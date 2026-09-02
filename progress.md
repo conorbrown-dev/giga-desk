@@ -147,6 +147,7 @@
 - Initial GitHub Actions run `33582831124` passed setup, Keycloak readiness, typecheck, lint, and unit tests, then correctly failed integration tests because CI had not migrated its empty PostgreSQL database. Corrected run `33583018180` applied all six migrations and passed every gate. Official action release readback identified `actions/checkout@v7` and `actions/setup-node@v7` as current; final run `33583242096` used those Node 24 action releases and passed migrations, typecheck, lint, 40 unit tests, 10 integration tests, four real-Keycloak E2E flows, and all three production builds in 2m14s without the deprecated-runtime warning.
 - Authenticated navigation styling: web typecheck, lint, eight component tests, production build, and all four real-Keycloak Playwright flows passed. A separate local Chrome visual inspection was not completed because an unrelated extension panel held browser control, so no manual visual claim is made.
 - Connect Agent tutorial: web typecheck, lint, nine component tests, and production build passed; five real-Keycloak Playwright flows passed, including authenticated navigation, checklist progress, reload persistence, and disabled future-provider states.
+- GitHub CI run `33631508200` passed every gate for the in-app tutorial; Railway API, web, and Keycloak deployments succeeded, both PostgreSQL services remained healthy, and the production proxy returned `{"status":"ok"}` from `/api/health`.
 
 ## Next steps
 
