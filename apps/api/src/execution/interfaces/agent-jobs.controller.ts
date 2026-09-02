@@ -25,10 +25,28 @@ import { ExecutionCompletionRejectedError } from '../domain/execution-completion
 import { ReportExecutionFailureCommand, type FailedExecution } from '../application/report-execution-failure.command.js';
 import { ExecutionFailureRejectedError } from '../application/agent-failure-repository.js';
 import { ReportExecutionFailureDto } from './report-execution-failure.dto.js';
+import { HeartbeatExecutionNodeCommand, type HeartbeatingExecutionNode } from '../application/heartbeat-execution-node.command.js';
+import { ExecutionNodeHeartbeatRejectedError } from '../application/execution-node-heartbeat-repository.js';
 
 @Controller('agent')
 export class AgentJobsController {
   constructor(private readonly commands: CommandBus, private readonly queries: QueryBus) {}
+
+  @Post('nodes/:nodeId/heartbeat')
+  @RequirePermissions('agent:jobs')
+  async heartbeat(
+    @Param('nodeId', ParseUUIDPipe) nodeId: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<HeartbeatingExecutionNode> {
+    try {
+      assertWorkerNode(nodeId, request.user?.executionNodeId ?? null);
+      return await this.commands.execute(new HeartbeatExecutionNodeCommand(nodeId));
+    } catch (error) {
+      if (error instanceof WorkerNodeMismatchError) throw new ForbiddenException(error.message);
+      if (error instanceof ExecutionNodeHeartbeatRejectedError) throw new NotFoundException(error.message);
+      throw error;
+    }
+  }
 
   @Get('nodes/:nodeId/jobs')
   @RequirePermissions('agent:jobs')

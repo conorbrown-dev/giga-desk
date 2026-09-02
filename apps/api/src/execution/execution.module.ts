@@ -35,6 +35,9 @@ import { PrismaWorkItemExecutionQueries } from './infrastructure/prisma-work-ite
 import { AgentJobsController } from './interfaces/agent-jobs.controller.js';
 import { ExecutionJobsController } from './interfaces/execution-jobs.controller.js';
 import { ExecutionTargetsController } from './interfaces/execution-targets.controller.js';
+import { HeartbeatExecutionNodeHandler } from './application/heartbeat-execution-node.handler.js';
+import { ExecutionNodeHeartbeatRepository } from './application/execution-node-heartbeat-repository.js';
+import { PrismaExecutionNodeHeartbeatRepository } from './infrastructure/prisma-execution-node-heartbeat.repository.js';
 
 @Module({
   imports: [DatabaseModule],
@@ -52,6 +55,7 @@ import { ExecutionTargetsController } from './interfaces/execution-targets.contr
     CompleteExecutionHandler,
     ReportExecutionFailureHandler,
     ListWorkItemExecutionsHandler,
+    HeartbeatExecutionNodeHandler,
     { provide: ExecutionTargetQueries, useClass: PrismaExecutionTargetQueries },
     { provide: ExecutionJobRepository, useClass: PrismaExecutionJobRepository },
     { provide: AgentJobRepository, useClass: PrismaAgentJobRepository },
@@ -62,6 +66,7 @@ import { ExecutionTargetsController } from './interfaces/execution-targets.contr
     { provide: AgentCompletionRepository, useClass: PrismaAgentCompletionRepository },
     { provide: AgentFailureRepository, useClass: PrismaAgentFailureRepository },
     { provide: WorkItemExecutionQueries, useClass: PrismaWorkItemExecutionQueries },
+    { provide: ExecutionNodeHeartbeatRepository, useClass: PrismaExecutionNodeHeartbeatRepository },
   ],
 })
 export class ExecutionModule {}

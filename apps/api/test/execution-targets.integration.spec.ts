@@ -88,6 +88,18 @@ describe('execution target registry API', () => {
     expect(records(body['agents']).some((agent) => agent['name'] === `Registry Agent ${suffix}`)).toBe(true);
     expect(records(body['models']).some((model) => model['modelIdentifier'] === `registry-${suffix}`)).toBe(true);
 
+    await request(server).post(`/api/agent/nodes/${nodeId}/heartbeat`)
+      .set('Authorization', 'Bearer worker-00000000-0000-4000-8000-000000000001').expect(403);
+    const heartbeat = await request(server).post(`/api/agent/nodes/${nodeId}/heartbeat`)
+      .set('Authorization', `Bearer worker-${nodeId}`).expect(201);
+    const heartbeatBody: unknown = heartbeat.body;
+    if (!isRecord(heartbeatBody) || typeof heartbeatBody['lastHeartbeatAt'] !== 'string') {
+      throw new Error('Expected an execution-node heartbeat response');
+    }
+    expect(heartbeatBody).toMatchObject({ id: nodeId, status: 'Online' });
+    const heartbeatingNode = await database.executionNode.findUniqueOrThrow({ where: { id: nodeId } });
+    expect(heartbeatingNode.lastHeartbeatAt?.toISOString()).toBe(heartbeatBody['lastHeartbeatAt']);
+
     const executionInput = { executionNodeId: nodeId, agentId, modelId };
     await request(server).post(`/api/work-items/${workItemId}/executions`)
       .set('Authorization', 'Bearer read-only-token').send(executionInput).expect(403);
