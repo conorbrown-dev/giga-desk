@@ -10,6 +10,7 @@ export interface CreatedFeature {
   status: 'Backlog';
   acceptanceCriteria: readonly string[];
   visualReferences: readonly { name: string; mediaType: string }[];
+  visualReviewRequired: boolean;
 }
 
 export interface CreateFeatureInput {
@@ -17,6 +18,7 @@ export interface CreateFeatureInput {
   description: string;
   acceptanceCriteria: readonly string[];
   visualReferences?: readonly VisualReferenceInput[];
+  visualReviewRequired?: boolean;
 }
 
 export class CreateFeatureCommand extends Command<CreatedFeature> {

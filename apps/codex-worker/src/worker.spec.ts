@@ -14,7 +14,7 @@ const work: WorkPackage = {
   execution: { node: { id: 'node-1', name: 'MIRIAM' },
     agent: { id: 'agent-1', name: 'Codex', type: 'Codex', version: '0.152.0' },
     model: { id: 'model-1', displayName: 'Default', provider: 'OpenAI', identifier: 'codex-cli-default' } },
-  expectations: { tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true },
+  expectations: { tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true, visualReviewRequired: false },
 };
 
 const result: CodexExecutionResult = {
@@ -23,6 +23,7 @@ const result: CodexExecutionResult = {
     { type: 'Integration', result: 'Passed', testCount: 1, failedTests: [], durationMs: 20 },
     { type: 'EndToEnd', result: 'Passed', testCount: 1, failedTests: [], durationMs: 30 },
   ],
+  visualEvidence: [],
   deployment: { environment: 'Production', status: 'Succeeded', version: 'abc', commitHash: 'abc', url: 'https://app.test' },
   satisfiedAcceptanceCriterionIds: ['criterion-1'], branchName: 'main', commitHash: 'abc', pullRequestUrl: null,
 };

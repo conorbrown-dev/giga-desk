@@ -42,6 +42,7 @@
 - The Project portfolio now includes a validated browser form for creating Projects and immediately refreshes with the persisted result.
 - Project work-item pages now include a validated browser form for creating Features with one acceptance criterion per line and immediately refresh with the persisted result.
 - Feature creation accepts up to three bounded PNG, JPEG, or WebP visual references; PostgreSQL persists the image bytes, Work Packages transport them, and the Codex worker supplies private temporary files through repeatable `--image` arguments without placing base64 data in the text prompt.
+- Feature authors can require responsive visual review; the persisted Work Package flag makes MIRIAM fail closed unless Codex returns one real desktop and one real mobile screenshot inside the repository, and a repository-local UI skill defines the reference-analysis and render-inspect-iterate workflow.
 - `npm run demo` starts isolated application and Keycloak PostgreSQL databases, imports a local-only Keycloak realm, builds both applications, and serves the authenticated browser UI.
 - Production API, web/Caddy, and Keycloak images are defined for an isolated five-service Railway topology; the application and identity databases remain separate.
 - Production API and web image dependency stages include every npm workspace manifest, including the agent simulator, so root `npm ci` remains reproducible as workspaces are added.
@@ -58,6 +59,7 @@
 
 ## Handoff — 2026-09-02
 
+- The UI quality gate is locally verified: the repository skill validator, typecheck, lint, 57 unit/component tests, 12 integration tests, five real-Keycloak E2E flows, all five builds, and migration deploy/status passed. The first E2E attempt reused a preview whose assets had been overwritten by a build without public Keycloak settings; after rebuilding that same preview with the required test settings, all five flows passed. No production deployment or live MIRIAM visual-review job is claimed.
 - The visual-reference pipeline is locally verified end to end: repository typecheck, lint, 55 unit/component tests, 12 PostgreSQL/HTTP worker integration tests, five real-Keycloak browser flows, all five production builds, migration deployment/status, and the worker's exact temporary-image bytes/CLI arguments passed. No production deployment or live MIRIAM job is claimed.
 - The authenticated content-shell fix is locally verified: web typecheck, lint, nine component tests, production build, and five real-Keycloak Playwright flows passed. The browser flow now asserts the desktop content width remains bounded; no deployment or live production visual claim has been made.
 - The approval-gate feature commit `eac41f1` was pushed and deployed. GitHub CI run `33646334055` passed migrations, typecheck, lint, 54 unit tests, 12 integration tests, five real-Keycloak E2E flows, and all five production builds in 2m14s. Railway API, web, and Keycloak deployments succeeded; the API applied migration `20260902143000_execution_protected_action_approval` and returned `{"status":"ok"}` from `/api/health`.
@@ -75,6 +77,12 @@
 
 ## Verification
 
+- `python3 /home/conor/.codex/skills/.system/skill-creator/scripts/quick_validate.py .agents/skills/frontend-visual-quality` — passed; the repository-local UI quality skill is structurally valid.
+- `npm exec prisma migrate deploy -- --config apps/api/prisma.config.ts` and `npm exec prisma migrate status -- --config apps/api/prisma.config.ts` — passed against local PostgreSQL; all nine migrations, including `20260902180000_work_item_visual_review_required`, are applied and current.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed for the visual-review gate across all five workspaces; the final focused Codex-worker run passed nine tests after adding repository-containment coverage, bringing the repository total to 57 unit/component tests.
+- `npm run test:integration` — passed nine API files/ten tests plus one shared-client and one real-worker HTTP-boundary test after the visual-review Work Package flag was added.
+- `PLAYWRIGHT_REUSE_EXISTING=true npm run test:e2e -w @giga-desk/web` — passed all five real-Keycloak flows after rebuilding the reused preview with its required public Keycloak settings; the preceding misconfigured-preview run failed before authentication and is not counted as product verification.
+- `npm run build` — passed all five production builds after the visual-review gate.
 - `npm exec prisma migrate deploy -- --config apps/api/prisma.config.ts` and `npm exec prisma migrate status -- --config apps/api/prisma.config.ts` — passed against local PostgreSQL; migration `20260902173000_work_item_visual_references` is applied and the schema is current.
 - `npm run typecheck`, `npm run lint`, and `npm test` — passed after visual-reference delivery across all five workspaces; 55 unit/component tests passed.
 - `npm run test:integration` — passed after the final oversized-request coverage update: nine API files/ten tests plus one shared-client and one real-worker HTTP-boundary test.
@@ -195,6 +203,15 @@
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Fail-closed UI visual review
+
+- Added an explicit Feature option for desktop/mobile screenshot review; selecting visual references automatically enables it, while non-visual work remains opt-in.
+- Persists the requirement on the WorkItem and carries it in Work Package expectations so worker enforcement does not rely on prompt wording or UI-task keyword guesses.
+- Extended structured Codex output with visual evidence and rejects required reviews unless they contain exactly one Desktop and one Mobile screenshot. Evidence paths must be relative, resolve physically inside the repository (including symlink containment), and contain a PNG, JPEG, or WebP signature.
+- Added the valid repository skill `.agents/skills/frontend-visual-quality`, which requires reference analysis, reusable design decisions, reachable-state and accessibility checks, real 1440x900/390x844 rendering, screenshot inspection, iteration, and the full frontend verification gate.
+- Migration `20260902180000_work_item_visual_review_required` adds a non-null Boolean with a `false` default, preserving existing WorkItems. Recovery can drop the column; no rollback was performed.
+- The feature changes 90 product-code lines; tests, the skill, documentation, and configuration are excluded from the 228-line limit.
 
 ### Visual references for MIRIAM
 

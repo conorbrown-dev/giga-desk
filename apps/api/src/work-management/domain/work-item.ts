@@ -33,6 +33,7 @@ export interface WorkItemProps {
   status: WorkItemStatus;
   acceptanceCriteria: readonly string[];
   visualReferences?: readonly VisualReferenceInput[];
+  visualReviewRequired?: boolean;
 }
 
 export class WorkItem {
@@ -55,6 +56,7 @@ export class WorkItem {
       title: props.title.trim(),
       acceptanceCriteria: props.acceptanceCriteria.map((criterion) => criterion.trim()),
       visualReferences: props.visualReferences?.map((reference) => ({ ...reference, name: reference.name.trim() })) ?? [],
+      visualReviewRequired: (props.visualReferences?.length ?? 0) > 0 || (props.visualReviewRequired ?? false),
     });
   }
 

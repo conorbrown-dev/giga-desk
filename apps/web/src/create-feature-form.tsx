@@ -3,8 +3,9 @@ import { useRef } from 'react';
 import * as Yup from 'yup';
 import { createFeature, type VisualReferenceInput } from './project-api.js';
 
-interface FeatureFormValues { title: string; description: string; acceptanceCriteria: string; visualReferences: readonly File[] }
-const initialValues: FeatureFormValues = { title: '', description: '', acceptanceCriteria: '', visualReferences: [] };
+interface FeatureFormValues { title: string; description: string; acceptanceCriteria: string;
+  visualReferences: readonly File[]; visualReviewRequired: boolean }
+const initialValues: FeatureFormValues = { title: '', description: '', acceptanceCriteria: '', visualReferences: [], visualReviewRequired: false };
 const criteria = (value: string): readonly string[] => value.split('\n').map((item) => item.trim()).filter(Boolean);
 const supportedImageTypes = new Set(['image/png', 'image/jpeg', 'image/webp']);
 interface FeatureFormStatus { success?: string; error?: string }
@@ -32,7 +33,7 @@ export function CreateFeatureForm({ projectId, onCreated }: { projectId: string;
   const fileInput = useRef<HTMLInputElement>(null);
   return <section className="card" aria-labelledby="create-feature-heading"><h2 id="create-feature-heading">Add feature</h2><Formik<FeatureFormValues> initialValues={initialValues} validationSchema={schema} onSubmit={async (values, { resetForm, setStatus }) => {
     setStatus(undefined);
-    try { const visualReferences = await Promise.all(values.visualReferences.map(encodeImage)); await createFeature(projectId, { title: values.title, description: values.description, acceptanceCriteria: criteria(values.acceptanceCriteria), ...(visualReferences.length > 0 ? { visualReferences } : {}) }); resetForm(); if (fileInput.current) fileInput.current.value = ''; setStatus({ success: 'Feature created.' }); onCreated(); }
+    try { const visualReferences = await Promise.all(values.visualReferences.map(encodeImage)); await createFeature(projectId, { title: values.title, description: values.description, acceptanceCriteria: criteria(values.acceptanceCriteria), visualReviewRequired: values.visualReviewRequired || visualReferences.length > 0, ...(visualReferences.length > 0 ? { visualReferences } : {}) }); resetForm(); if (fileInput.current) fileInput.current.value = ''; setStatus({ success: 'Feature created.' }); onCreated(); }
     catch (reason: unknown) { setStatus({ error: reason instanceof Error ? reason.message : 'Unable to create the feature.' }); }
   }}>{(form) => {
     const status: unknown = form.status;
@@ -42,6 +43,7 @@ export function CreateFeatureForm({ projectId, onCreated }: { projectId: string;
       <label>Description<Field as="textarea" name="description" rows="4" /><ErrorMessage name="description" component="span" /></label>
       <label>Acceptance criteria<Field as="textarea" name="acceptanceCriteria" rows="4" placeholder="One testable outcome per line" /><ErrorMessage name="acceptanceCriteria" component="span" /></label>
       <label>Visual references<input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(event) => { void form.setFieldValue('visualReferences', Array.from(event.currentTarget.files ?? [])); }} /><span>Up to three PNG, JPEG, or WebP screenshots, 3 MB each.</span><ErrorMessage name="visualReferences" component="span" /></label>
+      <label><Field type="checkbox" name="visualReviewRequired" /> Require desktop and mobile screenshot review</label>
       <button type="submit" disabled={form.isSubmitting}>{form.isSubmitting ? 'Adding…' : 'Add feature'}</button>
       {feedback?.error && <p role="alert">{feedback.error}</p>}{feedback?.success && <p role="status">{feedback.success}</p>}
     </Form>;

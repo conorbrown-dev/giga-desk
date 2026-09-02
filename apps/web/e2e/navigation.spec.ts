@@ -90,7 +90,7 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
     } else await route.fulfill({ json: projects });
   });
   await page.route('**/api/projects/*/features', async (route) => {
-    expect(route.request().postDataJSON()).toEqual({ title: 'Coworker showcase', description: 'Demonstrate feature planning', acceptanceCriteria: ['Project can be opened', 'Feature appears immediately'], visualReferences: [{ name: 'expo.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=' }] });
+    expect(route.request().postDataJSON()).toEqual({ title: 'Coworker showcase', description: 'Demonstrate feature planning', acceptanceCriteria: ['Project can be opened', 'Feature appears immediately'], visualReviewRequired: true, visualReferences: [{ name: 'expo.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=' }] });
     workItems = [{ id: 'work-10', parentId: null, type: 'Feature', title: 'Coworker showcase', status: 'Backlog', priority: 'Medium', criteria: [{ id: 'criterion-10', text: 'Project can be opened', satisfied: false, sortOrder: 0 }] }];
     await route.fulfill({ status: 201, json: {} });
   });

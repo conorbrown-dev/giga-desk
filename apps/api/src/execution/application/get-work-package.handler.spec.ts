@@ -12,7 +12,7 @@ const workPackage: WorkPackage = {
     implementationInstructions: null, parent: null, visualReferences: [], acceptanceCriteria: [], dependencies: [] },
   execution: { node: { id: 'node-1', name: 'Node' }, agent: { id: 'agent-1', name: 'Agent', type: 'Simulator', version: '1' },
     model: { id: 'model-1', displayName: 'Model', provider: 'Local', identifier: 'model' } },
-  expectations: { tests: ['Unit'], deploymentRequired: false },
+  expectations: { tests: ['Unit'], deploymentRequired: false, visualReviewRequired: false },
 };
 class StubWorkPackages extends AgentWorkPackageQueries {
   get(): Promise<WorkPackage> { return Promise.resolve(workPackage); }

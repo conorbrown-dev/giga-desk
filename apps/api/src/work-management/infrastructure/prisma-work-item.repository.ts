@@ -20,6 +20,7 @@ export class PrismaWorkItemRepository extends WorkItemRepository {
           type: 'Feature',
           title: feature.props.title,
           description: feature.props.description,
+          visualReviewRequired: feature.props.visualReviewRequired ?? false,
           status: 'Backlog',
           criteria: { create: feature.props.acceptanceCriteria.map((text, sortOrder) => ({ text, sortOrder })) },
           visualReferences: { create: (feature.props.visualReferences ?? []).map((reference, sortOrder) => ({

@@ -3,12 +3,12 @@ import { PrismaService } from '../../shared/infrastructure/prisma.service.js';
 import { AgentWorkPackageQueries, WorkPackageNotFoundError } from '../application/agent-work-package-queries.js';
 import type { WorkPackage } from '../application/get-work-package.query.js';
 
-const expectationsFor = (type: string): WorkPackage['expectations'] => {
+const expectationsFor = (type: string, visualReviewRequired: boolean): WorkPackage['expectations'] => {
   if (['Feature', 'UserStory', 'Bug'].includes(type)) {
-    return { tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true };
+    return { tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true, visualReviewRequired };
   }
-  if (type === 'Research') return { tests: [], deploymentRequired: false };
-  return { tests: ['Unit'], deploymentRequired: false };
+  if (type === 'Research') return { tests: [], deploymentRequired: false, visualReviewRequired };
+  return { tests: ['Unit'], deploymentRequired: false, visualReviewRequired };
 };
 
 @Injectable()
@@ -27,6 +27,7 @@ export class PrismaAgentWorkPackageQueries extends AgentWorkPackageQueries {
         model: { select: { id: true, displayName: true, provider: true, modelIdentifier: true } },
         workItem: { select: {
           id: true, type: true, title: true, description: true, technicalNotes: true, instructions: true,
+          visualReviewRequired: true,
           visualReferences: { orderBy: { sortOrder: 'asc' }, select: { name: true, mediaType: true, content: true } },
           parent: { select: { id: true, title: true } },
           criteria: { orderBy: { sortOrder: 'asc' }, select: { id: true, text: true, satisfied: true } },
@@ -57,7 +58,7 @@ export class PrismaAgentWorkPackageQueries extends AgentWorkPackageQueries {
         model: { id: job.model.id, displayName: job.model.displayName,
           provider: job.model.provider, identifier: job.model.modelIdentifier },
       },
-      expectations: expectationsFor(job.workItem.type),
+      expectations: expectationsFor(job.workItem.type, job.workItem.visualReviewRequired),
     };
   }
 }

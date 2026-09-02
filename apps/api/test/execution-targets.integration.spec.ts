@@ -47,7 +47,7 @@ describe('execution target registry API', () => {
     } });
     const project = await database.project.create({ data: {
       key: `ST${suffix.toUpperCase()}`, name: 'Start Work Fixture', description: 'Fixture', businessGoal: 'Queue work',
-      workItems: { create: { type: 'Feature', title: 'Queue execution', description: 'Start work',
+      workItems: { create: { type: 'Feature', title: 'Queue execution', description: 'Start work', visualReviewRequired: true,
         criteria: { create: { text: 'Execution is queued' } }, visualReferences: { create: {
           name: 'expo.png', mediaType: 'image/png', content: Buffer.from('iVBORw0KGgo=', 'base64'),
         } } } },
@@ -148,7 +148,7 @@ describe('execution target registry API', () => {
     }]);
     expect(workPackage['authorization']).toEqual({ protectedActionsApproved: true });
     expect(workPackage['expectations']).toEqual({
-      tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true,
+      tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true, visualReviewRequired: true,
     });
     await request(server).post(`/api/agent/jobs/${jobBody['id']}/claim`)
       .set('Authorization', `Bearer worker-${nodeId}`).expect(409);

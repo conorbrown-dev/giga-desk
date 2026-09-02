@@ -21,15 +21,17 @@ describe('CreateFeatureHandler', () => {
       content: Uint8Array.from([0x89, 0x50, 0x4e, 0x47]) };
     const result = await handler.execute(new CreateFeatureCommand('project-1', {
       title: ' Project board ', description: 'Show delivery state', acceptanceCriteria: [' Cards are visible '],
-      visualReferences: [visualReference],
+      visualReferences: [visualReference], visualReviewRequired: true,
     }, 'user-123'));
 
     expect(result).toMatchObject({
       projectId: 'project-1', type: 'Feature', title: 'Project board', status: 'Backlog',
       acceptanceCriteria: ['Cards are visible'],
       visualReferences: [{ name: 'expo.png', mediaType: 'image/png' }],
+      visualReviewRequired: true,
     });
     expect(repository.saved?.feature.props.visualReferences).toEqual([visualReference]);
+    expect(repository.saved?.feature.props.visualReviewRequired).toBe(true);
     expect(repository.saved?.actorId).toBe('user-123');
   });
 });

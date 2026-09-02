@@ -17,6 +17,7 @@ const visualReferenceContent = Buffer.concat([
 ]);
 const featureInput = {
   title: 'Project board', description: 'Show delivery state', acceptanceCriteria: ['Feature appears on the board'],
+  visualReviewRequired: false,
   visualReferences: [{ name: 'railway.png', mediaType: 'image/png', dataBase64: visualReferenceContent.toString('base64') }],
 };
 
@@ -75,6 +76,7 @@ describe('projects API', () => {
       projectId: stored.id, type: 'Feature', title: featureInput.title, status: 'Backlog',
       acceptanceCriteria: featureInput.acceptanceCriteria,
       visualReferences: [{ name: 'railway.png', mediaType: 'image/png' }],
+      visualReviewRequired: true,
     });
     const featureBody: unknown = featureResponse.body;
     if (typeof featureBody !== 'object' || featureBody === null || !('id' in featureBody)
@@ -83,6 +85,7 @@ describe('projects API', () => {
       where: { id: featureBody.id }, include: { criteria: true, activities: true, visualReferences: true },
     });
     expect(feature.criteria.map((criterion) => criterion.text)).toEqual(featureInput.acceptanceCriteria);
+    expect(feature.visualReviewRequired).toBe(true);
     expect(feature.visualReferences).toHaveLength(1);
     expect(feature.visualReferences[0]).toMatchObject({ name: 'railway.png', mediaType: 'image/png', sortOrder: 0 });
     expect(Buffer.from(feature.visualReferences[0]?.content ?? [])).toEqual(visualReferenceContent);

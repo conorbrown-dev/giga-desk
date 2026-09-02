@@ -14,7 +14,8 @@ export interface WorkPackage {
     dependencies: readonly { id: string; title: string; status: string }[] };
   execution: { node: { id: string; name: string }; agent: { id: string; name: string; type: string; version: string };
     model: { id: string; displayName: string; provider: string; identifier: string } };
-  expectations: { tests: readonly ('Unit' | 'Integration' | 'EndToEnd')[]; deploymentRequired: boolean };
+  expectations: { tests: readonly ('Unit' | 'Integration' | 'EndToEnd')[]; deploymentRequired: boolean;
+    visualReviewRequired: boolean };
 }
 
 export class AgentApiError extends Error {

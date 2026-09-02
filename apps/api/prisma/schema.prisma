@@ -135,6 +135,7 @@ model WorkItem {
   priority       Priority              @default(Medium)
   technicalNotes String?
   instructions   String?
+  visualReviewRequired Boolean             @default(false)
   sortOrder      Int                   @default(0)
   startedAt      DateTime?
   completedAt    DateTime?

@@ -1,5 +1,7 @@
 import type { WorkPackage } from '@giga-desk/agent-client/agent-api';
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { CodexExecutor, type CommandRunner } from './codex-executor.js';
 
@@ -15,7 +17,7 @@ const workPackage: WorkPackage = {
   execution: { node: { id: 'node-1', name: 'MIRIAM' },
     agent: { id: 'agent-1', name: 'Codex CLI', type: 'Codex', version: '0.152.0' },
     model: { id: 'model-1', displayName: 'Codex CLI default', provider: 'OpenAI', identifier: 'codex-cli-default' } },
-  expectations: { tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true },
+  expectations: { tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true, visualReviewRequired: true },
 };
 
 const successfulResult = {
@@ -25,12 +27,19 @@ const successfulResult = {
     { type: 'Integration', result: 'Passed', testCount: 2, failedTests: [], durationMs: 200 },
     { type: 'EndToEnd', result: 'Passed', testCount: 1, failedTests: [], durationMs: 300 },
   ],
+  visualEvidence: [
+    { viewport: 'Desktop', screenshotPath: 'desktop.png' },
+    { viewport: 'Mobile', screenshotPath: 'mobile.png' },
+  ],
   deployment: { environment: 'Production', status: 'Succeeded', version: 'abc123', commitHash: 'abc123', url: 'https://app.test' },
   satisfiedAcceptanceCriterionIds: ['criterion-1'], branchName: 'main', commitHash: 'abc123', pullRequestUrl: null,
 };
 
 describe('CodexExecutor', () => {
   it('runs Codex without a shell and accepts strict completion evidence', async () => {
+    const repositoryPath = await mkdtemp(join(tmpdir(), 'giga-desk-repository-'));
+    await Promise.all(['desktop.png', 'mobile.png'].map((name) => writeFile(join(repositoryPath, name),
+      Buffer.from([0x89, 0x50, 0x4e, 0x47]))));
     const run = vi.fn<CommandRunner>(async (file, args) => {
       expect(file).toBe('codex');
       expect(args).toContain('workspace-write');
@@ -46,11 +55,12 @@ describe('CodexExecutor', () => {
       await writeFile(outputPath, JSON.stringify(successfulResult));
     });
 
-    const result = await new CodexExecutor(run).execute(workPackage, '/trusted/repository');
-
-    expect(result.summary).toBe('Implemented and verified.');
-    expect(result.satisfiedAcceptanceCriterionIds).toEqual(['criterion-1']);
-    expect(run).toHaveBeenCalledOnce();
+    try {
+      const result = await new CodexExecutor(run).execute(workPackage, repositoryPath);
+      expect(result.summary).toBe('Implemented and verified.');
+      expect(result.visualEvidence.map(({ viewport }) => viewport)).toEqual(['Desktop', 'Mobile']);
+      expect(run).toHaveBeenCalledOnce();
+    } finally { await rm(repositoryPath, { recursive: true, force: true }); }
   });
 
   it('rejects incomplete evidence instead of treating it as success', async () => {
@@ -62,5 +72,31 @@ describe('CodexExecutor', () => {
 
     await expect(new CodexExecutor(run).execute(workPackage, '/trusted/repository'))
       .rejects.toThrow('invalid test evidence');
+  });
+
+  it('rejects a required visual review without both screenshots', async () => {
+    const run: CommandRunner = async (_file, args) => {
+      const outputPath = args[args.indexOf('--output-last-message') + 1];
+      if (!outputPath) throw new Error('Missing output path');
+      await writeFile(outputPath, JSON.stringify({ ...successfulResult, visualEvidence: [] }));
+    };
+    await expect(new CodexExecutor(run).execute(workPackage, '/trusted/repository'))
+      .rejects.toThrow('exactly one desktop and one mobile screenshot');
+  });
+
+  it('rejects visual evidence outside the repository', async () => {
+    const repositoryPath = await mkdtemp(join(tmpdir(), 'giga-desk-repository-'));
+    const run: CommandRunner = async (_file, args) => {
+      const outputPath = args[args.indexOf('--output-last-message') + 1];
+      if (!outputPath) throw new Error('Missing output path');
+      await writeFile(outputPath, JSON.stringify({ ...successfulResult, visualEvidence: [
+        { viewport: 'Desktop', screenshotPath: '/tmp/desktop.png' },
+        { viewport: 'Mobile', screenshotPath: 'mobile.png' },
+      ] }));
+    };
+    try {
+      await expect(new CodexExecutor(run).execute(workPackage, repositoryPath))
+        .rejects.toThrow('repository-relative file');
+    } finally { await rm(repositoryPath, { recursive: true, force: true }); }
   });
 });

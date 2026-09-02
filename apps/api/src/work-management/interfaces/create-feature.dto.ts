@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsOptional, IsString, Matches, MaxLength, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsOptional, IsString, Matches, MaxLength, ValidateNested } from 'class-validator';
 
 class VisualReferenceDto {
   @IsString() @MaxLength(200) @Matches(/^[^/\\]+$/)
@@ -32,4 +32,7 @@ export class CreateFeatureDto {
 
   @IsOptional() @IsArray() @ArrayMaxSize(3) @ValidateNested({ each: true }) @Type(() => VisualReferenceDto)
   declare visualReferences?: VisualReferenceDto[];
+
+  @IsOptional() @IsBoolean()
+  declare visualReviewRequired?: boolean;
 }

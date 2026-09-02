@@ -23,7 +23,7 @@ export interface ProjectWorkItem {
 export interface CreateProjectInput { key: string; name: string; description: string; businessGoal: string }
 export interface VisualReferenceInput { name: string; mediaType: string; dataBase64: string }
 export interface CreateFeatureInput { title: string; description: string; acceptanceCriteria: readonly string[];
-  visualReferences?: readonly VisualReferenceInput[] }
+  visualReferences?: readonly VisualReferenceInput[]; visualReviewRequired?: boolean }
 
 async function getAuthenticated<T>(path: string, signal: AbortSignal, unavailableMessage: string): Promise<T> {
   const token = await getAuthToken();

@@ -111,7 +111,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add feature' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Feature created.');
     expect(await screen.findByRole('link', { name: 'Show Ryan the demo' })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-2/features', expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'Show Ryan the demo', description: '', acceptanceCriteria: ['Project is visible', 'Feature is visible'], visualReferences: [{ name: 'railway.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=' }] }) }));
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-2/features', expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'Show Ryan the demo', description: '', acceptanceCriteria: ['Project is visible', 'Feature is visible'], visualReviewRequired: true, visualReferences: [{ name: 'railway.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=' }] }) }));
   });
 
   it('shows an empty execution dashboard state', async () => {
