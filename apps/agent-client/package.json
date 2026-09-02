@@ -1,0 +1,27 @@
+{
+  "name": "@giga-desk/agent-client",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./agent-api": {
+      "types": "./src/agent-api.ts",
+      "default": "./dist/agent-api.js"
+    },
+    "./machine-token": {
+      "types": "./src/machine-token.ts",
+      "default": "./dist/machine-token.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run src",
+    "test:integration": "vitest run test"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
+  }
+}

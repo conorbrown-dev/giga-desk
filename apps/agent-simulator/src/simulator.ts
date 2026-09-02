@@ -1,4 +1,4 @@
-import { AgentApi, type WorkPackage } from './agent-api.js';
+import { AgentApi, type WorkPackage } from '@giga-desk/agent-client/agent-api';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const key = (jobId: string, stage: string): string => `simulator:${jobId}:${stage}`;

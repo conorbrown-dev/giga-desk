@@ -1,6 +1,6 @@
-import { AgentApi } from './agent-api.js';
+import { AgentApi } from '@giga-desk/agent-client/agent-api';
 import { poll } from './simulator.js';
-import { ClientCredentialsTokenProvider, type AccessTokenProvider } from './machine-token.js';
+import { ClientCredentialsTokenProvider, type AccessTokenProvider } from '@giga-desk/agent-client/machine-token';
 
 const required = (name: string): string => {
   const value = process.env[name]?.trim();

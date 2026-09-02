@@ -6,7 +6,7 @@
 - The ordered project reference pack has been reviewed and a baseline architecture assessment is recorded in `docs/10_ARCHITECTURE_ASSESSMENT.md`.
 - The starting checkout was documentation-only, so the new application foundation follows the recorded architecture assessment rather than pre-existing runtime conventions.
 - Contributor guidance requires GitHub, Railway, and Cloudflare CLI tooling for repository, deployment, and infrastructure operations.
-- npm workspaces now separate the strict-TypeScript NestJS API, Vite/React web application, and Node polling agent simulator.
+- npm workspaces now separate the strict-TypeScript NestJS API, Vite/React web application, Node polling agent simulator, and production-neutral machine API client.
 - The API exposes a minimal `/api/health` readiness boundary; the web shell provides routed home and project-list states.
 - PostgreSQL and Prisma configuration now define the initial Project, WorkItem, acceptance-criteria, dependency, and immutable activity persistence model.
 - Framework-free Project and WorkItem domain objects enforce key normalization, required feature acceptance criteria, workflow transitions, and prerequisite completion.
@@ -48,6 +48,7 @@
 - Railway point-in-time recovery is intentionally disabled for both production PostgreSQL services to avoid unnecessary early-stage backup storage expense; database volumes remain live, but no recovery window is retained.
 - GitHub Actions now defines the complete local-shaped CI gate with PostgreSQL, real Keycloak login, typecheck, lint, unit/integration/E2E tests, and production builds.
 - A development-only polling simulator obtains and caches short-lived OIDC client-credentials tokens, heartbeats its node, and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle; an injected token remains available for isolated tests.
+- Machine API and OIDC client-credentials behavior now live in a dedicated shared workspace, keeping the production worker boundary independent of the synthetic simulator.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 
 ## Verification
@@ -148,6 +149,7 @@
 - Authenticated navigation styling: web typecheck, lint, eight component tests, production build, and all four real-Keycloak Playwright flows passed. A separate local Chrome visual inspection was not completed because an unrelated extension panel held browser control, so no manual visual claim is made.
 - Connect Agent tutorial: web typecheck, lint, nine component tests, and production build passed; five real-Keycloak Playwright flows passed, including authenticated navigation, checklist progress, reload persistence, and disabled future-provider states.
 - OIDC polling-agent authentication: repository-wide typecheck, lint, and production builds passed for all three workspaces; unit tests passed (web one file/nine tests, API 19 files/34 tests, agent two files/four tests). The complete integration gate passed outside sandbox isolation (API nine files/ten tests and agent one file/test), and all five real-Keycloak Playwright flows passed, including the enabled machine-identity step and still-disabled real-worker step.
+- Shared machine API client: repository-wide typecheck, lint, unit tests, and production builds passed across four workspaces; the API's nine PostgreSQL-backed integration files/ten tests and the shared client's localhost HTTP-boundary test passed outside sandbox isolation, as did all five real-Keycloak Playwright flows. `npm install` audited 546 packages with zero vulnerabilities.
 - GitHub CI run `33634761790` passed migrations, typecheck, lint, 47 unit tests, 11 integration tests, five real-Keycloak E2E flows, and all three production builds for commit `ba3c76b` in 2m14s. Railway production deployments `41d719af-0663-41f6-8264-135e0aeb5e7d` (API), `5a061b21-07ec-41ff-8bfb-97b52014abd0` (web), and `35114d6c-fde5-4de6-9502-19e6ce6f2f3f` (Keycloak) succeeded for that commit; the public web proxy returned `{"status":"ok"}` from `/api/health`, and Keycloak realm discovery returned the exact production issuer, token endpoint, and JWKS URI.
 - GitHub CI run `33631508200` passed every gate for the in-app tutorial; Railway API, web, and Keycloak deployments succeeded, both PostgreSQL services remained healthy, and the production proxy returned `{"status":"ok"}` from `/api/health`.
 
@@ -158,6 +160,13 @@
 - Unlock the final Codex tutorial step only after the real Codex worker has live verification.
 
 ## Change log
+
+### Shared machine API client
+
+- Extracted the machine HTTP client, full Work Package contract, and cached OIDC client-credentials provider into a production-neutral workspace for use by both real and simulated workers.
+- Kept the simulator lifecycle isolated and moved its HTTP/token boundary coverage with the shared code.
+- Updated reproducible Docker dependency stages and the repository integration gate for the added workspace.
+- The refactor changes 18 product-code lines in the rename-aware push diff; tests, manifests, lockfiles, Docker configuration, and documentation are excluded from the 228-line limit.
 
 ### OIDC polling-agent authentication and heartbeat
 

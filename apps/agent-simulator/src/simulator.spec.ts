@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AgentApi } from './agent-api.js';
+import { AgentApi } from '@giga-desk/agent-client/agent-api';
 import { simulateNext } from './simulator.js';
 
 const response = (body: unknown): Response => new Response(JSON.stringify(body), {

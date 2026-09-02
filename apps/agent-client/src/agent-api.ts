@@ -3,10 +3,16 @@ import type { AccessTokenProvider } from './machine-token.js';
 export interface DiscoverableJob { id: string; status: 'Queued' }
 
 export interface WorkPackage {
-  workItem: {
-    title: string;
+  executionJobId: string;
+  project: { id: string; key: string; name: string; description: string; businessGoal: string;
+    repositoryUrl: string | null; defaultBranch: string | null };
+  workItem: { id: string; type: string; title: string; description: string; technicalNotes: string | null;
+    implementationInstructions: string | null; parent: { id: string; title: string } | null;
     acceptanceCriteria: readonly { id: string; text: string; satisfied: boolean }[];
-  };
+    dependencies: readonly { id: string; title: string; status: string }[] };
+  execution: { node: { id: string; name: string }; agent: { id: string; name: string; type: string; version: string };
+    model: { id: string; displayName: string; provider: string; identifier: string } };
+  expectations: { tests: readonly ('Unit' | 'Integration' | 'EndToEnd')[]; deploymentRequired: boolean };
 }
 
 export class AgentApiError extends Error {

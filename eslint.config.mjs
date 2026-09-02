@@ -8,7 +8,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {
-    files: ['apps/api/**/*.ts', 'apps/agent-simulator/**/*.ts'],
+    files: ['apps/api/**/*.ts', 'apps/agent-{client,simulator}/**/*.ts'],
     languageOptions: {
       globals: globals.node,
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
