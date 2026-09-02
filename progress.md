@@ -34,6 +34,7 @@
 - Authenticated users with `work-items:read` can retrieve explicit execution history for a WorkItem, including selected targets, lifecycle timestamps, progress, test evidence, deployment evidence, source-control metadata, and failure reasons.
 - The web app now provides a typed execution-history client and `/work-items/:workItemId` dashboard route with accessible loading/error/empty states and evidence summaries.
 - The web app now loads authenticated Project and WorkItem projections, with project-list and project-work routes linking users through to each WorkItem's execution history.
+- Every authenticated route now renders inside the centered, bounded main-content shell instead of allowing page forms and dashboards to stretch edge-to-edge.
 - The authenticated web shell now uses a responsive primary navigation with a branded home link, account context, a styled sign-out action, cohesive link/button states, and visible keyboard focus.
 - Authenticated users can open an in-app Connect Agent guide: Codex provides a persisted, security-aware machine-setup checklist, while Claude and Grok are visible as disabled future providers.
 - WorkItem execution pages now provide an authenticated Formik/Yup Start Work flow that loads available targets, narrows models by agent provider compatibility, queues the selection, and refreshes history.
@@ -56,6 +57,7 @@
 
 ## Handoff — 2026-09-02
 
+- The authenticated content-shell fix is locally verified: web typecheck, lint, nine component tests, production build, and five real-Keycloak Playwright flows passed. The browser flow now asserts the desktop content width remains bounded; no deployment or live production visual claim has been made.
 - The approval-gate feature commit `eac41f1` was pushed and deployed. GitHub CI run `33646334055` passed migrations, typecheck, lint, 54 unit tests, 12 integration tests, five real-Keycloak E2E flows, and all five production builds in 2m14s. Railway API, web, and Keycloak deployments succeeded; the API applied migration `20260902143000_execution_protected_action_approval` and returned `{"status":"ok"}` from `/api/health`.
 - MIRIAM's protected worker configuration and installed user service are active; the node-scoped identity/heartbeat were verified and the production queue was empty during preflight. Live readback on 2026-09-02 reports `giga-desk-codex-worker.service` enabled, active, and running.
 - The approval-gate feature records a per-execution approval for protected production actions, delivers that decision in the Work Package, and blocks clearly sensitive tasks before Codex runs when approval is absent. Production contains the applied migration and the worker service is enabled and running.
@@ -177,6 +179,7 @@
 - GitHub CI run `33634761790` passed migrations, typecheck, lint, 47 unit tests, 11 integration tests, five real-Keycloak E2E flows, and all three production builds for commit `ba3c76b` in 2m14s. Railway production deployments `41d719af-0663-41f6-8264-135e0aeb5e7d` (API), `5a061b21-07ec-41ff-8bfb-97b52014abd0` (web), and `35114d6c-fde5-4de6-9502-19e6ce6f2f3f` (Keycloak) succeeded for that commit; the public web proxy returned `{"status":"ok"}` from `/api/health`, and Keycloak realm discovery returned the exact production issuer, token endpoint, and JWKS URI.
 - GitHub CI run `33631508200` passed every gate for the in-app tutorial; Railway API, web, and Keycloak deployments succeeded, both PostgreSQL services remained healthy, and the production proxy returned `{"status":"ok"}` from `/api/health`.
 - Admin dashboard UI: web typecheck, lint, production build passed; CSS and React component updates adopted a modern admin-dashboard aesthetic with status badges, summary stats cards, improved visual hierarchy, and responsive layout based on Railway/Expo.dev patterns; all existing Playwright flows and four real-Keycloak E2E flows passed.
+- Authenticated content shell: web typecheck, lint, nine component tests, production build, and all five real-Keycloak Playwright flows passed. The first E2E attempts were environmentally blocked by an occupied preview port and a stopped local Keycloak service; the same-repository preview was rebuilt with test identity settings, isolated local services were started, and the final real-login run passed.
 
 ## Next steps
 
@@ -185,6 +188,13 @@
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Bounded authenticated content shell
+
+- Wrapped authenticated route content in the semantic main landmark so the existing centered width and responsive padding apply consistently to Projects, Work Items, execution history, and agent setup.
+- Added component coverage for the main landmark and browser coverage that rejects an edge-to-edge desktop Project/Feature flow.
+- Made reuse of an existing Playwright preview explicit for local diagnostics while retaining fresh-server behavior by default.
+- The feature changes 6 product-code lines; tests, test configuration, and documentation are excluded from the 228-line limit.
 
 ### Protected production action approval
 

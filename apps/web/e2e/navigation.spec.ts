@@ -96,6 +96,10 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
   });
   await page.route('**/api/projects/*/work-items', async (route) => route.fulfill({ json: workItems }));
   await signIn(page, '/projects');
+  const content = await page.getByRole('main').boundingBox();
+  expect(content).not.toBeNull();
+  expect(content?.width).toBeLessThanOrEqual(1200);
+  expect(content?.x).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Add project' }).click();
   await expect(page.getByText('Enter a project key.')).toBeVisible();
   await page.getByLabel(/Project key/).fill('RY');

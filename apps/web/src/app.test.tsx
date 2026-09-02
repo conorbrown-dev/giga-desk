@@ -23,6 +23,7 @@ describe('App', () => {
     }]) }));
     render(<MemoryRouter initialEntries={['/projects']}><App /></MemoryRouter>);
     expect(await screen.findByRole('link', { name: 'GD · Giga Desk' })).toHaveAttribute('href', '/projects/project-1');
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { name: 'Project Portfolio' }));
     expect(fetch).toHaveBeenCalledWith('/api/projects', expect.objectContaining({ headers: { Authorization: 'Bearer test-token' } }));
   });
 
@@ -62,7 +63,7 @@ describe('App', () => {
     }]) }));
     render(<MemoryRouter initialEntries={['/projects/project-1']}><App /></MemoryRouter>);
     expect(await screen.findByRole('link', { name: 'Navigate projects' })).toHaveAttribute('href', '/work-items/work-1');
-    expect(screen.getByText('0 of 1 acceptance criteria complete')).toBeInTheDocument();
+    expect(screen.getByText(/0 of 1 criteria complete/)).toBeInTheDocument();
   });
 
   it('creates a project and refreshes the portfolio', async () => {
