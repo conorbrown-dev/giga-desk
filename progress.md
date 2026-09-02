@@ -60,6 +60,7 @@
 
 ## Handoff — 2026-09-02
 
+- Clarified the authenticated Connect Agent Step 5 with the actual systemd user-service installation, start, status, and log commands, plus repository-path and Online-heartbeat expectations. Web typecheck, lint, nine component tests, production build, and all five real-Keycloak Playwright E2E flows passed; the first sandboxed E2E attempt was blocked by local listener isolation and the permitted rerun passed.
 - The UI quality gate is locally verified: the repository skill validator, typecheck, lint, 57 unit/component tests, 12 integration tests, five real-Keycloak E2E flows, all five builds, and migration deploy/status passed. The first E2E attempt reused a preview whose assets had been overwritten by a build without public Keycloak settings; after rebuilding that same preview with the required test settings, all five flows passed. No production deployment or live MIRIAM visual-review job is claimed.
 - The visual-reference pipeline is locally verified end to end: repository typecheck, lint, 55 unit/component tests, 12 PostgreSQL/HTTP worker integration tests, five real-Keycloak browser flows, all five production builds, migration deployment/status, and the worker's exact temporary-image bytes/CLI arguments passed. No production deployment or live MIRIAM job is claimed.
 - The authenticated content-shell fix is locally verified: web typecheck, lint, nine component tests, production build, and five real-Keycloak Playwright flows passed. The browser flow now asserts the desktop content width remains bounded; no deployment or live production visual claim has been made.
@@ -204,6 +205,13 @@
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Clear Codex worker startup instructions
+
+- Updated `/agents/connect` Step 5 to install and start `giga-desk-codex-worker.service` with `systemctl --user`, inspect status/logs, and verify the node heartbeat changes to Online.
+- Documented the service file's expected repository path and the settings to update when the worker is installed elsewhere.
+- Added component and authenticated E2E assertions for the startup instructions.
+- Verification passed: `npm run typecheck -w @giga-desk/web`, `npm run lint -w @giga-desk/web`, `npm test -w @giga-desk/web`, `npm run build -w @giga-desk/web`, and `npm run test:e2e -w @giga-desk/web` (five flows).
 
 ### Automatic Codex target metadata
 

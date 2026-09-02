@@ -32,7 +32,8 @@ const steps: readonly SetupStep[] = [
   },
   {
     title: 'Start and verify the worker',
-    detail: 'Start the Codex worker, confirm its heartbeat changes the node to Online, then assign a small test work item.',
+    detail: 'From the repository root, install the included systemd user service. It loads the agent.env and worker.env files from Step 4, runs the Codex worker, and restarts it if it exits. Enable and start the service, then confirm the node changes to Online in Giga Desk and assign a small test work item. If your repository is not at /home/conor/repos/giga-desk, update WorkingDirectory, EnvironmentFile, and ExecStart in the service file first.',
+    command: 'mkdir -p ~/.config/systemd/user\ncp ops/giga-desk-codex-worker.service ~/.config/systemd/user/\nsystemctl --user daemon-reload\nsystemctl --user enable --now giga-desk-codex-worker.service\nsystemctl --user status giga-desk-codex-worker.service\njournalctl --user -u giga-desk-codex-worker.service -f',
     pending: true,
   },
 ];

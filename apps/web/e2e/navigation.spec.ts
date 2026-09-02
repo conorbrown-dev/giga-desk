@@ -41,6 +41,8 @@ test('walks through Codex agent setup in the authenticated app', async ({ page }
   await signIn(page, '/agents/connect');
   await expect(page.getByRole('heading', { name: 'Connect a work agent' })).toBeVisible();
   await expect(page.getByText('Claude').locator('..')).toHaveAttribute('aria-disabled', 'true');
+  await expect(page.getByText(/install the included systemd user service/i)).toBeVisible();
+  await expect(page.getByText(/systemctl --user enable --now giga-desk-codex-worker.service/)).toBeVisible();
   await expect(page.getByLabel('Step completed').nth(3)).toBeEnabled();
   await expect(page.getByLabel('Step completed').last()).toBeDisabled();
   await page.getByLabel('Step completed').first().check();

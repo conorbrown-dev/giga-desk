@@ -45,6 +45,8 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Connect a work agent' })).toBeInTheDocument();
     expect(screen.getByText('Claude').closest('article')).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getAllByText('Requires worker support')).toHaveLength(1);
+    expect(screen.getByText(/install the included systemd user service/i)).toBeInTheDocument();
+    expect(screen.getByText(/systemctl --user enable --now giga-desk-codex-worker.service/)).toBeInTheDocument();
     expect(screen.getAllByRole('checkbox')[3]).toBeEnabled();
     expect(screen.getAllByRole('checkbox')[4]).toBeDisabled();
     const firstStep = screen.getAllByRole('checkbox')[0];
