@@ -8,9 +8,11 @@ const response = (body: unknown): Response => new Response(JSON.stringify(body),
 
 describe('polling agent simulator', () => {
   it('leaves the API unchanged when no work is queued', async () => {
-    const request = vi.fn<typeof fetch>().mockResolvedValue(response([]));
+    const request = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(response({ status: 'Online' }))
+      .mockResolvedValueOnce(response([]));
     await expect(simulateNext(new AgentApi('http://api.test', 'token', request), 'node-1')).resolves.toBeNull();
-    expect(request).toHaveBeenCalledOnce();
+    expect(request).toHaveBeenCalledTimes(2);
   });
 
   it('reports the complete successful lifecycle with stable evidence keys', async () => {
@@ -31,7 +33,7 @@ describe('polling agent simulator', () => {
     await expect(simulateNext(new AgentApi('http://api.test', 'machine-token', request), 'node-1'))
       .resolves.toBe('job-1');
     expect(paths).toEqual([
-      '/api/agent/nodes/node-1/jobs', '/api/agent/jobs/job-1/claim',
+      '/api/agent/nodes/node-1/heartbeat', '/api/agent/nodes/node-1/jobs', '/api/agent/jobs/job-1/claim',
       '/api/agent/jobs/job-1/work-package', '/api/agent/jobs/job-1/start',
       '/api/agent/jobs/job-1/progress', '/api/agent/jobs/job-1/tests',
       '/api/agent/jobs/job-1/tests', '/api/agent/jobs/job-1/deployment',

@@ -47,7 +47,7 @@
 - The production Keycloak realm requires S256 PKCE for the exact web origin, adds the `giga-desk-api` audience, and grants the initial `conor` user only the seven human application roles.
 - Railway point-in-time recovery is intentionally disabled for both production PostgreSQL services to avoid unnecessary early-stage backup storage expense; database volumes remain live, but no recovery window is retained.
 - GitHub Actions now defines the complete local-shaped CI gate with PostgreSQL, real Keycloak login, typecheck, lint, unit/integration/E2E tests, and production builds.
-- A development-only polling simulator consumes the public machine API with an injected node identity/token and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle.
+- A development-only polling simulator obtains and caches short-lived OIDC client-credentials tokens, heartbeats its node, and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle; an injected token remains available for isolated tests.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 
 ## Verification
@@ -147,15 +147,24 @@
 - Initial GitHub Actions run `33582831124` passed setup, Keycloak readiness, typecheck, lint, and unit tests, then correctly failed integration tests because CI had not migrated its empty PostgreSQL database. Corrected run `33583018180` applied all six migrations and passed every gate. Official action release readback identified `actions/checkout@v7` and `actions/setup-node@v7` as current; final run `33583242096` used those Node 24 action releases and passed migrations, typecheck, lint, 40 unit tests, 10 integration tests, four real-Keycloak E2E flows, and all three production builds in 2m14s without the deprecated-runtime warning.
 - Authenticated navigation styling: web typecheck, lint, eight component tests, production build, and all four real-Keycloak Playwright flows passed. A separate local Chrome visual inspection was not completed because an unrelated extension panel held browser control, so no manual visual claim is made.
 - Connect Agent tutorial: web typecheck, lint, nine component tests, and production build passed; five real-Keycloak Playwright flows passed, including authenticated navigation, checklist progress, reload persistence, and disabled future-provider states.
+- OIDC polling-agent authentication: repository-wide typecheck, lint, and production builds passed for all three workspaces; unit tests passed (web one file/nine tests, API 19 files/34 tests, agent two files/four tests). The complete integration gate passed outside sandbox isolation (API nine files/ten tests and agent one file/test), and all five real-Keycloak Playwright flows passed, including the enabled machine-identity step and still-disabled real-worker step.
 - GitHub CI run `33631508200` passed every gate for the in-app tutorial; Railway API, web, and Keycloak deployments succeeded, both PostgreSQL services remained healthy, and the production proxy returned `{"status":"ok"}` from `/api/health`.
 
 ## Next steps
 
 - Design a future recursive Project JSON export contract for portable Project metadata, nested work items, acceptance criteria, dependencies, and deliberately selected related history.
 - Provision node-scoped Keycloak machine identity, then run the Codex worker against the real local Keycloak/API/PostgreSQL stack.
-- Unlock the final two Codex tutorial steps after node-scoped Keycloak machine identity and the real Codex worker have live verification.
+- Unlock the final Codex tutorial step only after the real Codex worker has live verification.
 
 ## Change log
+
+### OIDC polling-agent authentication and heartbeat
+
+- Added a client-credentials token provider that form-encodes credentials, validates the response, caches tokens until the pre-expiry refresh window, and never logs the client secret or token.
+- The simulator now accepts OIDC token URL/client ID/client secret settings, retains an already-issued static token for isolated testing, and heartbeats the node before each discovery poll.
+- Added focused token/cache and lifecycle tests plus an actual localhost HTTP-boundary integration covering token acquisition, bearer authorization, heartbeat, discovery, and API error mapping.
+- Unlocked the tutorial's machine-identity step with the exact external-secret environment workflow, retained the real-worker step as unavailable, and aligned the shared-automation instruction with official OpenAI service-account guidance.
+- The feature changes 73 product-code lines; tests and documentation are excluded from the 228-line limit. A real node-scoped Keycloak client and real Codex worker remain intentionally unprovisioned and unverified.
 
 ### In-app agent setup tutorial
 

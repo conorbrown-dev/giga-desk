@@ -1,3 +1,5 @@
+import type { AccessTokenProvider } from './machine-token.js';
+
 export interface DiscoverableJob { id: string; status: 'Queued' }
 
 export interface WorkPackage {
@@ -14,15 +16,19 @@ export class AgentApiError extends Error {
 export class AgentApi {
   constructor(
     private readonly baseUrl: string,
-    private readonly token: string,
+    token: string | AccessTokenProvider,
     private readonly request: typeof fetch = fetch,
-  ) {}
+  ) {
+    this.token = typeof token === 'string' ? () => Promise.resolve(token) : token;
+  }
+
+  private readonly token: AccessTokenProvider;
 
   private async send<T>(path: string, method: 'GET' | 'POST', body?: object): Promise<T> {
     const response = await this.request(new URL(path, this.baseUrl), {
       method,
       headers: {
-        Authorization: `Bearer ${this.token}`,
+        Authorization: `Bearer ${await this.token()}`,
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
@@ -36,6 +42,10 @@ export class AgentApi {
 
   discover(nodeId: string): Promise<readonly DiscoverableJob[]> {
     return this.send(`/api/agent/nodes/${nodeId}/jobs`, 'GET');
+  }
+
+  heartbeat(nodeId: string): Promise<unknown> {
+    return this.send(`/api/agent/nodes/${nodeId}/heartbeat`, 'POST');
   }
 
   workPackage(jobId: string): Promise<WorkPackage> {

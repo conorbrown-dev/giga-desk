@@ -47,7 +47,7 @@ Open `http://127.0.0.1:5173` and sign in with the local-only account `demo` / `g
 
 ## Polling agent simulator
 
-The development-only simulator consumes the machine API without importing API implementation code. Register an execution node, queue work for it, and provide that node's scoped short-lived token:
+The development-only simulator consumes the machine API without importing API implementation code. Register an execution node, queue work for it, and provide a node-scoped OIDC client. Its access token must contain the `agent:jobs` realm role, the API audience, and an `execution_node_id` claim matching the registered node:
 
 Provision the Codex target after building the API. The command idempotently creates or updates the node, Codex CLI agent version, and remote default-model selection, then prints their non-secret registry IDs:
 
@@ -61,8 +61,10 @@ The node remains offline until its scoped machine identity begins sending heartb
 ```bash
 npm run build
 GIGA_DESK_AGENT_NODE_ID=<node-uuid> \
-GIGA_DESK_AGENT_TOKEN=<machine-token> \
+GIGA_DESK_AGENT_OIDC_TOKEN_URL=<issuer>/protocol/openid-connect/token \
+GIGA_DESK_AGENT_OIDC_CLIENT_ID=<client-id> \
+GIGA_DESK_AGENT_OIDC_CLIENT_SECRET=<secret> \
 npm run agent:simulate
 ```
 
-It polls `http://127.0.0.1:3000` every five seconds, claims one queued job at a time, retrieves its Work Package, and reports simulated progress, passing tests, a successful staging deployment, E2E evidence, and completion. Set `GIGA_DESK_AGENT_API_URL`, `GIGA_DESK_AGENT_POLL_INTERVAL_MS`, or `GIGA_DESK_AGENT_ONCE=true` to override those defaults. Do not use the simulator against production because its evidence is synthetic.
+The simulator obtains and refreshes short-lived access tokens, heartbeats the node, polls `http://127.0.0.1:3000` every five seconds, and processes one queued job at a time. Set `GIGA_DESK_AGENT_API_URL`, `GIGA_DESK_AGENT_POLL_INTERVAL_MS`, or `GIGA_DESK_AGENT_ONCE=true` to override those defaults. `GIGA_DESK_AGENT_TOKEN` remains available for isolated testing with an already-issued token. Do not use the simulator against production because its evidence is synthetic.

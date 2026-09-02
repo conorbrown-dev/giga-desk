@@ -41,6 +41,8 @@ test('walks through Codex agent setup in the authenticated app', async ({ page }
   await signIn(page, '/agents/connect');
   await expect(page.getByRole('heading', { name: 'Connect a work agent' })).toBeVisible();
   await expect(page.getByText('Claude').locator('..')).toHaveAttribute('aria-disabled', 'true');
+  await expect(page.getByLabel('Step completed').nth(3)).toBeEnabled();
+  await expect(page.getByLabel('Step completed').last()).toBeDisabled();
   await page.getByLabel('Step completed').first().check();
   await expect(page.getByText('1 of 5 complete')).toBeVisible();
   await page.reload();

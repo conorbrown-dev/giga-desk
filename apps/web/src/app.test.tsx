@@ -43,7 +43,9 @@ describe('App', () => {
     const view = render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
     expect(screen.getByRole('heading', { name: 'Connect a work agent' })).toBeInTheDocument();
     expect(screen.getByText('Claude').closest('article')).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getAllByText('Requires worker support')).toHaveLength(2);
+    expect(screen.getAllByText('Requires worker support')).toHaveLength(1);
+    expect(screen.getAllByRole('checkbox')[3]).toBeEnabled();
+    expect(screen.getAllByRole('checkbox')[4]).toBeDisabled();
     const firstStep = screen.getAllByRole('checkbox')[0];
     if (!firstStep) throw new Error('Expected a setup checkbox');
     fireEvent.click(firstStep);

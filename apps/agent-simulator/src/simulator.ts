@@ -28,6 +28,7 @@ async function simulateSuccess(api: AgentApi, jobId: string, work: WorkPackage):
 }
 
 export async function simulateNext(api: AgentApi, nodeId: string): Promise<string | null> {
+  await api.heartbeat(nodeId);
   const [job] = await api.discover(nodeId);
   if (!job) return null;
   await api.post(job.id, 'claim');

@@ -1,5 +1,6 @@
 import { AgentApi } from './agent-api.js';
 import { poll } from './simulator.js';
+import { ClientCredentialsTokenProvider, type AccessTokenProvider } from './machine-token.js';
 
 const required = (name: string): string => {
   const value = process.env[name]?.trim();
@@ -12,7 +13,14 @@ if (!Number.isSafeInteger(interval) || interval < 100) {
 }
 const apiUrl = process.env['GIGA_DESK_AGENT_API_URL']?.trim() || 'http://127.0.0.1:3000';
 const nodeId = required('GIGA_DESK_AGENT_NODE_ID');
-const token = required('GIGA_DESK_AGENT_TOKEN');
+const staticToken = process.env['GIGA_DESK_AGENT_TOKEN']?.trim();
+const token: string | AccessTokenProvider = staticToken || (() => {
+  const provider = new ClientCredentialsTokenProvider(
+    required('GIGA_DESK_AGENT_OIDC_TOKEN_URL'), required('GIGA_DESK_AGENT_OIDC_CLIENT_ID'),
+    required('GIGA_DESK_AGENT_OIDC_CLIENT_SECRET'),
+  );
+  return provider.getToken.bind(provider);
+})();
 const stop = new AbortController();
 process.once('SIGINT', () => { stop.abort(); });
 process.once('SIGTERM', () => { stop.abort(); });

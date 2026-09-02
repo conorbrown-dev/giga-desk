@@ -17,8 +17,8 @@ const steps: readonly SetupStep[] = [
   },
   {
     title: 'Authenticate Codex',
-    detail: 'On a trusted personal machine, sign in interactively. For shared automation, use a separately managed service-account access token.',
-    command: 'codex login\ncodex login status',
+    detail: 'On a trusted personal machine, sign in interactively. For shared automation, inject a separately managed service-account access token without saving a login.',
+    command: 'codex login\ncodex login status\n# Shared automation: export CODEX_ACCESS_TOKEN=<secret>',
   },
   {
     title: 'Register the execution target',
@@ -27,8 +27,8 @@ const steps: readonly SetupStep[] = [
   },
   {
     title: 'Create the machine identity',
-    detail: 'Create a node-scoped Giga Desk credential with only agent:jobs permission and keep its secret outside the repository.',
-    pending: true,
+    detail: 'Ask an administrator for a node-scoped OIDC client with only agent:jobs permission. Store its values outside the repository as GIGA_DESK_AGENT_NODE_ID and the three GIGA_DESK_AGENT_OIDC_* settings.',
+    command: 'install -d -m 700 ~/.config/giga-desk\n$EDITOR ~/.config/giga-desk/agent.env\nchmod 600 ~/.config/giga-desk/agent.env\nset -a; . ~/.config/giga-desk/agent.env; set +a',
   },
   {
     title: 'Start and verify the worker',
@@ -62,7 +62,7 @@ export function AgentSetupGuide() {
       <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></article>
     </section>
     <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
-      <p>Complete these steps on the machine that will run Codex. Pending steps are visible so the security boundary is clear.</p>
+      <p>Complete these steps on the machine that will run Codex. The final step stays locked until the real worker is installed.</p>
       <ol className="setup-steps">{steps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
         <p>{step.detail}</p>{step.command && <pre><code>{step.command}</code></pre>}
