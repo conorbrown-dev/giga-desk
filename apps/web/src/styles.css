@@ -1,0 +1,16 @@
+:root { font-family: Inter, system-ui, sans-serif; color: #e8ecf4; background: #10131a; }
+body { margin: 0; }
+main { max-width: 72rem; margin: 0 auto; padding: 4rem 1.5rem; }
+a { color: #8fb8ff; }
+.eyebrow { color: #8fb8ff; text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; margin-top: 3rem; }
+.card { border: 1px solid #303747; border-radius: .75rem; padding: 1.25rem; margin-top: 1rem; background: #171c26; }
+.row { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.row h2 { margin: 0; }
+small { color: #aeb7c7; }
+.badge { background: #244a38; border-radius: 999px; color: #b9f6d2; padding: .35rem .7rem; }
+.form-grid { display: grid; gap: 1rem; }
+.form-grid label { display: grid; gap: .4rem; }
+.form-grid input, .form-grid textarea, .form-grid select, .form-grid button { background: #10131a; border: 1px solid #59647a; border-radius: .4rem; color: inherit; padding: .7rem; }
+.form-grid span, [role="alert"] { color: #ffb4ab; }
+.form-grid button { cursor: pointer; justify-self: start; }
+@media (max-width: 40rem) { .row { align-items: flex-start; flex-direction: column; } main { padding-top: 2rem; } }
