@@ -173,13 +173,14 @@
 - GitHub CI run `33640560628` passed migrations, typecheck, lint, 49 unit tests, 12 integration tests, five real-Keycloak E2E flows, and all five production builds for worker commit `7124bc9` in 2m52s. Railway API, web, and Keycloak deployments for that commit all report `SUCCESS` with running instances.
 - MIRIAM service preflight verified `codex-cli 0.152.0` and its existing ChatGPT login from a transient user-service context, an empty production queue, protected worker configuration (`0600`), and an installed service definition (`0644`). `giga-desk-codex-worker.service` remains disabled and inactive; no production job has been claimed.
 - Protected production action approval: repository-wide typecheck, lint, 54 unit tests, 12 integration tests, five real-Keycloak E2E flows, and all five builds passed. PR opened and merged after CI passed; Railway production deployments for commit `eac41f1` succeeded for API, web, and Keycloak; both PostgreSQL services remained healthy; the API applied migration `20260902143000_execution_protected_action_approval` and returned `{"status":"ok"}` from `/api/health`.
+- MIRIAM user service enabled and running: service starts successfully, polls production queue every 5 seconds, no queued jobs currently available for claim.
 - GitHub CI run `33634761790` passed migrations, typecheck, lint, 47 unit tests, 11 integration tests, five real-Keycloak E2E flows, and all three production builds for commit `ba3c76b` in 2m14s. Railway production deployments `41d719af-0663-41f6-8264-135e0aeb5e7d` (API), `5a061b21-07ec-41ff-8bfb-97b52014abd0` (web), and `35114d6c-fde5-4de6-9502-19e6ce6f2f3f` (Keycloak) succeeded for that commit; the public web proxy returned `{"status":"ok"}` from `/api/health`, and Keycloak realm discovery returned the exact production issuer, token endpoint, and JWKS URI.
 - GitHub CI run `33631508200` passed every gate for the in-app tutorial; Railway API, web, and Keycloak deployments succeeded, both PostgreSQL services remained healthy, and the production proxy returned `{"status":"ok"}` from `/api/health`.
 
 ## Next steps
 
 - Design a future recursive Project JSON export contract for portable Project metadata, nested work items, acceptance criteria, dependencies, and deliberately selected related history.
-- Enable the installed MIRIAM user service, then complete one harmless production Work Package as live acceptance.
+- Queue one harmless real production Work Package and verify live heartbeat, claim, lifecycle callbacks, and the browser flow; do not use the simulator against production.
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
@@ -190,7 +191,7 @@
 - Persists the approval on the immutable execution attempt, includes it in the audit metadata and Work Package, and instructs Codex to stop if an unapproved protected action emerges.
 - Added a fail-closed worker preflight for production database/schema work, destructive SQL, credentials/identity, DNS/infrastructure, billing, and repository visibility changes.
 - Migration `20260902143000_execution_protected_action_approval` adds one non-null Boolean with a `false` default, so existing jobs remain unapproved. Production now contains the applied migration.
-- The feature changes 52 product-code lines; tests, documentation, and generated/configuration files are excluded from the 228-line limit. The worker service remains disabled pending continuous autonomous work authorization.
+- The feature changes 52 product-code lines; tests, documentation, and generated/configuration files are excluded from the 228-line limit. The worker service is now enabled and running; production queue was empty during preflight.
 
 ### Production Codex worker lifecycle
 
