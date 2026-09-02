@@ -37,6 +37,7 @@
 - `npm run demo` starts isolated application and Keycloak PostgreSQL databases, imports a local-only Keycloak realm, builds both applications, and serves the authenticated browser UI.
 - Production API, web/Caddy, and Keycloak images are defined for an isolated five-service Railway topology; the application and identity databases remain separate.
 - Production API and web image dependency stages include every npm workspace manifest, including the agent simulator, so root `npm ci` remains reproducible as workspaces are added.
+- API image builds regenerate Prisma after source/config copy and exclude host-generated clients from Docker context; Keycloak is augmented in a PostgreSQL-aware build stage before optimized startup.
 - A development-only polling simulator consumes the public machine API with an injected node identity/token and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 
@@ -122,15 +123,25 @@
 - `npm run test:integration` — passed eight API files/nine PostgreSQL-backed tests plus one simulator real-HTTP boundary test; localhost/database access was required outside the sandbox.
 - `npm run test:e2e` — passed all four Playwright flows through the real local Keycloak login after the simulator was added.
 - `npm run build` — passed production builds for the web, API, and agent simulator.
+- Clean API Docker build passed without host-generated Prisma sources, and a disposable container imported the compiled client successfully (`PRISMA_IMPORT_OK`).
+- Clean Keycloak Docker build passed; `show-config` reports production mode, persisted PostgreSQL support, health/metrics, and `kc.optimized = true`.
+- Railway project `giga-desk` was created with isolated application/Keycloak PostgreSQL services, API, web, and Keycloak; both databases and web deployed successfully. First API startup applied all six migrations but exposed a generated-client `.ts` import packaging defect; first Keycloak startup exposed missing optimized augmentation. Corrected images are locally verified and pending source redeployment.
 
 ## Next steps
 
-- Create the isolated five-service Railway production project after action-time approval for new usage-billed resources and generated production credentials.
-- Configure exact production Keycloak redirect/web origins after Railway assigns the web and authentication domains, then run live production login and Project/Feature acceptance flows.
+- Redeploy the corrected API and Keycloak images, provision the exact production realm/client/roles, then run live production login and Project/Feature acceptance flows.
+- Confirm Railway backup/retention policy separately for both PostgreSQL services; successful deployment is not backup verification.
 - Add CI after the production service requirements are confirmed.
 - Add execution-node registration/heartbeat and local machine-identity provisioning, then run the simulator against the real local Keycloak/API/PostgreSQL stack.
 
 ## Change log
+
+### Production container startup hardening
+
+- Excluded generated Prisma sources from Docker context and regenerated the client after application source/config copy, making local builds reproduce Git/Railway build inputs and preserving `.js` ESM imports in compiled output.
+- Added a Keycloak augmentation stage with PostgreSQL, health, and metrics enabled before optimized production startup.
+- Added disposable-container proof for the compiled Prisma import and Keycloak persisted optimized configuration.
+- No product-code lines changed; Docker, Prisma generator, and documentation configuration are excluded from the 228-line limit.
 
 ### Polling-first agent simulator
 
