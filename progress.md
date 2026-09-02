@@ -133,12 +133,11 @@
 - Production Keycloak readback confirmed a public authorization-code client with direct grants disabled, exact redirect/web origins, required S256 PKCE, the `giga-desk-api` audience mapper, and the expected seven human roles on `conor`.
 - Live headless-browser acceptance passed (`PRODUCTION_ACCEPTANCE_OK`): the temporary credential rotated without disclosure, Keycloak login succeeded, the production API accepted the token, and `PRODCHK · Production Acceptance` plus its Feature persisted with no console errors.
 - Railway PITR is enabled and bucket-wired for both databases; application and Keycloak archivers report healthy with current restore timestamps. Daily/weekly/monthly schedules and on-demand backup creation returned `OAUTH_INSUFFICIENT_GRANT`; CLI reauthorization is awaiting explicit browser consent for full workspace/project administration and offline access.
-- Initial GitHub Actions run `33582831124` passed setup, Keycloak readiness, typecheck, lint, and unit tests, then correctly failed integration tests because CI had not migrated its empty PostgreSQL database. Corrected run `33583018180` applied all six migrations and passed typecheck, lint, 40 unit tests, 10 integration tests, four real-Keycloak E2E flows, and all three production builds in 2m18s. Official action release readback identified `actions/checkout@v7` and `actions/setup-node@v7` as current, so the workflow now uses those Node 24 action releases instead of deprecated Node 20 majors.
+- Initial GitHub Actions run `33582831124` passed setup, Keycloak readiness, typecheck, lint, and unit tests, then correctly failed integration tests because CI had not migrated its empty PostgreSQL database. Corrected run `33583018180` applied all six migrations and passed every gate. Official action release readback identified `actions/checkout@v7` and `actions/setup-node@v7` as current; final run `33583242096` used those Node 24 action releases and passed migrations, typecheck, lint, 40 unit tests, 10 integration tests, four real-Keycloak E2E flows, and all three production builds in 2m14s without the deprecated-runtime warning.
 
 ## Next steps
 
 - Complete Railway CLI OAuth consent, then configure daily/weekly/monthly retained backups and create labeled initial backups for both databases.
-- Push the CI workflow and verify its first GitHub Actions run rather than treating local gates as CI proof.
 - Add execution-node registration/heartbeat and local machine-identity provisioning, then run the simulator against the real local Keycloak/API/PostgreSQL stack.
 
 ## Change log
