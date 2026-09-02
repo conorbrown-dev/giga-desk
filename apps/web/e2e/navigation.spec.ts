@@ -22,6 +22,9 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   await page.route('**/api/work-items/*/executions', async (route) => route.fulfill({ json: [] }));
   await page.route('**/api/execution/targets', async (route) => route.fulfill({ json: { nodes: [], agents: [], models: [] } }));
   await signIn(page);
+  const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
+  await expect(navigation.getByRole('link', { name: 'Giga Desk' })).toBeVisible();
+  await expect(navigation.getByRole('button', { name: 'Sign out' })).toBeVisible();
   await page.getByRole('link', { name: 'View projects' }).click();
   await page.getByRole('link', { name: 'GD · Giga Desk' }).click();
   await page.getByRole('link', { name: 'Project navigation' }).click();

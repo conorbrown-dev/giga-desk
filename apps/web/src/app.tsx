@@ -51,10 +51,10 @@ const testAuthentication: AuthenticationState = {
 export function App({ authentication = testAuthentication }: { authentication?: AuthenticationState }) {
   if (authentication.error) return <main><h1>Giga Desk</h1><p role="alert">{authentication.error}</p></main>;
   if (!authentication.configured) return <main><h1>Giga Desk</h1><p role="alert">Keycloak is not configured.</p></main>;
-  if (!authentication.authenticated) return <main><p className="eyebrow">Praxis Project Orchestrator</p><h1>Turn plans into shipped work.</h1><p>Sign in to manage projects and features.</p><button type="button" onClick={() => { void authentication.login(); }}>Sign in</button></main>;
+  if (!authentication.authenticated) return <main><p className="eyebrow">Praxis Project Orchestrator</p><h1>Turn plans into shipped work.</h1><p>Sign in to manage projects and features.</p><button className="button" type="button" onClick={() => { void authentication.login(); }}>Sign in</button></main>;
   return (
-    <><header className="row"><Link to="/projects">Giga Desk</Link><span>{authentication.username ?? 'Signed in'} <button type="button" onClick={() => { void authentication.logout(); }}>Sign out</button></span></header><Routes>
-      <Route path="*" element={<main><p>Praxis Project Orchestrator</p><h1>Turn plans into shipped work.</h1><Link to="/projects">View projects</Link></main>} />
+    <><header className="site-header"><nav className="site-nav" aria-label="Primary navigation"><Link className="brand-link" to="/projects">Giga Desk</Link><div className="account-menu"><span className="account-name">{authentication.username ?? 'Signed in'}</span><button className="button button-secondary" type="button" onClick={() => { void authentication.logout(); }}>Sign out</button></div></nav></header><Routes>
+      <Route path="*" element={<main><p>Praxis Project Orchestrator</p><h1>Turn plans into shipped work.</h1><Link className="button-link" to="/projects">View projects</Link></main>} />
       <Route path="/projects" element={<ProjectList />} />
       <Route path="/projects/:projectId" element={<ProjectWorkItems />} />
       <Route path="/work-items/:workItemId" element={<ExecutionDashboard />} />

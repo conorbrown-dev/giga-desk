@@ -26,6 +26,18 @@ describe('App', () => {
     expect(fetch).toHaveBeenCalledWith('/api/projects', expect.objectContaining({ headers: { Authorization: 'Bearer test-token' } }));
   });
 
+  it('provides primary navigation and signs out from the account action', () => {
+    const logout = vi.fn().mockResolvedValue(undefined);
+    const authentication: AuthenticationState = { configured: true, authenticated: true, username: 'conor', error: null, login: vi.fn(), logout };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) }));
+    render(<MemoryRouter initialEntries={['/projects']}><App authentication={authentication} /></MemoryRouter>);
+    const navigation = screen.getByRole('navigation', { name: 'Primary navigation' });
+    expect(navigation).toHaveTextContent('conor');
+    expect(screen.getByRole('link', { name: 'Giga Desk' })).toHaveAttribute('href', '/projects');
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(logout).toHaveBeenCalledOnce();
+  });
+
   it('links project work items to execution history', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([{
       id: 'work-1', parentId: null, type: 'Feature', title: 'Navigate projects', status: 'Ready', priority: 'Medium',

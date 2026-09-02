@@ -31,6 +31,7 @@
 - Authenticated users with `work-items:read` can retrieve explicit execution history for a WorkItem, including selected targets, lifecycle timestamps, progress, test evidence, deployment evidence, source-control metadata, and failure reasons.
 - The web app now provides a typed execution-history client and `/work-items/:workItemId` dashboard route with accessible loading/error/empty states and evidence summaries.
 - The web app now loads authenticated Project and WorkItem projections, with project-list and project-work routes linking users through to each WorkItem's execution history.
+- The authenticated web shell now uses a responsive primary navigation with a branded home link, account context, a styled sign-out action, cohesive link/button states, and visible keyboard focus.
 - WorkItem execution pages now provide an authenticated Formik/Yup Start Work flow that loads available targets, narrows models by agent provider compatibility, queues the selection, and refreshes history.
 - The Project portfolio now includes a validated browser form for creating Projects and immediately refreshes with the persisted result.
 - Project work-item pages now include a validated browser form for creating Features with one acceptance criterion per line and immediately refresh with the persisted result.
@@ -40,7 +41,7 @@
 - API image builds regenerate Prisma after source/config copy and exclude host-generated clients from Docker context; Keycloak is augmented in a PostgreSQL-aware build stage before optimized startup.
 - Railway project `giga-desk` runs five isolated production services; web and Keycloak have public Railway domains while API and both PostgreSQL services remain private-network only.
 - The production Keycloak realm requires S256 PKCE for the exact web origin, adds the `giga-desk-api` audience, and grants the initial `conor` user only the seven human application roles.
-- Continuous PITR and dedicated backup buckets are enabled for both production PostgreSQL services; both WAL archivers report healthy restore timestamps, while retained backup schedules still require a refreshed Railway OAuth grant.
+- Continuous PITR and dedicated backup buckets are enabled for both production PostgreSQL services; both WAL archivers report healthy restore timestamps, but Railway CLI readback currently returns no retained schedules or backups and still reports backup coverage exit status 31.
 - GitHub Actions now defines the complete local-shaped CI gate with PostgreSQL, real Keycloak login, typecheck, lint, unit/integration/E2E tests, and production builds.
 - A development-only polling simulator consumes the public machine API with an injected node identity/token and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
@@ -132,15 +133,23 @@
 - Railway project `giga-desk` was created with isolated application/Keycloak PostgreSQL services, API, web, and Keycloak. Corrected deployments are all `SUCCESS`; the API applied all six migrations and the web proxy returns `healthy` plus `{"status":"ok"}` from `/api/health`.
 - Production Keycloak readback confirmed a public authorization-code client with direct grants disabled, exact redirect/web origins, required S256 PKCE, the `giga-desk-api` audience mapper, and the expected seven human roles on `conor`.
 - Live headless-browser acceptance passed (`PRODUCTION_ACCEPTANCE_OK`): the temporary credential rotated without disclosure, Keycloak login succeeded, the production API accepted the token, and `PRODCHK · Production Acceptance` plus its Feature persisted with no console errors.
-- Railway PITR is enabled and bucket-wired for both databases; application and Keycloak archivers report healthy with current restore timestamps. Daily/weekly/monthly schedules and on-demand backup creation returned `OAUTH_INSUFFICIENT_GRANT`; CLI reauthorization is awaiting explicit browser consent for full workspace/project administration and offline access.
+- Railway PITR is enabled and bucket-wired for both databases; application and Keycloak archivers report healthy with current restore timestamps. On 2026-09-02, read-only Railway CLI checks returned empty schedule and backup lists for both services plus backup coverage exit status 31, so retained backups are not verified despite the reported manual completion.
 - Initial GitHub Actions run `33582831124` passed setup, Keycloak readiness, typecheck, lint, and unit tests, then correctly failed integration tests because CI had not migrated its empty PostgreSQL database. Corrected run `33583018180` applied all six migrations and passed every gate. Official action release readback identified `actions/checkout@v7` and `actions/setup-node@v7` as current; final run `33583242096` used those Node 24 action releases and passed migrations, typecheck, lint, 40 unit tests, 10 integration tests, four real-Keycloak E2E flows, and all three production builds in 2m14s without the deprecated-runtime warning.
+- Authenticated navigation styling: web typecheck, lint, eight component tests, production build, and all four real-Keycloak Playwright flows passed. A separate local Chrome visual inspection was not completed because an unrelated extension panel held browser control, so no manual visual claim is made.
 
 ## Next steps
 
-- Complete Railway CLI OAuth consent, then configure daily/weekly/monthly retained backups and create labeled initial backups for both databases.
+- Configure and verify retained schedules plus an initial backup for both Railway PostgreSQL services; current CLI readback is empty even though continuous PITR archiving is healthy.
 - Add execution-node registration/heartbeat and local machine-identity provisioning, then run the simulator against the real local Keycloak/API/PostgreSQL stack.
 
 ## Change log
+
+### Cohesive authenticated navigation styling
+
+- Reworked the authenticated shell into an accessible primary navigation with a branded Project link, username context, and an outlined sign-out action that shares the application's dark visual language.
+- Added shared link, primary/secondary action, hover, and keyboard-focus states, plus responsive stacking for narrow screens; the public sign-in and project call-to-action now use the same controls.
+- Added component coverage for navigation semantics and logout behavior, and extended the real-Keycloak browser flow to verify the primary navigation remains available through Project and WorkItem links.
+- The feature changes 22 product-code lines; tests and documentation are excluded from the 228-line limit.
 
 ### Railway production topology and CI
 

@@ -1,7 +1,19 @@
 :root { font-family: Inter, system-ui, sans-serif; color: #e8ecf4; background: #10131a; }
 body { margin: 0; }
 main { max-width: 72rem; margin: 0 auto; padding: 4rem 1.5rem; }
-a { color: #8fb8ff; }
+a { color: #9fc2ff; font-weight: 600; text-decoration-color: #59647a; text-decoration-thickness: .08em; text-underline-offset: .2em; }
+a:hover { color: #d7e5ff; text-decoration-color: currentColor; }
+a:focus-visible, button:focus-visible { outline: 3px solid #8fb8ff; outline-offset: 3px; }
+.site-header { background: #171c26; border-bottom: 1px solid #303747; }
+.site-nav { max-width: 72rem; margin: 0 auto; padding: 1rem 1.5rem; display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
+.brand-link { color: #f4f7ff; font-size: 1.1rem; letter-spacing: .02em; text-decoration: none; }
+.brand-link:hover { color: #9fc2ff; text-decoration: none; }
+.account-menu { display: flex; gap: .75rem; align-items: center; }
+.account-name { color: #aeb7c7; font-size: .875rem; }
+.button, .button-link { background: #8fb8ff; border: 1px solid #8fb8ff; border-radius: .4rem; color: #10131a; cursor: pointer; display: inline-block; font: inherit; font-weight: 700; padding: .65rem .9rem; text-decoration: none; }
+.button:hover, .button-link:hover { background: #b8d1ff; border-color: #b8d1ff; color: #10131a; text-decoration: none; }
+.button-secondary { background: #20293a; border-color: #59647a; color: #e8ecf4; }
+.button-secondary:hover { background: #2a3549; border-color: #8fb8ff; color: #fff; }
 .eyebrow { color: #8fb8ff; text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; margin-top: 3rem; }
 .card { border: 1px solid #303747; border-radius: .75rem; padding: 1.25rem; margin-top: 1rem; background: #171c26; }
 .row { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
@@ -13,4 +25,4 @@ small { color: #aeb7c7; }
 .form-grid input, .form-grid textarea, .form-grid select, .form-grid button { background: #10131a; border: 1px solid #59647a; border-radius: .4rem; color: inherit; padding: .7rem; }
 .form-grid span, [role="alert"] { color: #ffb4ab; }
 .form-grid button { cursor: pointer; justify-self: start; }
-@media (max-width: 40rem) { .row { align-items: flex-start; flex-direction: column; } main { padding-top: 2rem; } }
+@media (max-width: 40rem) { .row { align-items: flex-start; flex-direction: column; } .site-nav { align-items: flex-start; flex-direction: column; } main { padding-top: 2rem; } }
