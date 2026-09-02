@@ -34,8 +34,23 @@ describe('App', () => {
     const navigation = screen.getByRole('navigation', { name: 'Primary navigation' });
     expect(navigation).toHaveTextContent('conor');
     expect(screen.getByRole('link', { name: 'Giga Desk' })).toHaveAttribute('href', '/projects');
+    expect(screen.getByRole('link', { name: 'Connect agent' })).toHaveAttribute('href', '/agents/connect');
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(logout).toHaveBeenCalledOnce();
+  });
+
+  it('guides Codex setup and remembers completed steps', () => {
+    const view = render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
+    expect(screen.getByRole('heading', { name: 'Connect a work agent' })).toBeInTheDocument();
+    expect(screen.getByText('Claude').closest('article')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getAllByText('Requires worker support')).toHaveLength(2);
+    const firstStep = screen.getAllByRole('checkbox')[0];
+    if (!firstStep) throw new Error('Expected a setup checkbox');
+    fireEvent.click(firstStep);
+    expect(screen.getByText('1 of 5 complete')).toBeInTheDocument();
+    view.unmount();
+    render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
+    expect(screen.getAllByRole('checkbox')[0]).toBeChecked();
   });
 
   it('links project work items to execution history', async () => {

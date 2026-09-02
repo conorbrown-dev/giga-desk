@@ -8,6 +8,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid #8fb8ff; outline-offs
 .site-nav { max-width: 72rem; margin: 0 auto; padding: 1rem 1.5rem; display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
 .brand-link { color: #f4f7ff; font-size: 1.1rem; letter-spacing: .02em; text-decoration: none; }
 .brand-link:hover { color: #9fc2ff; text-decoration: none; }
+.nav-links { display: flex; gap: 1.5rem; align-items: center; }
 .account-menu { display: flex; gap: .75rem; align-items: center; }
 .account-name { color: #aeb7c7; font-size: .875rem; }
 .button, .button-link { background: #8fb8ff; border: 1px solid #8fb8ff; border-radius: .4rem; color: #10131a; cursor: pointer; display: inline-block; font: inherit; font-weight: 700; padding: .65rem .9rem; text-decoration: none; }
@@ -25,4 +26,16 @@ small { color: #aeb7c7; }
 .form-grid input, .form-grid textarea, .form-grid select, .form-grid button { background: #10131a; border: 1px solid #59647a; border-radius: .4rem; color: inherit; padding: .7rem; }
 .form-grid span, [role="alert"] { color: #ffb4ab; }
 .form-grid button { cursor: pointer; justify-self: start; }
-@media (max-width: 40rem) { .row { align-items: flex-start; flex-direction: column; } .site-nav { align-items: flex-start; flex-direction: column; } main { padding-top: 2rem; } }
+.provider-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.provider-card h2 { margin-bottom: .25rem; }
+.provider-card p { color: #aeb7c7; }
+.provider-selected { border-color: #8fb8ff; }
+.provider-disabled { opacity: .62; }
+.provider-disabled > span, .pending-badge { color: #f4d58d; font-size: .8rem; font-weight: 700; }
+.setup-steps { list-style: none; padding: 0; counter-reset: setup; }
+.setup-steps > li { counter-increment: setup; }
+.setup-steps h3::before { content: counter(setup) ". "; color: #8fb8ff; }
+.setup-steps pre { background: #0c0f15; border: 1px solid #303747; border-radius: .4rem; overflow-x: auto; padding: 1rem; }
+.step-check { display: flex; gap: .6rem; align-items: center; font-weight: 700; }
+.security-note { background: #2a2117; border-left: 4px solid #f4d58d; padding: 1rem; }
+@media (max-width: 40rem) { .row { align-items: flex-start; flex-direction: column; } .site-nav { align-items: flex-start; flex-direction: column; } .nav-links { align-items: flex-start; flex-direction: column; gap: .75rem; } .provider-grid { grid-template-columns: 1fr; } main { padding-top: 2rem; } }

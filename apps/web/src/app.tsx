@@ -6,6 +6,7 @@ import { StartWorkControls } from './start-work-controls.js';
 import { CreateProjectForm } from './create-project-form.js';
 import { CreateFeatureForm } from './create-feature-form.js';
 import type { AuthenticationState } from './auth-token.js';
+import { AgentSetupGuide } from './agent-setup-guide.js';
 
 function useAuthenticatedLoad<T>(load: (signal: AbortSignal) => Promise<readonly T[]>, reloadKey = 0) {
   const [data, setData] = useState<readonly T[] | null>(null);
@@ -53,11 +54,12 @@ export function App({ authentication = testAuthentication }: { authentication?: 
   if (!authentication.configured) return <main><h1>Giga Desk</h1><p role="alert">Keycloak is not configured.</p></main>;
   if (!authentication.authenticated) return <main><p className="eyebrow">Praxis Project Orchestrator</p><h1>Turn plans into shipped work.</h1><p>Sign in to manage projects and features.</p><button className="button" type="button" onClick={() => { void authentication.login(); }}>Sign in</button></main>;
   return (
-    <><header className="site-header"><nav className="site-nav" aria-label="Primary navigation"><Link className="brand-link" to="/projects">Giga Desk</Link><div className="account-menu"><span className="account-name">{authentication.username ?? 'Signed in'}</span><button className="button button-secondary" type="button" onClick={() => { void authentication.logout(); }}>Sign out</button></div></nav></header><Routes>
+    <><header className="site-header"><nav className="site-nav" aria-label="Primary navigation"><div className="nav-links"><Link className="brand-link" to="/projects">Giga Desk</Link><Link to="/agents/connect">Connect agent</Link></div><div className="account-menu"><span className="account-name">{authentication.username ?? 'Signed in'}</span><button className="button button-secondary" type="button" onClick={() => { void authentication.logout(); }}>Sign out</button></div></nav></header><Routes>
       <Route path="*" element={<main><p>Praxis Project Orchestrator</p><h1>Turn plans into shipped work.</h1><Link className="button-link" to="/projects">View projects</Link></main>} />
       <Route path="/projects" element={<ProjectList />} />
       <Route path="/projects/:projectId" element={<ProjectWorkItems />} />
       <Route path="/work-items/:workItemId" element={<ExecutionDashboard />} />
+      <Route path="/agents/connect" element={<AgentSetupGuide />} />
     </Routes></>
   );
 }

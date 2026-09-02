@@ -37,6 +37,16 @@ test('requires Keycloak authentication for project access', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Projects' })).not.toBeVisible();
 });
 
+test('walks through Codex agent setup in the authenticated app', async ({ page }) => {
+  await signIn(page, '/agents/connect');
+  await expect(page.getByRole('heading', { name: 'Connect a work agent' })).toBeVisible();
+  await expect(page.getByText('Claude').locator('..')).toHaveAttribute('aria-disabled', 'true');
+  await page.getByLabel('Step completed').first().check();
+  await expect(page.getByText('1 of 5 complete')).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Step completed').first()).toBeChecked();
+});
+
 test('validates selections and handles Start Work success and conflict', async ({ page }) => {
   let submissions = 0;
   await page.route('**/api/execution/targets', async (route) => route.fulfill({ json: {

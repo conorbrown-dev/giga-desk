@@ -35,6 +35,7 @@
 - The web app now provides a typed execution-history client and `/work-items/:workItemId` dashboard route with accessible loading/error/empty states and evidence summaries.
 - The web app now loads authenticated Project and WorkItem projections, with project-list and project-work routes linking users through to each WorkItem's execution history.
 - The authenticated web shell now uses a responsive primary navigation with a branded home link, account context, a styled sign-out action, cohesive link/button states, and visible keyboard focus.
+- Authenticated users can open an in-app Connect Agent guide: Codex provides a persisted, security-aware machine-setup checklist, while Claude and Grok are visible as disabled future providers.
 - WorkItem execution pages now provide an authenticated Formik/Yup Start Work flow that loads available targets, narrows models by agent provider compatibility, queues the selection, and refreshes history.
 - The Project portfolio now includes a validated browser form for creating Projects and immediately refreshes with the persisted result.
 - Project work-item pages now include a validated browser form for creating Features with one acceptance criterion per line and immediately refresh with the persisted result.
@@ -145,13 +146,22 @@
 - Railway CLI decommissioned PITR on `giga-desk-postgres` and `giga-desk-keycloak-postgres`; both standalone services redeployed successfully and now report `enabled: false` plus `bucketWired: false`. `railway bucket list --json` returns no production buckets, while the proxied API health endpoint and exact Keycloak realm issuer remain healthy. This intentionally removes database point-in-time restore capability.
 - Initial GitHub Actions run `33582831124` passed setup, Keycloak readiness, typecheck, lint, and unit tests, then correctly failed integration tests because CI had not migrated its empty PostgreSQL database. Corrected run `33583018180` applied all six migrations and passed every gate. Official action release readback identified `actions/checkout@v7` and `actions/setup-node@v7` as current; final run `33583242096` used those Node 24 action releases and passed migrations, typecheck, lint, 40 unit tests, 10 integration tests, four real-Keycloak E2E flows, and all three production builds in 2m14s without the deprecated-runtime warning.
 - Authenticated navigation styling: web typecheck, lint, eight component tests, production build, and all four real-Keycloak Playwright flows passed. A separate local Chrome visual inspection was not completed because an unrelated extension panel held browser control, so no manual visual claim is made.
+- Connect Agent tutorial: web typecheck, lint, nine component tests, and production build passed; five real-Keycloak Playwright flows passed, including authenticated navigation, checklist progress, reload persistence, and disabled future-provider states.
 
 ## Next steps
 
 - Design a future recursive Project JSON export contract for portable Project metadata, nested work items, acceptance criteria, dependencies, and deliberately selected related history.
 - Provision node-scoped Keycloak machine identity, then run the Codex worker against the real local Keycloak/API/PostgreSQL stack.
+- Unlock the final two Codex tutorial steps after node-scoped Keycloak machine identity and the real Codex worker have live verification.
 
 ## Change log
+
+### In-app agent setup tutorial
+
+- Added an authenticated Connect Agent route and primary-navigation link instead of relying on repository documentation for user onboarding.
+- Added a provider-neutral selection surface with an actionable Codex checklist and clearly disabled Claude/Grok future states.
+- Persisted completed preparation steps locally, linked official OpenAI service-account guidance, warned against credential disclosure, and kept unavailable machine-identity/worker steps visibly locked.
+- Added component and real-Keycloak browser coverage for the route, future-provider states, checklist interaction, and reload persistence.
 
 ### Codex execution target provisioning
 
