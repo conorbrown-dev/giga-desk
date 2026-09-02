@@ -9,6 +9,7 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "target:codex": "node dist/provision-codex-target.js",
     "test": "vitest run src",
     "test:integration": "vitest run test"
   },

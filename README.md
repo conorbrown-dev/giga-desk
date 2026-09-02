@@ -49,6 +49,15 @@ Open `http://127.0.0.1:5173` and sign in with the local-only account `demo` / `g
 
 The development-only simulator consumes the machine API without importing API implementation code. Register an execution node, queue work for it, and provide that node's scoped short-lived token:
 
+Provision the Codex target after building the API. The command idempotently creates or updates the node, Codex CLI agent version, and remote default-model selection, then prints their non-secret registry IDs:
+
+```bash
+DATABASE_URL=<postgresql-url> npm run target:codex -w @giga-desk/api -- \
+  MIRIAM Conor-Ubuntu-MIRIAM Linux x64 0.152.0
+```
+
+The node remains offline until its scoped machine identity begins sending heartbeats.
+
 ```bash
 npm run build
 GIGA_DESK_AGENT_NODE_ID=<node-uuid> \
