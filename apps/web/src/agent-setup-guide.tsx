@@ -22,8 +22,8 @@ const steps: readonly SetupStep[] = [
   },
   {
     title: 'Register the execution target',
-    detail: 'A Giga Desk administrator runs this on the API host. It stores machine metadata and registry IDs, never Codex credentials.',
-    command: 'npm run target:codex -w @giga-desk/api -- <name> <hostname> <os> <arch> <codex-version>',
+    detail: 'A Giga Desk administrator runs this on the API host. With no arguments, it detects the hostname, operating system, architecture, and installed Codex CLI version, then stores machine metadata and registry IDs without storing credentials. Supply all five original fields only when you need to override the detected values.',
+    command: 'npm run target:codex -w @giga-desk/api --',
   },
   {
     title: 'Create the machine identity',

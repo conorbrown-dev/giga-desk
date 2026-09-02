@@ -54,6 +54,7 @@
 - A development-only polling simulator obtains and caches short-lived OIDC client-credentials tokens, heartbeats its node, and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle; an injected token remains available for isolated tests.
 - Machine API and OIDC client-credentials behavior now live in a dedicated shared workspace, keeping the production worker boundary independent of the synthetic simulator.
 - A production Codex executor launches non-interactive ephemeral runs without a shell, restricts edits to workspace-write, and rejects malformed or incomplete structured evidence.
+- `target:codex` can now discover the local hostname, operating system, architecture, and installed Codex CLI version when run without arguments; explicit five-field metadata overrides remain supported.
 - The MIRIAM worker runtime polls one job at a time, enforces an exact repository allowlist and evidence set, reports the real lifecycle in API order, and heartbeats continuously under a restartable user service.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 
@@ -203,6 +204,13 @@
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Automatic Codex target metadata
+
+- `target:codex` now supports a zero-argument form that derives the registry name and hostname from the local host, the OS and architecture from Node, and the Codex version from `codex --version`.
+- The original five-argument form remains supported for explicit metadata overrides; invalid partial arguments and unparseable version output fail clearly.
+- The `/agents/connect` Step 3 guide now explains automatic detection and when to use the explicit override form.
+- Verification passed: repository-wide typecheck, lint, 60 unit tests, repository integration tests (10 API tests plus shared-client and worker integration tests), five authenticated Playwright E2E flows including `/agents/connect`, all workspace production builds, and a real zero-argument resolution check returning the current host metadata.
 
 ### Fail-closed UI visual review
 
