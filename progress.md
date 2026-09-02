@@ -41,7 +41,7 @@
 - API image builds regenerate Prisma after source/config copy and exclude host-generated clients from Docker context; Keycloak is augmented in a PostgreSQL-aware build stage before optimized startup.
 - Railway project `giga-desk` runs five isolated production services; web and Keycloak have public Railway domains while API and both PostgreSQL services remain private-network only.
 - The production Keycloak realm requires S256 PKCE for the exact web origin, adds the `giga-desk-api` audience, and grants the initial `conor` user only the seven human application roles.
-- Continuous PITR and dedicated backup buckets are enabled for both production PostgreSQL services; both WAL archivers report healthy restore timestamps, but Railway CLI readback currently returns no retained schedules or backups and still reports backup coverage exit status 31.
+- Railway point-in-time recovery is intentionally disabled for both production PostgreSQL services to avoid unnecessary early-stage backup storage expense; database volumes remain live, but no recovery window is retained.
 - GitHub Actions now defines the complete local-shaped CI gate with PostgreSQL, real Keycloak login, typecheck, lint, unit/integration/E2E tests, and production builds.
 - A development-only polling simulator consumes the public machine API with an injected node identity/token and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
@@ -133,16 +133,24 @@
 - Railway project `giga-desk` was created with isolated application/Keycloak PostgreSQL services, API, web, and Keycloak. Corrected deployments are all `SUCCESS`; the API applied all six migrations and the web proxy returns `healthy` plus `{"status":"ok"}` from `/api/health`.
 - Production Keycloak readback confirmed a public authorization-code client with direct grants disabled, exact redirect/web origins, required S256 PKCE, the `giga-desk-api` audience mapper, and the expected seven human roles on `conor`.
 - Live headless-browser acceptance passed (`PRODUCTION_ACCEPTANCE_OK`): the temporary credential rotated without disclosure, Keycloak login succeeded, the production API accepted the token, and `PRODCHK · Production Acceptance` plus its Feature persisted with no console errors.
-- Railway PITR is enabled and bucket-wired for both databases; application and Keycloak archivers report healthy with current restore timestamps. On 2026-09-02, read-only Railway CLI checks returned empty schedule and backup lists for both services plus backup coverage exit status 31, so retained backups are not verified despite the reported manual completion.
+- Railway CLI decommissioned PITR on `giga-desk-postgres` and `giga-desk-keycloak-postgres`; both standalone services redeployed successfully and now report `enabled: false` plus `bucketWired: false`. `railway bucket list --json` returns no production buckets, while the proxied API health endpoint and exact Keycloak realm issuer remain healthy. This intentionally removes database point-in-time restore capability.
 - Initial GitHub Actions run `33582831124` passed setup, Keycloak readiness, typecheck, lint, and unit tests, then correctly failed integration tests because CI had not migrated its empty PostgreSQL database. Corrected run `33583018180` applied all six migrations and passed every gate. Official action release readback identified `actions/checkout@v7` and `actions/setup-node@v7` as current; final run `33583242096` used those Node 24 action releases and passed migrations, typecheck, lint, 40 unit tests, 10 integration tests, four real-Keycloak E2E flows, and all three production builds in 2m14s without the deprecated-runtime warning.
 - Authenticated navigation styling: web typecheck, lint, eight component tests, production build, and all four real-Keycloak Playwright flows passed. A separate local Chrome visual inspection was not completed because an unrelated extension panel held browser control, so no manual visual claim is made.
 
 ## Next steps
 
-- Configure and verify retained schedules plus an initial backup for both Railway PostgreSQL services; current CLI readback is empty even though continuous PITR archiving is healthy.
+- Design a future recursive Project JSON export contract for portable Project metadata, nested work items, acceptance criteria, dependencies, and deliberately selected related history.
 - Add execution-node registration/heartbeat and local machine-identity provisioning, then run the simulator against the real local Keycloak/API/PostgreSQL stack.
 
 ## Change log
+
+### Railway PITR decommission
+
+- Disabled point-in-time recovery on the separate application and Keycloak PostgreSQL services to remove unneeded early-stage recovery storage expense.
+- Applied the standalone database configuration changes one at a time; both Railway deployments succeeded before the next service was changed.
+- Verified both services report PITR disabled and no bucket wired, no production buckets are deployed, and the production API plus Keycloak realm discovery remain healthy.
+- Preserved both database services and persistent volumes; this change removes recovery storage and restore capability, not live data.
+- No product-code lines changed; this is Railway infrastructure state plus documentation only.
 
 ### Cohesive authenticated navigation styling
 
