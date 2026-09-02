@@ -49,6 +49,7 @@
 - GitHub Actions now defines the complete local-shaped CI gate with PostgreSQL, real Keycloak login, typecheck, lint, unit/integration/E2E tests, and production builds.
 - A development-only polling simulator obtains and caches short-lived OIDC client-credentials tokens, heartbeats its node, and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle; an injected token remains available for isolated tests.
 - Machine API and OIDC client-credentials behavior now live in a dedicated shared workspace, keeping the production worker boundary independent of the synthetic simulator.
+- A production Codex executor launches non-interactive ephemeral runs without a shell, restricts edits to workspace-write, and rejects malformed or incomplete structured evidence.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 
 ## Verification
@@ -150,6 +151,7 @@
 - Connect Agent tutorial: web typecheck, lint, nine component tests, and production build passed; five real-Keycloak Playwright flows passed, including authenticated navigation, checklist progress, reload persistence, and disabled future-provider states.
 - OIDC polling-agent authentication: repository-wide typecheck, lint, and production builds passed for all three workspaces; unit tests passed (web one file/nine tests, API 19 files/34 tests, agent two files/four tests). The complete integration gate passed outside sandbox isolation (API nine files/ten tests and agent one file/test), and all five real-Keycloak Playwright flows passed, including the enabled machine-identity step and still-disabled real-worker step.
 - Shared machine API client: repository-wide typecheck, lint, unit tests, and production builds passed across four workspaces; the API's nine PostgreSQL-backed integration files/ten tests and the shared client's localhost HTTP-boundary test passed outside sandbox isolation, as did all five real-Keycloak Playwright flows. `npm install` audited 546 packages with zero vulnerabilities.
+- Production Codex executor: repository-wide typecheck, lint, unit tests, and production builds passed across five workspaces; worker coverage includes two executor tests. The API's nine PostgreSQL-backed integration files/ten tests, shared-client HTTP-boundary test, and all five real-Keycloak Playwright flows passed outside sandbox isolation.
 - GitHub CI run `33634761790` passed migrations, typecheck, lint, 47 unit tests, 11 integration tests, five real-Keycloak E2E flows, and all three production builds for commit `ba3c76b` in 2m14s. Railway production deployments `41d719af-0663-41f6-8264-135e0aeb5e7d` (API), `5a061b21-07ec-41ff-8bfb-97b52014abd0` (web), and `35114d6c-fde5-4de6-9502-19e6ce6f2f3f` (Keycloak) succeeded for that commit; the public web proxy returned `{"status":"ok"}` from `/api/health`, and Keycloak realm discovery returned the exact production issuer, token endpoint, and JWKS URI.
 - GitHub CI run `33631508200` passed every gate for the in-app tutorial; Railway API, web, and Keycloak deployments succeeded, both PostgreSQL services remained healthy, and the production proxy returned `{"status":"ok"}` from `/api/health`.
 
@@ -160,6 +162,14 @@
 - Unlock the final Codex tutorial step only after the real Codex worker has live verification.
 
 ## Change log
+
+### Production Codex executor
+
+- Added a dedicated strict-TypeScript worker workspace and an argument-safe non-interactive Codex execution adapter.
+- Uses ephemeral `workspace-write` runs, the selected Work Package model, a two-hour timeout, a private temporary JSON schema/result boundary, and guaranteed temporary-file cleanup.
+- Rejects malformed tests, deployment metadata, and acceptance evidence rather than allowing an execution to appear successful.
+- Added focused unit coverage for exact CLI constraints and fail-closed evidence parsing; real job claiming and lifecycle callbacks remain in the next feature slice.
+- The feature adds 106 product-code lines; tests, manifests, Docker/configuration, and documentation are excluded from the 228-line limit.
 
 ### Shared machine API client
 

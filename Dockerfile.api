@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/agent-simulator/package.json apps/agent-simulator/package.json
 COPY apps/agent-client/package.json apps/agent-client/package.json
+COPY apps/codex-worker/package.json apps/codex-worker/package.json
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY apps/api/prisma.config.ts apps/api/prisma.config.ts
