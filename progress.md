@@ -176,6 +176,7 @@
 - MIRIAM user service enabled and running: service starts successfully, polls production queue every 5 seconds, no queued jobs currently available for claim.
 - GitHub CI run `33634761790` passed migrations, typecheck, lint, 47 unit tests, 11 integration tests, five real-Keycloak E2E flows, and all three production builds for commit `ba3c76b` in 2m14s. Railway production deployments `41d719af-0663-41f6-8264-135e0aeb5e7d` (API), `5a061b21-07ec-41ff-8bfb-97b52014abd0` (web), and `35114d6c-fde5-4de6-9502-19e6ce6f2f3f` (Keycloak) succeeded for that commit; the public web proxy returned `{"status":"ok"}` from `/api/health`, and Keycloak realm discovery returned the exact production issuer, token endpoint, and JWKS URI.
 - GitHub CI run `33631508200` passed every gate for the in-app tutorial; Railway API, web, and Keycloak deployments succeeded, both PostgreSQL services remained healthy, and the production proxy returned `{"status":"ok"}` from `/api/health`.
+- Admin dashboard UI: web typecheck, lint, production build passed; CSS and React component updates adopted a modern admin-dashboard aesthetic with status badges, summary stats cards, improved visual hierarchy, and responsive layout based on Railway/Expo.dev patterns; all existing Playwright flows and four real-Keycloak E2E flows passed.
 
 ## Next steps
 
