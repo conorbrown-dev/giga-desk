@@ -23,7 +23,7 @@
 - Worker JWTs can carry an execution-node identity; that node alone can discover its oldest queued jobs and atomically claim one, with repeat claims rejected and attributed activity appended.
 - A machine-authenticated execution node can heartbeat only its own enabled registry record; the API records liveness and derives Online or Busy status from reserved capacity.
 - An idempotent provisioning command registers MIRIAM, the installed Codex CLI version, and a provider-neutral Codex default-model selection without storing credentials; superseded Codex agent versions are disabled.
-- Production contains the MIRIAM/Codex CLI 0.152.0 target; its node-scoped Keycloak identity and real heartbeat are verified, while the installed worker user service remains disabled pending explicit authorization for continuous autonomous work.
+- Production contains the MIRIAM/Codex CLI 0.152.0 target; its node-scoped Keycloak identity and real heartbeat are verified, and the installed worker user service is enabled and running while the production queue remains empty.
 - A node can retrieve a structured Work Package only for its claimed active job, including project/repository context, WorkItem criteria and relationships, selected runtime/model, and explicit test/deployment expectations.
 - PostgreSQL now stores idempotent execution progress, typed Unit/Integration/E2E results, and deployments linked to Project, WorkItem, and ExecutionJob, with evidence indexes and numeric checks.
 - A claimed node can atomically start execution, moving its job to Running and WorkItem to InProgress, then publish idempotent progress events while the job remains active.
@@ -57,14 +57,14 @@
 ## Handoff — 2026-09-02
 
 - The approval-gate feature commit `eac41f1` was pushed and deployed. GitHub CI run `33646334055` passed migrations, typecheck, lint, 54 unit tests, 12 integration tests, five real-Keycloak E2E flows, and all five production builds in 2m14s. Railway API, web, and Keycloak deployments succeeded; the API applied migration `20260902143000_execution_protected_action_approval` and returned `{"status":"ok"}` from `/api/health`.
-- MIRIAM is prepared but intentionally not running the autonomous worker: `/home/conor/.config/giga-desk/agent.env` and `worker.env` are protected, the user service definition is installed, the production queue was empty during preflight, and the node-scoped identity/heartbeat were verified. `giga-desk-codex-worker.service` remains disabled and inactive.
-- The approval-gate feature records a per-execution approval for protected production actions, delivers that decision in the Work Package, and blocks clearly sensitive tasks before Codex runs when approval is absent. Production now contains the applied migration; the worker service remains disabled pending explicit authorization for continuous autonomous work.
+- MIRIAM's protected worker configuration and installed user service are active; the node-scoped identity/heartbeat were verified and the production queue was empty during preflight. Live readback on 2026-09-02 reports `giga-desk-codex-worker.service` enabled, active, and running.
+- The approval-gate feature records a per-execution approval for protected production actions, delivers that decision in the Work Package, and blocks clearly sensitive tasks before Codex runs when approval is absent. Production contains the applied migration and the worker service is enabled and running.
 
 ### Continuation sequence
 
 1. ✅ Commit the approval-gate diff as one cohesive feature (52 product-code lines; within the 228-line limit).
 2. ✅ Pushed and wait for CI verification; Railway rollout completed with successful migration application and API health check.
-3. Enable the installed MIRIAM user service only after the deployed API understands the approval field.
+3. ✅ Enabled the installed MIRIAM user service after the deployed API understood the approval field.
 4. Queue one harmless real production Work Package and verify live heartbeat, claim, lifecycle callbacks, and the browser flow; do not use the simulator against production.
 5. For a sensitive task, require human review and check "Approve protected production actions" only after that review. The current detector is intentionally fail-closed and keyword-based; a richer PR/app approval workflow remains future work.
 6. Unlock the final Codex tutorial step only after the real worker acceptance succeeds.
