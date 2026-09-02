@@ -6,7 +6,9 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run src"
+    "test": "vitest run src",
+    "test:integration": "vitest run test",
+    "start": "node dist/main.js"
   },
   "dependencies": {
     "@giga-desk/agent-client": "*"

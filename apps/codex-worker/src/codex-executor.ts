@@ -21,7 +21,10 @@ interface RunOptions { cwd: string; timeout: number; maxBuffer: number }
 export type CommandRunner = (file: string, args: readonly string[], options: RunOptions) => Promise<void>;
 
 const runCommand: CommandRunner = (file, args, options) => new Promise((resolve, reject) => {
-  execFile(file, args, options, (error) => { if (error) reject(new Error(error.message, { cause: error })); else resolve(); });
+  execFile(file, args, options, (error) => {
+    if (error) reject(new Error(`Codex process failed with code ${String(error.code ?? 'unknown')}`, { cause: error }));
+    else resolve();
+  });
 });
 
 const resultSchema = {

@@ -1,0 +1,20 @@
+[Unit]
+Description=Giga Desk Codex worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/conor/repos/giga-desk
+EnvironmentFile=/home/conor/.config/giga-desk/agent.env
+EnvironmentFile=/home/conor/.config/giga-desk/worker.env
+ExecStart=/usr/bin/npm run start -w @giga-desk/codex-worker
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=default.target
