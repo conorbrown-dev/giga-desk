@@ -133,6 +133,7 @@
 - Production Keycloak readback confirmed a public authorization-code client with direct grants disabled, exact redirect/web origins, required S256 PKCE, the `giga-desk-api` audience mapper, and the expected seven human roles on `conor`.
 - Live headless-browser acceptance passed (`PRODUCTION_ACCEPTANCE_OK`): the temporary credential rotated without disclosure, Keycloak login succeeded, the production API accepted the token, and `PRODCHK · Production Acceptance` plus its Feature persisted with no console errors.
 - Railway PITR is enabled and bucket-wired for both databases; application and Keycloak archivers report healthy with current restore timestamps. Daily/weekly/monthly schedules and on-demand backup creation returned `OAUTH_INSUFFICIENT_GRANT`; CLI reauthorization is awaiting explicit browser consent for full workspace/project administration and offline access.
+- Initial GitHub Actions run `33582831124` passed setup, Keycloak readiness, typecheck, lint, and unit tests, then correctly failed integration tests because CI had not migrated its empty PostgreSQL database. The workflow now applies committed migrations before verification; the corrected hosted run is pending.
 
 ## Next steps
 
@@ -148,6 +149,7 @@
 - Provisioned and read back the production Keycloak realm, scoped roles, required-PKCE client, audience mapper, and initial user; live browser acceptance persisted a production Project and Feature.
 - Enabled continuous PITR with dedicated backup buckets and healthy WAL archivers for both PostgreSQL services; retained schedules and labeled backups remain blocked only by Railway OAuth consent.
 - Added a GitHub Actions workflow mirroring the repository's required local gates against PostgreSQL and real Keycloak.
+- Corrected the first CI run's empty-database failure by applying committed Prisma migrations before integration and E2E verification.
 - No product-code lines changed; workflow, deployment, identity, and documentation configuration are excluded from the 228-line limit.
 
 ### Production container startup hardening

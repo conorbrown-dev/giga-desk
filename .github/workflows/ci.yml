@@ -37,6 +37,9 @@ jobs:
           done
           docker compose logs keycloak
           exit 1
+      - name: Apply database migrations
+        working-directory: apps/api
+        run: npm exec prisma migrate deploy
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
