@@ -38,6 +38,10 @@
 - Production API, web/Caddy, and Keycloak images are defined for an isolated five-service Railway topology; the application and identity databases remain separate.
 - Production API and web image dependency stages include every npm workspace manifest, including the agent simulator, so root `npm ci` remains reproducible as workspaces are added.
 - API image builds regenerate Prisma after source/config copy and exclude host-generated clients from Docker context; Keycloak is augmented in a PostgreSQL-aware build stage before optimized startup.
+- Railway project `giga-desk` runs five isolated production services; web and Keycloak have public Railway domains while API and both PostgreSQL services remain private-network only.
+- The production Keycloak realm requires S256 PKCE for the exact web origin, adds the `giga-desk-api` audience, and grants the initial `conor` user only the seven human application roles.
+- Continuous PITR and dedicated backup buckets are enabled for both production PostgreSQL services; both WAL archivers report healthy restore timestamps, while retained backup schedules still require a refreshed Railway OAuth grant.
+- GitHub Actions now defines the complete local-shaped CI gate with PostgreSQL, real Keycloak login, typecheck, lint, unit/integration/E2E tests, and production builds.
 - A development-only polling simulator consumes the public machine API with an injected node identity/token and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 
@@ -125,16 +129,26 @@
 - `npm run build` — passed production builds for the web, API, and agent simulator.
 - Clean API Docker build passed without host-generated Prisma sources, and a disposable container imported the compiled client successfully (`PRISMA_IMPORT_OK`).
 - Clean Keycloak Docker build passed; `show-config` reports production mode, persisted PostgreSQL support, health/metrics, and `kc.optimized = true`.
-- Railway project `giga-desk` was created with isolated application/Keycloak PostgreSQL services, API, web, and Keycloak; both databases and web deployed successfully. First API startup applied all six migrations but exposed a generated-client `.ts` import packaging defect; first Keycloak startup exposed missing optimized augmentation. Corrected images are locally verified and pending source redeployment.
+- Railway project `giga-desk` was created with isolated application/Keycloak PostgreSQL services, API, web, and Keycloak. Corrected deployments are all `SUCCESS`; the API applied all six migrations and the web proxy returns `healthy` plus `{"status":"ok"}` from `/api/health`.
+- Production Keycloak readback confirmed a public authorization-code client with direct grants disabled, exact redirect/web origins, required S256 PKCE, the `giga-desk-api` audience mapper, and the expected seven human roles on `conor`.
+- Live headless-browser acceptance passed (`PRODUCTION_ACCEPTANCE_OK`): the temporary credential rotated without disclosure, Keycloak login succeeded, the production API accepted the token, and `PRODCHK · Production Acceptance` plus its Feature persisted with no console errors.
+- Railway PITR is enabled and bucket-wired for both databases; application and Keycloak archivers report healthy with current restore timestamps. Daily/weekly/monthly schedules and on-demand backup creation returned `OAUTH_INSUFFICIENT_GRANT`; CLI reauthorization is awaiting explicit browser consent for full workspace/project administration and offline access.
 
 ## Next steps
 
-- Redeploy the corrected API and Keycloak images, provision the exact production realm/client/roles, then run live production login and Project/Feature acceptance flows.
-- Confirm Railway backup/retention policy separately for both PostgreSQL services; successful deployment is not backup verification.
-- Add CI after the production service requirements are confirmed.
+- Complete Railway CLI OAuth consent, then configure daily/weekly/monthly retained backups and create labeled initial backups for both databases.
+- Push the CI workflow and verify its first GitHub Actions run rather than treating local gates as CI proof.
 - Add execution-node registration/heartbeat and local machine-identity provisioning, then run the simulator against the real local Keycloak/API/PostgreSQL stack.
 
 ## Change log
+
+### Railway production topology and CI
+
+- Created the five-service `giga-desk` Railway project from `conorbrown-dev/giga-desk@main` with isolated application/identity databases, private service references, generated credentials, exact public domains, and successful API/web/Keycloak deployments.
+- Provisioned and read back the production Keycloak realm, scoped roles, required-PKCE client, audience mapper, and initial user; live browser acceptance persisted a production Project and Feature.
+- Enabled continuous PITR with dedicated backup buckets and healthy WAL archivers for both PostgreSQL services; retained schedules and labeled backups remain blocked only by Railway OAuth consent.
+- Added a GitHub Actions workflow mirroring the repository's required local gates against PostgreSQL and real Keycloak.
+- No product-code lines changed; workflow, deployment, identity, and documentation configuration are excluded from the 228-line limit.
 
 ### Production container startup hardening
 
