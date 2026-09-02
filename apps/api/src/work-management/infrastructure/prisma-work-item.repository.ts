@@ -22,6 +22,9 @@ export class PrismaWorkItemRepository extends WorkItemRepository {
           description: feature.props.description,
           status: 'Backlog',
           criteria: { create: feature.props.acceptanceCriteria.map((text, sortOrder) => ({ text, sortOrder })) },
+          visualReferences: { create: (feature.props.visualReferences ?? []).map((reference, sortOrder) => ({
+            name: reference.name, mediaType: reference.mediaType, content: Buffer.from(reference.content), sortOrder,
+          })) },
         } });
         await transaction.activity.create({ data: {
           projectId: feature.props.projectId,

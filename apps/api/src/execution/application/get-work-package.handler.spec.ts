@@ -9,7 +9,7 @@ const workPackage: WorkPackage = {
   project: { id: 'project-1', key: 'GD', name: 'Giga Desk', description: '', businessGoal: 'Ship',
     repositoryUrl: null, defaultBranch: null },
   workItem: { id: 'item-1', type: 'Feature', title: 'Board', description: '', technicalNotes: null,
-    implementationInstructions: null, parent: null, acceptanceCriteria: [], dependencies: [] },
+    implementationInstructions: null, parent: null, visualReferences: [], acceptanceCriteria: [], dependencies: [] },
   execution: { node: { id: 'node-1', name: 'Node' }, agent: { id: 'agent-1', name: 'Agent', type: 'Simulator', version: '1' },
     model: { id: 'model-1', displayName: 'Model', provider: 'Local', identifier: 'model' } },
   expectations: { tests: ['Unit'], deploymentRequired: false },

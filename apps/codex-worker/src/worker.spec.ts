@@ -9,7 +9,7 @@ const work: WorkPackage = {
   project: { id: 'project-1', key: 'GD', name: 'Giga Desk', description: 'Plan', businessGoal: 'Ship',
     repositoryUrl: 'https://github.com/conorbrown-dev/giga-desk.git', defaultBranch: 'main' },
   workItem: { id: 'work-1', type: 'Feature', title: 'Execute work', description: 'Do it', technicalNotes: null,
-    implementationInstructions: null, parent: null, dependencies: [],
+    implementationInstructions: null, parent: null, visualReferences: [], dependencies: [],
     acceptanceCriteria: [{ id: 'criterion-1', text: 'Done', satisfied: false }] },
   execution: { node: { id: 'node-1', name: 'MIRIAM' },
     agent: { id: 'agent-1', name: 'Codex', type: 'Codex', version: '0.152.0' },

@@ -21,6 +21,7 @@ export class CreateFeatureHandler implements ICommandHandler<CreateFeatureComman
       description: feature.props.description,
       status: 'Backlog',
       acceptanceCriteria: feature.props.acceptanceCriteria,
+      visualReferences: (feature.props.visualReferences ?? []).map(({ name, mediaType }) => ({ name, mediaType })),
     };
   }
 }

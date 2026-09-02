@@ -90,7 +90,7 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
     } else await route.fulfill({ json: projects });
   });
   await page.route('**/api/projects/*/features', async (route) => {
-    expect(route.request().postDataJSON()).toEqual({ title: 'Coworker showcase', description: 'Demonstrate feature planning', acceptanceCriteria: ['Project can be opened', 'Feature appears immediately'] });
+    expect(route.request().postDataJSON()).toEqual({ title: 'Coworker showcase', description: 'Demonstrate feature planning', acceptanceCriteria: ['Project can be opened', 'Feature appears immediately'], visualReferences: [{ name: 'expo.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=' }] });
     workItems = [{ id: 'work-10', parentId: null, type: 'Feature', title: 'Coworker showcase', status: 'Backlog', priority: 'Medium', criteria: [{ id: 'criterion-10', text: 'Project can be opened', satisfied: false, sortOrder: 0 }] }];
     await route.fulfill({ status: 201, json: {} });
   });
@@ -113,6 +113,8 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
   await page.getByLabel(/Title/).fill('Coworker showcase');
   await page.getByLabel(/Description/).fill('Demonstrate feature planning');
   await page.getByLabel(/Acceptance criteria/).fill('Project can be opened\nFeature appears immediately');
+  await page.getByLabel(/Visual references/).setInputFiles({ name: 'expo.png', mimeType: 'image/png',
+    buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) });
   await page.getByRole('button', { name: 'Add feature' }).click();
   await expect(page.getByRole('link', { name: 'Coworker showcase' })).toBeVisible();
 });

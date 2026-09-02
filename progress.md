@@ -41,6 +41,7 @@
 - Start Work now records an explicit protected-production-action approval per execution; that decision is audited and delivered in the Work Package, and the worker rejects clearly sensitive tasks before Codex runs unless approval was checked.
 - The Project portfolio now includes a validated browser form for creating Projects and immediately refreshes with the persisted result.
 - Project work-item pages now include a validated browser form for creating Features with one acceptance criterion per line and immediately refresh with the persisted result.
+- Feature creation accepts up to three bounded PNG, JPEG, or WebP visual references; PostgreSQL persists the image bytes, Work Packages transport them, and the Codex worker supplies private temporary files through repeatable `--image` arguments without placing base64 data in the text prompt.
 - `npm run demo` starts isolated application and Keycloak PostgreSQL databases, imports a local-only Keycloak realm, builds both applications, and serves the authenticated browser UI.
 - Production API, web/Caddy, and Keycloak images are defined for an isolated five-service Railway topology; the application and identity databases remain separate.
 - Production API and web image dependency stages include every npm workspace manifest, including the agent simulator, so root `npm ci` remains reproducible as workspaces are added.
@@ -57,6 +58,7 @@
 
 ## Handoff — 2026-09-02
 
+- The visual-reference pipeline is locally verified end to end: repository typecheck, lint, 55 unit/component tests, 12 PostgreSQL/HTTP worker integration tests, five real-Keycloak browser flows, all five production builds, migration deployment/status, and the worker's exact temporary-image bytes/CLI arguments passed. No production deployment or live MIRIAM job is claimed.
 - The authenticated content-shell fix is locally verified: web typecheck, lint, nine component tests, production build, and five real-Keycloak Playwright flows passed. The browser flow now asserts the desktop content width remains bounded; no deployment or live production visual claim has been made.
 - The approval-gate feature commit `eac41f1` was pushed and deployed. GitHub CI run `33646334055` passed migrations, typecheck, lint, 54 unit tests, 12 integration tests, five real-Keycloak E2E flows, and all five production builds in 2m14s. Railway API, web, and Keycloak deployments succeeded; the API applied migration `20260902143000_execution_protected_action_approval` and returned `{"status":"ok"}` from `/api/health`.
 - MIRIAM's protected worker configuration and installed user service are active; the node-scoped identity/heartbeat were verified and the production queue was empty during preflight. Live readback on 2026-09-02 reports `giga-desk-codex-worker.service` enabled, active, and running.
@@ -73,6 +75,11 @@
 
 ## Verification
 
+- `npm exec prisma migrate deploy -- --config apps/api/prisma.config.ts` and `npm exec prisma migrate status -- --config apps/api/prisma.config.ts` — passed against local PostgreSQL; migration `20260902173000_work_item_visual_references` is applied and the schema is current.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after visual-reference delivery across all five workspaces; 55 unit/component tests passed.
+- `npm run test:integration` — passed after the final oversized-request coverage update: nine API files/ten tests plus one shared-client and one real-worker HTTP-boundary test.
+- `PLAYWRIGHT_REUSE_EXISTING=true npm run test:e2e -w @giga-desk/web` — passed all five real-Keycloak browser flows, including Feature image selection and exact request serialization.
+- `npm run build` — passed all five production builds after visual-reference delivery.
 - Read `README.md`, `AGENTS.md`, and `docs/00_READ_ME_FIRST.md` followed by reference documents `01` through `09` in numerical order.
 - Inspected the complete repository file inventory and confirmed it contains only policy and project documentation.
 - `npm run typecheck` — passed for both workspaces.
@@ -188,6 +195,14 @@
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Visual references for MIRIAM
+
+- Added an accessible Feature file picker for up to three PNG, JPEG, or WebP screenshots of at most 3 MB each, with Formik/Yup validation and browser-flow coverage.
+- Validates file metadata and image signatures at the API/domain boundary, persists ordered bytes in PostgreSQL, and exposes only metadata in the Feature creation response.
+- Delivers references in the claimed Work Package and materializes them as mode-`0600` temporary files for repeatable Codex `--image` arguments; base64 content is replaced with attachment metadata in the prompt and the existing executor cleanup removes the files.
+- Migration `20260902173000_work_item_visual_references` creates the cascade-owned `VisualReference` table and ordered lookup index. Recovery is to preserve/export any required reference bytes before dropping that table; no rollback was performed.
+- The feature changes 150 product-code lines; tests, documentation, and configuration are excluded from the 228-line limit.
 
 ### Bounded authenticated content shell
 

@@ -1,5 +1,5 @@
 import type { WorkPackage } from '@giga-desk/agent-client/agent-api';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { describe, expect, it, vi } from 'vitest';
 import { CodexExecutor, type CommandRunner } from './codex-executor.js';
 
@@ -10,6 +10,7 @@ const workPackage: WorkPackage = {
     repositoryUrl: 'https://github.com/conorbrown-dev/giga-desk.git', defaultBranch: 'main' },
   workItem: { id: 'work-1', type: 'Feature', title: 'Run Codex', description: 'Execute real work',
     technicalNotes: null, implementationInstructions: null, parent: null,
+    visualReferences: [{ name: 'railway.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=' }],
     acceptanceCriteria: [{ id: 'criterion-1', text: 'Verified', satisfied: false }], dependencies: [] },
   execution: { node: { id: 'node-1', name: 'MIRIAM' },
     agent: { id: 'agent-1', name: 'Codex CLI', type: 'Codex', version: '0.152.0' },
@@ -34,6 +35,11 @@ describe('CodexExecutor', () => {
       expect(file).toBe('codex');
       expect(args).toContain('workspace-write');
       expect(args).not.toContain('--model');
+      const imagePath = args[args.indexOf('--image') + 1];
+      if (!imagePath) throw new Error('Missing visual reference path');
+      expect(await readFile(imagePath)).toEqual(Buffer.from('iVBORw0KGgo=', 'base64'));
+      expect(args.at(-1)).toContain('"attached": true');
+      expect(args.at(-1)).not.toContain('iVBORw0KGgo=');
       const outputIndex = args.indexOf('--output-last-message');
       const outputPath = args[outputIndex + 1];
       if (!outputPath) throw new Error('Missing output path');

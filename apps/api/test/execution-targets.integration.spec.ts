@@ -48,7 +48,9 @@ describe('execution target registry API', () => {
     const project = await database.project.create({ data: {
       key: `ST${suffix.toUpperCase()}`, name: 'Start Work Fixture', description: 'Fixture', businessGoal: 'Queue work',
       workItems: { create: { type: 'Feature', title: 'Queue execution', description: 'Start work',
-        criteria: { create: { text: 'Execution is queued' } } } },
+        criteria: { create: { text: 'Execution is queued' } }, visualReferences: { create: {
+          name: 'expo.png', mediaType: 'image/png', content: Buffer.from('iVBORw0KGgo=', 'base64'),
+        } } } },
     }, include: { workItems: true } });
     const workItem = project.workItems[0];
     if (!workItem) throw new Error('Expected a Start Work fixture');
@@ -141,6 +143,9 @@ describe('execution target registry API', () => {
       || !isRecord(workPackage['expectations'])) throw new Error('Expected a structured Work Package');
     expect(workPackage['project']['key']).toBe(`ST${suffix.toUpperCase()}`);
     expect(workPackage['workItem']['title']).toBe('Queue execution');
+    expect(workPackage['workItem']['visualReferences']).toEqual([{
+      name: 'expo.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=',
+    }]);
     expect(workPackage['authorization']).toEqual({ protectedActionsApproved: true });
     expect(workPackage['expectations']).toEqual({
       tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true,

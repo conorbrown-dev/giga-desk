@@ -144,6 +144,7 @@ model WorkItem {
   parent         WorkItem?             @relation("Hierarchy", fields: [parentId], references: [id], onDelete: Restrict)
   children       WorkItem[]            @relation("Hierarchy")
   criteria       AcceptanceCriterion[]
+  visualReferences VisualReference[]
   dependencies   WorkItemDependency[]  @relation("Dependent")
   blocks         WorkItemDependency[]  @relation("Prerequisite")
   activities     Activity[]
@@ -152,6 +153,18 @@ model WorkItem {
 
   @@index([projectId, status])
   @@index([parentId])
+}
+
+model VisualReference {
+  id         String   @id @default(uuid()) @db.Uuid
+  workItemId String   @db.Uuid
+  name       String   @db.VarChar(200)
+  mediaType  String   @db.VarChar(40)
+  content    Bytes
+  sortOrder  Int      @default(0)
+  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+
+  @@index([workItemId, sortOrder])
 }
 
 model AcceptanceCriterion {

@@ -1,4 +1,5 @@
 import { Command } from '@nestjs/cqrs';
+import type { VisualReferenceInput } from '../domain/work-item.js';
 
 export interface CreatedFeature {
   id: string;
@@ -8,12 +9,14 @@ export interface CreatedFeature {
   description: string;
   status: 'Backlog';
   acceptanceCriteria: readonly string[];
+  visualReferences: readonly { name: string; mediaType: string }[];
 }
 
 export interface CreateFeatureInput {
   title: string;
   description: string;
   acceptanceCriteria: readonly string[];
+  visualReferences?: readonly VisualReferenceInput[];
 }
 
 export class CreateFeatureCommand extends Command<CreatedFeature> {

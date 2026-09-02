@@ -105,10 +105,13 @@ describe('App', () => {
     expect(await screen.findByText('Enter a feature title.')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Title/), { target: { value: 'Show Ryan the demo' } });
     fireEvent.change(screen.getByLabelText(/Acceptance criteria/), { target: { value: 'Project is visible\nFeature is visible' } });
+    fireEvent.change(screen.getByLabelText(/Visual references/), { target: { files: [new File([
+      Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    ], 'railway.png', { type: 'image/png' })] } });
     fireEvent.click(screen.getByRole('button', { name: 'Add feature' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Feature created.');
     expect(await screen.findByRole('link', { name: 'Show Ryan the demo' })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-2/features', expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'Show Ryan the demo', description: '', acceptanceCriteria: ['Project is visible', 'Feature is visible'] }) }));
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-2/features', expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'Show Ryan the demo', description: '', acceptanceCriteria: ['Project is visible', 'Feature is visible'], visualReferences: [{ name: 'railway.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=' }] }) }));
   });
 
   it('shows an empty execution dashboard state', async () => {

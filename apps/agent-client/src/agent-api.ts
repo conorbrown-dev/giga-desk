@@ -9,6 +9,7 @@ export interface WorkPackage {
     repositoryUrl: string | null; defaultBranch: string | null };
   workItem: { id: string; type: string; title: string; description: string; technicalNotes: string | null;
     implementationInstructions: string | null; parent: { id: string; title: string } | null;
+    visualReferences: readonly { name: string; mediaType: string; dataBase64: string }[];
     acceptanceCriteria: readonly { id: string; text: string; satisfied: boolean }[];
     dependencies: readonly { id: string; title: string; status: string }[] };
   execution: { node: { id: string; name: string }; agent: { id: string; name: string; type: string; version: string };

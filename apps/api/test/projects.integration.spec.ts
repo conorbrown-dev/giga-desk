@@ -12,8 +12,12 @@ import './test-environment.js';
 const projectInput = {
   key: 'CREATE', name: 'Create Project API', description: 'First command', businessGoal: 'Track delivery',
 };
+const visualReferenceContent = Buffer.concat([
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(149_992),
+]);
 const featureInput = {
   title: 'Project board', description: 'Show delivery state', acceptanceCriteria: ['Feature appears on the board'],
+  visualReferences: [{ name: 'railway.png', mediaType: 'image/png', dataBase64: visualReferenceContent.toString('base64') }],
 };
 
 describe('projects API', () => {
@@ -62,19 +66,26 @@ describe('projects API', () => {
       .set('Authorization', 'Bearer read-only-token').send(featureInput).expect(403);
     await request(server).post(`/api/projects/${stored.id}/features`)
       .set('Authorization', 'Bearer valid-token').send({ ...featureInput, acceptanceCriteria: [] }).expect(400);
+    await request(server).post(`/api/projects/${stored.id}/features`)
+      .set('Authorization', 'Bearer valid-token').send({ ...featureInput,
+        visualReferences: [{ ...featureInput.visualReferences[0], mediaType: 'image/gif' }] }).expect(400);
     const featureResponse = await request(server).post(`/api/projects/${stored.id}/features`)
       .set('Authorization', 'Bearer valid-token').send(featureInput).expect(201);
     expect(featureResponse.body).toMatchObject({
       projectId: stored.id, type: 'Feature', title: featureInput.title, status: 'Backlog',
       acceptanceCriteria: featureInput.acceptanceCriteria,
+      visualReferences: [{ name: 'railway.png', mediaType: 'image/png' }],
     });
     const featureBody: unknown = featureResponse.body;
     if (typeof featureBody !== 'object' || featureBody === null || !('id' in featureBody)
       || typeof featureBody.id !== 'string') throw new Error('Expected a created Feature identifier');
     const feature = await database.workItem.findUniqueOrThrow({
-      where: { id: featureBody.id }, include: { criteria: true, activities: true },
+      where: { id: featureBody.id }, include: { criteria: true, activities: true, visualReferences: true },
     });
     expect(feature.criteria.map((criterion) => criterion.text)).toEqual(featureInput.acceptanceCriteria);
+    expect(feature.visualReferences).toHaveLength(1);
+    expect(feature.visualReferences[0]).toMatchObject({ name: 'railway.png', mediaType: 'image/png', sortOrder: 0 });
+    expect(Buffer.from(feature.visualReferences[0]?.content ?? [])).toEqual(visualReferenceContent);
     expect(feature.activities[0]?.actorId).toBe('user-123');
     const workItemsResponse = await request(server).get(`/api/projects/${stored.id}/work-items`)
       .set('Authorization', 'Bearer read-only-token').expect(200);

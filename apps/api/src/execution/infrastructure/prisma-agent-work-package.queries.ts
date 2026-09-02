@@ -27,6 +27,7 @@ export class PrismaAgentWorkPackageQueries extends AgentWorkPackageQueries {
         model: { select: { id: true, displayName: true, provider: true, modelIdentifier: true } },
         workItem: { select: {
           id: true, type: true, title: true, description: true, technicalNotes: true, instructions: true,
+          visualReferences: { orderBy: { sortOrder: 'asc' }, select: { name: true, mediaType: true, content: true } },
           parent: { select: { id: true, title: true } },
           criteria: { orderBy: { sortOrder: 'asc' }, select: { id: true, text: true, satisfied: true } },
           dependencies: { select: { prerequisite: { select: { id: true, title: true, status: true } } } },
@@ -44,6 +45,9 @@ export class PrismaAgentWorkPackageQueries extends AgentWorkPackageQueries {
         id: job.workItem.id, type: job.workItem.type, title: job.workItem.title,
         description: job.workItem.description, technicalNotes: job.workItem.technicalNotes,
         implementationInstructions: job.workItem.instructions, parent: job.workItem.parent,
+        visualReferences: job.workItem.visualReferences.map(({ content, ...reference }) => ({
+          ...reference, dataBase64: Buffer.from(content).toString('base64'),
+        })),
         acceptanceCriteria: job.workItem.criteria,
         dependencies: job.workItem.dependencies.map((dependency) => dependency.prerequisite),
       },

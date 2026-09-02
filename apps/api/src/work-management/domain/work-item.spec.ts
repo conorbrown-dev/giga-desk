@@ -20,6 +20,14 @@ describe('WorkItem', () => {
     expect(() => { feature().transitionTo('Completed'); }).toThrow('Cannot transition');
   });
 
+  it('accepts bounded image references and rejects invalid image content', () => {
+    const reference = { name: 'railway.png', mediaType: 'image/png' as const,
+      content: Uint8Array.from([0x89, 0x50, 0x4e, 0x47]) };
+    expect(feature({ visualReferences: [reference] }).props.visualReferences).toEqual([reference]);
+    expect(() => feature({ visualReferences: [{ ...reference, content: Uint8Array.from([1, 2, 3]) }] }))
+      .toThrow('valid PNG, JPEG, or WebP');
+  });
+
   it('blocks work while a prerequisite is unfinished', () => {
     expect(() => { feature().assertCanStart(['Completed', 'Testing']); }).toThrow('Unfinished prerequisites');
   });
