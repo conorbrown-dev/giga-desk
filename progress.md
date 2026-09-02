@@ -3,21 +3,337 @@
 ## Current state
 
 - Repository template initialized with contributor, architecture, testing, and delivery guidance.
+- The ordered project reference pack has been reviewed and a baseline architecture assessment is recorded in `docs/10_ARCHITECTURE_ASSESSMENT.md`.
+- The starting checkout was documentation-only, so the new application foundation follows the recorded architecture assessment rather than pre-existing runtime conventions.
 - Contributor guidance requires GitHub, Railway, and Cloudflare CLI tooling for repository, deployment, and infrastructure operations.
-- No frontend or backend application has been scaffolded.
+- npm workspaces now separate the strict-TypeScript NestJS API, Vite/React web application, and Node polling agent simulator.
+- The API exposes a minimal `/api/health` readiness boundary; the web shell provides routed home and project-list states.
+- PostgreSQL and Prisma configuration now define the initial Project, WorkItem, acceptance-criteria, dependency, and immutable activity persistence model.
+- Framework-free Project and WorkItem domain objects enforce key normalization, required feature acceptance criteria, workflow transitions, and prerequisite completion.
+- API routes are protected by default with provider-neutral RS256 JWT verification using configured issuer, audience, and remote JWKS values; `/api/health` is explicitly public and `/api/auth/me` returns the verified subject and permissions.
+- Browser authentication now uses Keycloak's authorization-code flow with S256 PKCE; the API accepts known Giga Desk permissions from Keycloak realm roles while retaining the provider-neutral JWT boundary.
+- Authenticated identities with `projects:create` can create Projects through a CQRS command; creation persists the domain object and immutable `ProjectCreated` activity atomically.
+- Authenticated identities with `projects:read` can retrieve the 50 most recently updated, non-archived Projects through a dedicated CQRS read model.
+- Authenticated identities with `work-items:create` can create a Feature under a Project with structured, ordered acceptance criteria and an immutable `FeatureCreated` activity.
+- Authenticated identities with `projects:read` can retrieve a Project's ordered work-item projection, including hierarchy, workflow state, priority, and structured criteria.
+- Authenticated identities with `work-items:update` can apply valid WorkItem status transitions; starting work checks prerequisites, persistence uses optimistic concurrency, and each transition appends an attributed activity.
+- PostgreSQL now persists ExecutionNode, Agent, AiModel, and ExecutionJob separately with registry uniqueness, historical WorkItem attempts, query indexes, restrictive history foreign keys, and database-level numeric invariants.
+- Authenticated identities with `executions:read` can retrieve enabled execution nodes, agents, and models through an explicit execution-context registry projection.
+- Authenticated identities with `executions:create` can queue Start Work for a compatible, available node/agent/model selection; the transaction reserves node capacity, readies the WorkItem, creates the job, and appends audit activities.
+- Worker JWTs can carry an execution-node identity; that node alone can discover its oldest queued jobs and atomically claim one, with repeat claims rejected and attributed activity appended.
+- A node can retrieve a structured Work Package only for its claimed active job, including project/repository context, WorkItem criteria and relationships, selected runtime/model, and explicit test/deployment expectations.
+- PostgreSQL now stores idempotent execution progress, typed Unit/Integration/E2E results, and deployments linked to Project, WorkItem, and ExecutionJob, with evidence indexes and numeric checks.
+- A claimed node can atomically start execution, moving its job to Running and WorkItem to InProgress, then publish idempotent progress events while the job remains active.
+- A node can report idempotent Unit/Integration results while active and EndToEnd results only after deployment; automated tests move both job and WorkItem into Testing and persist attributed evidence.
+- Deployment reporting requires latest passing Unit and Integration evidence, persists idempotently, and moves successful work to E2E Testing; failed/rolled-back deployments terminate the job, block the WorkItem, and release node capacity.
+- A node can complete an E2E-tested execution only when all three test stages, deployment, and every acceptance criterion pass; completion atomically marks the job and WorkItem Completed, satisfies criteria, records terminal audit events, and releases node capacity with idempotent retry handling.
+- A worker can report an active execution failure with an idempotency key; the transaction records the reason and terminal audit events, blocks the WorkItem, releases node capacity, and rejects later non-idempotent terminal changes.
+- Authenticated users with `work-items:read` can retrieve explicit execution history for a WorkItem, including selected targets, lifecycle timestamps, progress, test evidence, deployment evidence, source-control metadata, and failure reasons.
+- The web app now provides a typed execution-history client and `/work-items/:workItemId` dashboard route with accessible loading/error/empty states and evidence summaries.
+- The web app now loads authenticated Project and WorkItem projections, with project-list and project-work routes linking users through to each WorkItem's execution history.
+- WorkItem execution pages now provide an authenticated Formik/Yup Start Work flow that loads available targets, narrows models by agent provider compatibility, queues the selection, and refreshes history.
+- The Project portfolio now includes a validated browser form for creating Projects and immediately refreshes with the persisted result.
+- Project work-item pages now include a validated browser form for creating Features with one acceptance criterion per line and immediately refresh with the persisted result.
+- `npm run demo` starts isolated application and Keycloak PostgreSQL databases, imports a local-only Keycloak realm, builds both applications, and serves the authenticated browser UI.
+- Production API, web/Caddy, and Keycloak images are defined for an isolated five-service Railway topology; the application and identity databases remain separate.
+- Production API and web image dependency stages include every npm workspace manifest, including the agent simulator, so root `npm ci` remains reproducible as workspaces are added.
+- A development-only polling simulator consumes the public machine API with an injected node identity/token and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle.
+- Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 
 ## Verification
 
-- Documentation reviewed for consistency with the template's requested stack and workflow.
-- No product code exists, so build and test commands are not yet applicable.
+- Read `README.md`, `AGENTS.md`, and `docs/00_READ_ME_FIRST.md` followed by reference documents `01` through `09` in numerical order.
+- Inspected the complete repository file inventory and confirmed it contains only policy and project documentation.
+- `npm run typecheck` — passed for both workspaces.
+- `npm run lint` — passed for both workspaces.
+- `npm test` — passed: one frontend component test and one API unit test.
+- `npm run test:integration` — passed: one API HTTP integration test (required local port access outside the network sandbox).
+- `npm run test:e2e` — passed: one Playwright navigation flow using the installed Chromium runtime.
+- `npm run build` — passed for both production applications.
+- `npm exec prisma migrate status -- --config prisma.config.ts` — passed against local PostgreSQL; the initial migration is applied and the schema is current.
+- `npm run test:integration` — passed after adding the persistence foundation: three API integration test files passed against local PostgreSQL and the Nest HTTP boundary.
+- `npm run lint` — passed after replacing unsafe non-null assertions in the persistence integration test with an explicit guard.
+- `npm run test:integration` — passed with five API integration files after authentication: missing/invalid bearer tokens are rejected, a verified identity is returned, and the real JOSE adapter validates a signed RS256 token through a local JWKS endpoint.
+- `npm run typecheck` and `npm run lint` — passed after the authentication boundary and adapter coverage were added.
+- `npm test` — passed after Project creation: one web component test and 14 API unit tests across six files.
+- `npm run test:integration` — passed six API integration files, including 401, 403, unknown-field 400, successful Project persistence/audit, and duplicate-key 409 behavior.
+- `npm run typecheck` and `npm run lint` — passed after the Project creation CQRS slice.
+- `npm test` — passed after the Project list query: one web component test and 15 API unit tests across seven files.
+- `npm run test:integration` — passed six API integration files after Project listing and isolated dependency-fixture cleanup; unauthenticated listing returns 401 and a read-authorized identity receives the persisted projection.
+- `npm test` — passed after Feature creation: one web component test and 16 API unit tests across eight files.
+- `npm run test:integration` — passed six API integration files after Feature creation, covering permission denial, criteria validation, atomic persistence/audit, and an unknown-Project 404.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after the work-item read model; API unit coverage is 17 tests across nine files.
+- `npm run test:integration` — passed six API integration files after the work-item read model, including authorized projection data and unknown-Project 404 behavior.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after status transitions; API unit coverage is 19 tests across ten files.
+- `npm run test:integration` — passed six API integration files after status transitions, including permission denial, invalid-transition conflict, successful optimistic update/activity, and missing-item 404 behavior.
+- `npm exec prisma migrate status -- --config prisma.config.ts` — passed after execution persistence; all three migrations are applied and current.
+- `npm run typecheck`, `npm run lint`, and `npm run test:integration` — passed after regenerating the Prisma client; seven integration files now cover the separate execution registry/job relationships.
+- Focused execution persistence test passed with deprecation tracing and no warning after avoiding Prisma's open `adapter-pg` write-with-multiple-includes regression.
+- `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:integration` — passed for the execution-target registry; API unit coverage is 20 tests across 11 files and integration coverage is eight files.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after Start Work; API unit coverage is 22 tests across 12 files.
+- `npm run test:integration` — passed eight API integration files after Start Work, covering permission denial, compatible job creation, node capacity reservation, WorkItem readiness, audit history, and duplicate-active-job conflict.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after node-scoped discovery/claim; API unit coverage is 23 tests across 13 files.
+- `npm run test:integration` — passed eight API integration files after discovery/claim, including node-scope denial, queued discovery, atomic claim, repeat-claim 409, and worker audit attribution.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after Work Package retrieval; API unit coverage is 24 tests across 14 files.
+- `npm run test:integration` — passed eight API integration files after Work Package retrieval, including wrong-node 404 isolation and the full structured contract for the claimed job.
+- `npm run typecheck`, `npm run lint`, and `npm run test:integration` — passed after execution evidence persistence; duplicate progress keys are rejected and progress/test/deployment relations are verified.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after execution start/progress; API unit coverage is 26 tests across 15 files.
+- `npm run test:integration` — passed eight API integration files after start/progress, covering wrong-node isolation, invalid-state conflicts, atomic job/WorkItem start, activity history, and retry deduplication.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after test reporting; API unit coverage is 28 tests across 16 files.
+- `npm run test:integration` — passed nine API integration files/ten tests after test reporting, covering retry deduplication, Testing transitions, evidence persistence, and early-E2E rejection.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after deployment reporting; API unit coverage is 29 tests across 17 files.
+- `npm run test:integration` — passed nine API integration files/ten tests after deployment reporting, including pre-deployment test gates, retry deduplication, persisted deployment evidence, and successful E2E transition.
+- `npm run typecheck` — passed after completion callback wiring and evidence-gate tests.
+- `npm run lint` — passed after completion callback wiring and focused domain tests.
+- `npm run test -w @giga-desk/api -- --run` — passed: 32 API unit tests across 18 files.
+- `npm run test:integration` — passed nine API integration files/ten tests after completion reporting, including rejected incomplete evidence, terminal state transitions, criterion satisfaction, audit history, capacity release, and idempotent retry.
+- `npm run typecheck` and `npm run lint` — passed after the failure callback and repository wiring.
+- `npm run test:integration` — passed nine API integration files/ten tests after failure reporting, including queue/claim/start, terminal failure persistence, blocked WorkItem state, capacity release, and idempotent retry.
+- `npm run test:integration` — passed nine API integration files/ten tests after adding execution-history projection coverage, including authenticated terminal evidence and deployment summaries.
+- `npm test` — passed: one frontend component test and 32 API unit tests across 18 files.
+- `npm run build` — passed for both production applications after terminal execution callbacks.
+- `npm run test:e2e` — passed: one Playwright navigation flow using the installed Chromium runtime (local loopback access required).
+- `npm run lint`, `npm run typecheck`, and `npm test` — passed after the execution dashboard client/route; frontend coverage is two component tests and API coverage remains 32 unit tests across 18 files.
+- `npm run test:e2e` — passed: one Playwright navigation flow after the dashboard route was added.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after project/work-item navigation; frontend coverage is three component tests and API coverage is 31 source unit tests across 17 files.
+- `npm run test:integration` — passed eight source integration files/nine tests against the local PostgreSQL service after excluding ignored compiled `dist` output from Vitest discovery; the first sandboxed run was blocked by local listener/database isolation and PostgreSQL then required starting.
+- `npm run build` — passed for both production applications after project/work-item navigation.
+- `npm run test:e2e` — passed: two Playwright tests cover navigation from home through a Project and WorkItem to execution history plus the authentication failure state; local loopback access was required.
+- `npm exec prisma migrate status -- --config prisma.config.ts` — passed against the restarted local PostgreSQL service; all six migrations are applied and the schema is current.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after Start Work controls; frontend coverage is four component tests and API coverage is 31 source unit tests across 17 files.
+- `npm run test:integration` — passed all eight source integration files/nine tests after Start Work controls against the healthy local PostgreSQL service.
+- `npm run build` — passed for both production applications after Start Work controls.
+- `npm run test:e2e` — passed: three Playwright tests, including required Start Work validation, successful authenticated submission, and conflict feedback.
+- `npm test` — passed after browser creation and demo mode: six frontend component tests and 32 API unit tests across 18 source files.
+- `npm run test:integration` — passed nine source integration files/ten tests, including the real local-demo authentication HTTP boundary.
+- `npm run test:e2e` — passed four Playwright tests, including the complete authenticated create-Project → open-Project → create-Feature flow.
+- `npm run demo` — launched PostgreSQL, the API on port 3000, and Vite on port 5173 after correcting a launcher-only JavaScript syntax error found by the first live attempt.
+- Live browser verification against the real API/PostgreSQL stack created `RYSHOW1 · Ryan Showcase`, added `Browser project planning demo`, and confirmed all three acceptance criteria were persisted and rendered; no browser console errors were reported.
+- Package installation audited 542 packages with zero reported vulnerabilities after adding the JOSE verifier and Nest CQRS dependencies.
+- `npm run typecheck`, `npm run lint`, and `npm test` — passed after Keycloak integration: seven frontend component tests and 31 API unit tests across 17 source files.
+- `npm run test:integration` — passed all eight API integration files/nine tests; the real JOSE adapter maps a known Keycloak realm role and rejects non-application roles.
+- `npm run test:e2e` — passed all four browser flows through the real local Keycloak login, including protected routing, Start Work, and create-Project → create-Feature.
+- `npm run build` — passed for both applications after Keycloak integration.
+- Production API, web, and Keycloak Docker images built successfully; the API image applied all six Prisma migrations and returned `{"status":"ok"}`, while the Caddy image returned `healthy`.
+- `npm audit --omit=dev` — passed with zero vulnerabilities after overriding Prisma's transitive, unused MySQL driver to its patched `3.22.0` release.
+- `npm install` — audited 544 packages with zero vulnerabilities after adding the isolated simulator workspace; a later standalone `npm audit --omit=dev` refresh was blocked by restricted registry egress, so no second live audit result is claimed.
+- `npm run typecheck` and `npm run lint` — passed across the API, web, and agent-simulator workspaces.
+- `npm test` — passed 40 tests: seven web component tests, 31 API unit tests, and two simulator lifecycle tests.
+- `npm run test:integration` — passed eight API files/nine PostgreSQL-backed tests plus one simulator real-HTTP boundary test; localhost/database access was required outside the sandbox.
+- `npm run test:e2e` — passed all four Playwright flows through the real local Keycloak login after the simulator was added.
+- `npm run build` — passed production builds for the web, API, and agent simulator.
 
 ## Next steps
 
-- Create a repository from this template.
-- Scaffold `apps/web` and `apps/api` using supported framework versions.
-- Add repository scripts and CI for typechecking, linting, unit tests, backend integration tests, frontend E2E tests, and production builds.
+- Create the isolated five-service Railway production project after action-time approval for new usage-billed resources and generated production credentials.
+- Configure exact production Keycloak redirect/web origins after Railway assigns the web and authentication domains, then run live production login and Project/Feature acceptance flows.
+- Add CI after the production service requirements are confirmed.
+- Add execution-node registration/heartbeat and local machine-identity provisioning, then run the simulator against the real local Keycloak/API/PostgreSQL stack.
 
 ## Change log
+
+### Polling-first agent simulator
+
+- Added a separate strict-TypeScript Node workspace that depends only on the public machine HTTP contracts rather than API implementation details.
+- Polls one registered node, claims the oldest queued job, retrieves its Work Package, and submits simulated progress, Unit/Integration evidence, staging deployment, E2E evidence, and exact-criterion completion.
+- Uses deterministic job/stage idempotency keys, abortable polling, an injected short-lived bearer token, and no source-controlled credentials; documentation explicitly prohibits production use because evidence is synthetic.
+- Added focused lifecycle tests plus a real localhost HTTP-boundary integration test for machine authorization and error mapping.
+- The feature adds 131 product-code lines; tests, documentation, package manifests, lockfiles, and tool configuration are excluded from the 228-line limit.
+
+### Keycloak authentication and production packaging
+
+- Replaced the local bearer-token bypass with a real Keycloak realm and authorization-code browser login using S256 PKCE; access tokens remain in the Keycloak adapter rather than browser storage.
+- Maps only known Giga Desk realm roles to API permissions, preserves issuer/audience/signature validation, and filters unrelated Keycloak roles.
+- Added real-login component, integration, and browser coverage plus reproducible local Keycloak/PostgreSQL services and a complete demo user profile.
+- Added separate production API, web/Caddy, and Keycloak images with a documented five-service Railway topology and independent application/identity databases.
+- The authentication feature changes 173 product-code lines; tests, documentation, dependency manifests, launcher code, realm configuration, and deployment configuration are excluded from the 228-line limit.
+
+### Superseded guarded local showcase mode
+
+- This earlier local bearer-token shortcut was removed by the Keycloak authentication feature; invalid tokens remain 401 and no production/demo bypass exists.
+- Its Vite API proxy and launcher were retained, but the launcher now starts a real isolated Keycloak realm and login flow.
+
+### Browser Feature creation
+
+- Added a Formik/Yup Feature form on Project work-item pages with title, description, and newline-separated acceptance criteria.
+- Maps criteria into the backend's structured array contract, reports authorization/missing-Project failures, resets after success, and refreshes the WorkItem projection.
+- Added component and E2E coverage for validation, exact payload mapping, persistence refresh, and visible outcomes.
+- The feature changes 35 product-code lines; tests and documentation are excluded from the 228-line limit.
+
+### Browser Project creation
+
+- Added a Formik/Yup Project form with backend-aligned key, name, description, and business-goal validation.
+- Uses the authenticated Project creation API, reports duplicate-key/authorization failures, resets after success, and refreshes the portfolio.
+- Added component and E2E coverage for validation, exact payload mapping, and immediate navigation to the new Project.
+- The feature changes 41 product-code lines; tests and documentation are excluded from the 228-line limit.
+
+### Authenticated Start Work controls
+
+- Added a Formik/Yup Start Work form to the WorkItem execution page with accessible required-field feedback and submission states.
+- Loads the authenticated execution registry, hides unavailable nodes, narrows model options to providers supported by the selected agent, and resets stale model selections when the agent changes.
+- Queues the selected node/agent/model through the existing authenticated API, reports authorization/conflict failures, and refreshes execution history after success.
+- Added component and browser coverage for validation, exact request payloads, successful queuing, and concurrent/incompatible selection conflicts.
+- The feature changes 76 product-code lines; tests and documentation are excluded from the 228-line limit.
+
+### Authenticated project and work-item navigation
+
+- Replaced the placeholder Project route with authenticated Project summaries and explicit loading, error, and empty states.
+- Added a Project work-items route with status, priority, acceptance-criterion progress, and direct links to WorkItem execution history.
+- Added a typed frontend project API boundary and behavior-focused component/E2E coverage for the complete navigation path.
+- Excluded ignored compiled `dist` output from API Vitest discovery so unit/integration results are independent of build order; corrected verification covers 17 unit and eight integration source files rather than counting stale compiled health-test duplicates.
+- The feature changes 69 product-code lines; tests, documentation, and test configuration are excluded from the 228-line limit.
+
+### Deployment callbacks and E2E transition
+
+- Added node-scoped `POST /api/agent/jobs/{jobId}/deployment` with typed environment and deployment states.
+- Deployment is rejected until the latest Unit and Integration results both pass.
+- Callbacks persist Project/WorkItem/Execution-linked deployment evidence and deduplicate job-scoped retries.
+- Successful deployment moves job and WorkItem to E2E Testing; failure/rollback marks the job Failed, blocks the WorkItem, and releases reserved node capacity.
+- Added focused deployment-gate coverage and PostgreSQL-backed HTTP coverage for test gates, idempotency, evidence, and E2E transition.
+- The feature adds 123 product-code lines plus focused controller/module edits, below the 228-line limit.
+- Test cleanup now deletes restrictive Deployment fixtures before jobs and remains scoped to IDs created by the current run; broad stale-fixture cleanup was intentionally rejected.
+
+### Automated test-result callbacks
+
+- Added node-scoped `POST /api/agent/jobs/{jobId}/tests` with typed Unit/Integration/EndToEnd and Passed/Failed evidence.
+- Unit and Integration results are accepted during Running/Testing and move implementation into Testing; E2E is rejected until the deployment phase.
+- Test callbacks persist counts, failures, duration, artifact reference, audit metadata, and job-scoped idempotency keys; retries return the original result.
+- Added a direct InProgress-to-Testing automation transition while retaining the review path for human/manual workflows.
+- Added focused state coverage and PostgreSQL-backed HTTP coverage for transitions, idempotency, evidence, and early-E2E rejection.
+- The feature adds 108 product-code lines plus focused controller/module/domain edits, below the 228-line limit.
+
+### Execution start and progress callbacks
+
+- Added node-scoped `POST /api/agent/jobs/{jobId}/start` and `/progress` callbacks for machine identities with `agent:jobs`.
+- Start validates Assigned/Ready state and completed prerequisites, then atomically moves the job to Running, WorkItem to InProgress, timestamps both, and appends activities.
+- Progress accepts only active execution states and deduplicates retries by job/idempotency key, returning the originally stored event even when retry payload text differs.
+- Added focused execution-state coverage and PostgreSQL-backed HTTP coverage for node isolation, invalid states, transitions, audit history, and idempotency.
+- The feature adds 133 product-code lines plus focused controller/module edits, below the 228-line limit.
+
+### Execution evidence persistence
+
+- Added ExecutionProgress, TestResult, and Deployment models linked to execution history; deployments also link directly to Project and WorkItem for operational views.
+- Added typed Unit/Integration/EndToEnd, pass/fail, environment, and deployment-status enums.
+- Added per-job idempotency uniqueness for progress, test, and deployment callbacks plus operational query indexes and nonnegative result metrics.
+- Added and reviewed a 94-line generated migration plus a 4-line handwritten constraint migration, below the 228-line product-code limit.
+- Expanded PostgreSQL integration coverage to prove evidence relations and retry deduplication.
+- Rollback/recovery: remove dependent Deployment rows first, then TestResult and ExecutionProgress, before dropping the added enums; production rollback was not performed.
+
+### Structured Work Package retrieval
+
+- Added a node-scoped CQRS Work Package query for claimed active jobs at `GET /api/agent/jobs/{jobId}/work-package`.
+- Returns project and repository context, WorkItem description/instructions/parent/criteria/dependencies, selected node/agent/model, and type-specific test/deployment expectations.
+- Wrong-node and unclaimed/inactive access returns a non-revealing 404; machine permission and execution-node identity remain required.
+- Added focused handler coverage and PostgreSQL-backed HTTP coverage for node isolation and the structured Feature execution contract.
+- The feature adds 93 product-code lines plus focused controller/module edits, below the 228-line limit.
+
+### Node-scoped job discovery and claim
+
+- Extended verified principals with an optional execution-node claim while keeping human identities node-neutral.
+- Added `GET /api/agent/nodes/{nodeId}/jobs` and `POST /api/agent/jobs/{jobId}/claim`, both requiring `agent:jobs` and a matching machine identity.
+- Discovery returns the oldest 20 queued jobs for an enabled node through an explicit machine contract.
+- Claiming is an atomic compare-and-set from Queued to Assigned and appends an attributed `ExecutionJobClaimed` activity; repeat/wrong-node claims are rejected.
+- Added focused worker-scope coverage and PostgreSQL-backed HTTP coverage for discovery, claim, isolation, conflicts, and audit metadata.
+- The feature adds 135 product-code lines plus focused authentication/module edits, below the 228-line limit.
+
+### Start Work execution-job creation
+
+- Added a CQRS command/handler and execution repository port for queuing a selected node, agent, and model against a WorkItem.
+- Added `POST /api/work-items/{workItemId}/executions`, requiring `executions:create`, with strict UUID validation and stable 404/409 responses.
+- Validates WorkItem state and dependencies, active-job absence, node availability/capacity, enabled targets, node capabilities, and agent/model provider compatibility.
+- Atomically reserves node capacity, moves Backlog work to Ready, creates the queued job, and appends attributed execution/status activities.
+- Added a partial unique index enforcing one nonterminal execution per WorkItem, closing concurrent duplicate requests at the database boundary.
+- Added focused compatibility/handler tests and PostgreSQL-backed HTTP coverage for the complete Start Work behavior.
+- The feature changes 227 product-code lines including migration and module wiring, below the 228-line limit.
+
+### Authorized execution-target registry
+
+- Added the execution bounded context with a CQRS registry query, Prisma read adapter, and `GET /api/execution/targets` transport requiring `executions:read`.
+- Returns enabled nodes, agents, and models as explicit JSON-safe contracts while preserving node/agent/model separation.
+- Excludes disabled nodes and records, orders each registry deterministically, and serializes heartbeat timestamps at the transport boundary.
+- Added focused handler coverage and PostgreSQL-backed HTTP authentication, authorization, and projection coverage.
+- The feature adds 106 product-code lines plus one application-module import, below the 228-line limit.
+
+### Execution-domain persistence foundation
+
+- Added separate ExecutionNode, Agent, AiModel, and ExecutionJob persistence models rather than collapsing host, runtime, and inference concerns.
+- Added queued-through-terminal execution states, source-control/result metadata, registry uniqueness, WorkItem history relations, and operational indexes.
+- Added database checks for positive node capacity, nonnegative job counts/retries, and positive optional model context windows.
+- Added and reviewed a 115-line generated migration plus an 11-line handwritten constraint migration; the feature remains below the 228-line product-code limit.
+- Added PostgreSQL-backed integration coverage for the complete WorkItem/node/agent/model/job relational graph.
+- Avoided a known open Prisma `adapter-pg` deprecation path by separating relation-rich reads from writes; the focused trace run is clean.
+
+### Controlled WorkItem status transitions
+
+- Added a CQRS transition command/handler and a dedicated repository port for loading, prerequisite checks, and committing state.
+- Added `PATCH /api/work-items/{workItemId}/status`, requiring `work-items:update`, with strict UUID/status validation and stable 404/409 responses.
+- Starting `InProgress` is blocked while any dependency is unfinished.
+- Prisma persistence uses a compare-and-set status predicate and appends `WorkItemStatusChanged` in the same transaction, preventing lost concurrent transitions.
+- Added focused handler coverage plus PostgreSQL-backed HTTP coverage for authorization, invalid transitions, persistence, audit metadata, and missing items.
+- The feature adds 138 product-code lines plus focused domain/module edits, below the 228-line limit.
+
+### Project work-item read model
+
+- Added a separate CQRS work-item query contract, handler, and Prisma projection adapter for Project board/detail consumers.
+- Added `GET /api/projects/{projectId}/work-items`, requiring `projects:read`, with strict Project UUID validation and stable unknown-Project 404 behavior.
+- Returns explicit hierarchy, type, status, priority, and ordered acceptance-criterion fields without exposing Prisma models.
+- Added focused handler coverage and PostgreSQL-backed HTTP projection coverage.
+- The feature adds 74 product-code lines plus small controller/module wiring edits, below the 228-line limit.
+
+### Authenticated Feature creation
+
+- Added a CQRS command/handler and write-repository port for creating a top-level Feature under a Project.
+- Extended the domain invariant to reject blank acceptance criteria and normalize each criterion before persistence.
+- Added `POST /api/projects/{projectId}/features`, requiring `work-items:create`, with strict DTO and UUID validation.
+- Persists the Feature, ordered criteria, and attributed `FeatureCreated` activity in one Prisma transaction; unknown Projects map to a stable 404.
+- Added focused handler/domain tests and PostgreSQL-backed HTTP coverage for authorization, validation, persistence, audit attribution, and missing parents.
+- The feature adds 120 product-code lines plus focused domain/controller/module edits, below the 228-line limit.
+
+### Authorized Project list query
+
+- Added a separate CQRS query contract, handler, and Prisma read adapter instead of reusing the write repository.
+- Added `GET /api/projects`, requiring `projects:read`, returning an explicit provider-independent projection ordered by recent activity.
+- Excludes archived Projects and bounds the first read model to 50 records pending cursor pagination.
+- Added focused query-handler coverage and PostgreSQL-backed HTTP authorization/projection coverage.
+- Corrected persistence-test cleanup to remove dependency edges explicitly before deleting isolated Project fixtures.
+- The feature adds 52 product-code lines plus small controller/module wiring edits, below the 228-line limit.
+
+### Authenticated Project creation
+
+- Added the first CQRS command and handler, keeping Project invariants in the framework-free domain object.
+- Added a Prisma repository port/adapter and shared database module; runtime database configuration now fails closed when `DATABASE_URL` is absent.
+- Added a validated `POST /api/projects` transport that derives the audit actor from the verified identity and requires `projects:create`.
+- Maps duplicate keys to a stable 409 response without leaking Prisma errors; unknown request fields are rejected.
+- Added focused handler coverage and PostgreSQL-backed HTTP integration coverage for authentication, authorization, validation, persistence, audit attribution, and conflicts.
+- The feature adds 170 product-code lines plus small application wiring edits, below the 228-line limit.
+
+### Provider-neutral API authentication
+
+- Added a default-deny Nest guard with an explicit public-route decorator for health checks.
+- Added strict bearer-token parsing and a JOSE verifier that requires RS256 signature, issuer, audience, subject, and configured remote JWKS validation.
+- Added `/api/auth/me` as the authenticated identity boundary and preserved provider permissions without embedding provider-specific domain behavior.
+- Added focused parsing tests, authenticated HTTP integration coverage, and a real signed-token/JWKS adapter integration test.
+
+### Work-management persistence foundation
+
+- Added PostgreSQL/Prisma configuration, a local Compose service, and the initial reviewed SQL migration.
+- Added Project, WorkItem, AcceptanceCriterion, WorkItemDependency, and Activity persistence models with relational constraints and query indexes.
+- Added framework-free Project and WorkItem domain validation plus focused unit coverage.
+- Added a PostgreSQL integration test for hierarchy, criteria, dependencies, and structured activity metadata.
+- Verified the migration state and persistence behavior against the healthy local PostgreSQL 17 container.
+
+### Strict TypeScript application foundation
+
+- Added npm workspaces for independently built NestJS and Vite/React applications.
+- Added strict compiler rules, type-aware ESLint rules, Vitest unit/integration coverage, and Playwright E2E coverage.
+- Added a minimal API health boundary and accessible routed frontend shell.
+- Removed the unnecessary Nest scaffolding CLI after its transitive engine requirement exceeded the host Node patch; the API builds directly with TypeScript.
+- Selected a host-compatible `jsdom` release and installed Playwright Chromium for local E2E execution.
+
+### Repository architecture assessment
+
+- Recorded the empty-template baseline and the initial modular-monolith, bounded-context, persistence, API, authentication, and delivery decisions.
+- Confirmed there are no representative runtime features whose conventions can be reused.
 
 ### Platform CLI requirements
 

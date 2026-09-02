@@ -1,0 +1,324 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProjectStatus {
+  Idea
+  Planning
+  Active
+  OnHold
+  Completed
+  Archived
+}
+
+enum Priority {
+  Low
+  Medium
+  High
+  Critical
+}
+
+enum WorkItemType {
+  Idea
+  Epic
+  Feature
+  UserStory
+  Task
+  Bug
+  Issue
+  TechnicalDebt
+  Research
+}
+
+enum WorkItemStatus {
+  Backlog
+  Ready
+  InProgress
+  Blocked
+  InReview
+  Testing
+  ReadyForDeployment
+  Deploying
+  E2ETesting
+  Completed
+  Cancelled
+}
+
+enum ExecutionNodeStatus {
+  Online
+  Offline
+  Busy
+  Degraded
+  Disabled
+}
+
+enum ModelLocation {
+  Local
+  Remote
+}
+
+enum ExecutionJobStatus {
+  Queued
+  Assigned
+  Starting
+  Running
+  WaitingForInput
+  Blocked
+  Testing
+  Reviewing
+  Deploying
+  E2ETesting
+  Completed
+  Failed
+  Cancelled
+}
+
+enum TestType {
+  Unit
+  Integration
+  EndToEnd
+}
+
+enum EvidenceResult {
+  Passed
+  Failed
+}
+
+enum DeploymentEnvironment {
+  Development
+  Test
+  Staging
+  Production
+}
+
+enum DeploymentStatus {
+  Pending
+  Running
+  Succeeded
+  Failed
+  RolledBack
+}
+
+model Project {
+  id            String        @id @default(uuid()) @db.Uuid
+  key           String        @unique @db.VarChar(12)
+  name          String        @db.VarChar(120)
+  description   String
+  businessGoal  String
+  status        ProjectStatus @default(Idea)
+  priority      Priority      @default(Medium)
+  repositoryUrl String?
+  defaultBranch String?       @db.VarChar(255)
+  archived      Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  workItems     WorkItem[]
+  activities    Activity[]
+  deployments   Deployment[]
+}
+
+model WorkItem {
+  id             String                @id @default(uuid()) @db.Uuid
+  projectId      String                @db.Uuid
+  parentId       String?               @db.Uuid
+  type           WorkItemType
+  title          String                @db.VarChar(200)
+  description    String
+  status         WorkItemStatus        @default(Backlog)
+  priority       Priority              @default(Medium)
+  technicalNotes String?
+  instructions   String?
+  sortOrder      Int                   @default(0)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  project        Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent         WorkItem?             @relation("Hierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children       WorkItem[]            @relation("Hierarchy")
+  criteria       AcceptanceCriterion[]
+  dependencies   WorkItemDependency[]  @relation("Dependent")
+  blocks         WorkItemDependency[]  @relation("Prerequisite")
+  activities     Activity[]
+  executions     ExecutionJob[]
+  deployments    Deployment[]
+
+  @@index([projectId, status])
+  @@index([parentId])
+}
+
+model AcceptanceCriterion {
+  id         String   @id @default(uuid()) @db.Uuid
+  workItemId String   @db.Uuid
+  text       String
+  satisfied  Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+
+  @@index([workItemId])
+}
+
+model WorkItemDependency {
+  workItemId     String   @db.Uuid
+  prerequisiteId String   @db.Uuid
+  workItem       WorkItem @relation("Dependent", fields: [workItemId], references: [id], onDelete: Cascade)
+  prerequisite   WorkItem @relation("Prerequisite", fields: [prerequisiteId], references: [id], onDelete: Restrict)
+
+  @@id([workItemId, prerequisiteId])
+}
+
+model Activity {
+  id         String    @id @default(uuid()) @db.Uuid
+  projectId  String    @db.Uuid
+  workItemId String?   @db.Uuid
+  eventType  String    @db.VarChar(80)
+  actorId    String    @db.VarChar(255)
+  metadata   Json
+  createdAt  DateTime  @default(now())
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workItem   WorkItem? @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([workItemId, createdAt])
+}
+
+model ExecutionNode {
+  id                    String              @id @default(uuid()) @db.Uuid
+  name                  String              @unique @db.VarChar(120)
+  description           String?
+  hostname              String              @db.VarChar(255)
+  operatingSystem       String              @db.VarChar(120)
+  architecture          String              @db.VarChar(80)
+  status                ExecutionNodeStatus @default(Offline)
+  lastHeartbeatAt       DateTime?
+  enabled               Boolean             @default(true)
+  capabilities          Json
+  maximumConcurrentJobs Int                 @default(1)
+  currentJobCount       Int                 @default(0)
+  tags                  String[]            @default([])
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  executions            ExecutionJob[]
+}
+
+model Agent {
+  id                      String         @id @default(uuid()) @db.Uuid
+  name                    String         @db.VarChar(120)
+  agentType               String         @db.VarChar(120)
+  version                 String         @db.VarChar(80)
+  enabled                 Boolean        @default(true)
+  supportedCapabilities   Json
+  configuration           Json
+  supportedModelProviders String[]       @default([])
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  executions              ExecutionJob[]
+
+  @@unique([name, version])
+}
+
+model AiModel {
+  id              String         @id @default(uuid()) @db.Uuid
+  displayName     String         @db.VarChar(160)
+  provider        String         @db.VarChar(120)
+  modelIdentifier String         @db.VarChar(255)
+  modelType       String         @db.VarChar(80)
+  contextWindow   Int?
+  location        ModelLocation
+  enabled         Boolean        @default(true)
+  capabilities    Json
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  executions      ExecutionJob[]
+
+  @@unique([provider, modelIdentifier])
+}
+
+model ExecutionJob {
+  id              String              @id @default(uuid()) @db.Uuid
+  workItemId      String              @db.Uuid
+  executionNodeId String              @db.Uuid
+  agentId         String              @db.Uuid
+  modelId         String              @db.Uuid
+  requestedBy     String              @db.VarChar(255)
+  requestedAt     DateTime            @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  status          ExecutionJobStatus  @default(Queued)
+  result          Json?
+  failureReason   String?
+  retryCount      Int                 @default(0)
+  branchName      String?             @db.VarChar(255)
+  pullRequestUrl  String?
+  commitHash      String?             @db.VarChar(128)
+  workItem        WorkItem            @relation(fields: [workItemId], references: [id], onDelete: Restrict)
+  executionNode   ExecutionNode       @relation(fields: [executionNodeId], references: [id], onDelete: Restrict)
+  agent           Agent               @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  model           AiModel             @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  progress        ExecutionProgress[]
+  testResults     TestResult[]
+  deployments     Deployment[]
+
+  @@index([status, requestedAt])
+  @@index([workItemId, requestedAt])
+  @@index([executionNodeId, status])
+}
+
+model ExecutionProgress {
+  id             String       @id @default(uuid()) @db.Uuid
+  executionJobId String       @db.Uuid
+  phase          String       @db.VarChar(80)
+  message        String
+  idempotencyKey String       @db.VarChar(128)
+  createdAt      DateTime     @default(now())
+  executionJob   ExecutionJob @relation(fields: [executionJobId], references: [id], onDelete: Cascade)
+
+  @@unique([executionJobId, idempotencyKey])
+  @@index([executionJobId, createdAt])
+}
+
+model TestResult {
+  id             String         @id @default(uuid()) @db.Uuid
+  executionJobId String         @db.Uuid
+  type           TestType
+  result         EvidenceResult
+  testCount      Int?
+  failedTests    Json?
+  durationMs     Int?
+  artifactUrl    String?
+  idempotencyKey String         @db.VarChar(128)
+  createdAt      DateTime       @default(now())
+  executionJob   ExecutionJob   @relation(fields: [executionJobId], references: [id], onDelete: Cascade)
+
+  @@unique([executionJobId, idempotencyKey])
+  @@index([executionJobId, type, createdAt])
+}
+
+model Deployment {
+  id             String                @id @default(uuid()) @db.Uuid
+  projectId      String                @db.Uuid
+  workItemId     String                @db.Uuid
+  executionJobId String                @db.Uuid
+  environment    DeploymentEnvironment
+  version        String?               @db.VarChar(255)
+  commitHash     String?               @db.VarChar(128)
+  startedAt      DateTime              @default(now())
+  completedAt    DateTime?
+  status         DeploymentStatus
+  url            String?
+  failureReason  String?
+  idempotencyKey String                @db.VarChar(128)
+  project        Project               @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  workItem       WorkItem              @relation(fields: [workItemId], references: [id], onDelete: Restrict)
+  executionJob   ExecutionJob          @relation(fields: [executionJobId], references: [id], onDelete: Restrict)
+
+  @@unique([executionJobId, idempotencyKey])
+  @@index([projectId, startedAt])
+  @@index([workItemId, startedAt])
+}

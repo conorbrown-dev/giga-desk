@@ -1,0 +1,58 @@
+{
+  "realm": "giga-desk",
+  "enabled": true,
+  "displayName": "Giga Desk",
+  "roles": {
+    "realm": [
+      { "name": "projects:read" },
+      { "name": "projects:create" },
+      { "name": "work-items:create" },
+      { "name": "work-items:update" },
+      { "name": "work-items:read" },
+      { "name": "executions:read" },
+      { "name": "executions:create" },
+      { "name": "agent:jobs" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "giga-desk-web",
+      "name": "Giga Desk web",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://127.0.0.1:5173/*", "http://127.0.0.1:4391/*"],
+      "webOrigins": ["http://127.0.0.1:5173", "http://127.0.0.1:4391"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "protocolMappers": [
+        {
+          "name": "giga-desk-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "giga-desk-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "demo",
+      "enabled": true,
+      "email": "demo@giga-desk.local",
+      "emailVerified": true,
+      "firstName": "Giga",
+      "lastName": "Desk Demo",
+      "credentials": [{ "type": "password", "value": "giga-desk-demo", "temporary": false }],
+      "realmRoles": [
+        "projects:read", "projects:create", "work-items:create", "work-items:update",
+        "work-items:read", "executions:read", "executions:create"
+      ]
+    }
+  ]
+}

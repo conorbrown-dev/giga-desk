@@ -1,0 +1,15 @@
+:{$PORT:8080} {
+  handle /healthz {
+    respond "healthy" 200
+  }
+
+  handle /api/* {
+    reverse_proxy {$API_UPSTREAM}
+  }
+
+  handle {
+    root * /srv
+    try_files {path} /index.html
+    file_server
+  }
+}

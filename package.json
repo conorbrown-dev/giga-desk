@@ -1,0 +1,31 @@
+{
+  "name": "giga-desk",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "overrides": {
+    "deepmerge-ts": "$deepmerge-ts",
+    "mysql2": "3.22.0"
+  },
+  "scripts": {
+    "build": "npm run build -ws",
+    "typecheck": "npm run typecheck -ws",
+    "lint": "npm run lint -ws",
+    "test": "npm run test -ws",
+    "test:integration": "npm run test:integration -w @giga-desk/api && npm run test:integration -w @giga-desk/agent-simulator",
+    "test:e2e": "npm run test:e2e -w @giga-desk/web",
+    "verify:demo": "node scripts/verify-demo.mjs",
+    "demo": "docker compose up -d postgres keycloak-postgres keycloak && npm run build && node scripts/demo.mjs",
+    "agent:simulate": "npm run start -w @giga-desk/agent-simulator"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "deepmerge-ts": "^8.0.0",
+    "eslint": "^10.9.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.11.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.69.0"
+  }
+}

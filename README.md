@@ -34,3 +34,26 @@ progress.md
 - Unit and integration tests for every backend product-code change.
 - Unit/component and E2E tests for every frontend product-code change.
 - Update `progress.md` for every change and reconcile it with the codebase before starting.
+
+## Local showcase
+
+With Docker running, launch the database, API, and web demo with:
+
+```bash
+npm run demo
+```
+
+Open `http://127.0.0.1:5173` and sign in with the local-only account `demo` / `giga-desk-demo`. The launcher starts an isolated Keycloak realm and database, so the browser uses authorization code flow with PKCE and the API verifies a real Keycloak access token. These development credentials must not be used in production.
+
+## Polling agent simulator
+
+The development-only simulator consumes the machine API without importing API implementation code. Register an execution node, queue work for it, and provide that node's scoped short-lived token:
+
+```bash
+npm run build
+GIGA_DESK_AGENT_NODE_ID=<node-uuid> \
+GIGA_DESK_AGENT_TOKEN=<machine-token> \
+npm run agent:simulate
+```
+
+It polls `http://127.0.0.1:3000` every five seconds, claims one queued job at a time, retrieves its Work Package, and reports simulated progress, passing tests, a successful staging deployment, E2E evidence, and completion. Set `GIGA_DESK_AGENT_API_URL`, `GIGA_DESK_AGENT_POLL_INTERVAL_MS`, or `GIGA_DESK_AGENT_ONCE=true` to override those defaults. Do not use the simulator against production because its evidence is synthetic.
