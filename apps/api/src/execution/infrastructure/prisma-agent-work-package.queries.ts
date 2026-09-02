@@ -21,7 +21,7 @@ export class PrismaAgentWorkPackageQueries extends AgentWorkPackageQueries {
         in: ['Assigned', 'Starting', 'Running', 'WaitingForInput', 'Blocked', 'Testing', 'Reviewing', 'Deploying', 'E2ETesting'],
       } },
       select: {
-        id: true,
+        id: true, protectedActionsApproved: true,
         executionNode: { select: { id: true, name: true } },
         agent: { select: { id: true, name: true, agentType: true, version: true } },
         model: { select: { id: true, displayName: true, provider: true, modelIdentifier: true } },
@@ -38,6 +38,7 @@ export class PrismaAgentWorkPackageQueries extends AgentWorkPackageQueries {
     if (!job) throw new WorkPackageNotFoundError('Claimed execution job not found for this node');
     return {
       executionJobId: job.id,
+      authorization: { protectedActionsApproved: job.protectedActionsApproved },
       project: job.workItem.project,
       workItem: {
         id: job.workItem.id, type: job.workItem.type, title: job.workItem.title,

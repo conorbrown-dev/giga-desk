@@ -256,6 +256,7 @@ model ExecutionJob {
   result          Json?
   failureReason   String?
   retryCount      Int                 @default(0)
+  protectedActionsApproved Boolean    @default(false)
   branchName      String?             @db.VarChar(255)
   pullRequestUrl  String?
   commitHash      String?             @db.VarChar(128)

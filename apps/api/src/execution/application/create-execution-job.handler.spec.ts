@@ -22,9 +22,10 @@ describe('CreateExecutionJobHandler', () => {
   it('validates and queues the selected node, agent, and model', async () => {
     const repository = new RecordingExecutionJobRepository();
     const result = await new CreateExecutionJobHandler(repository).execute(new CreateExecutionJobCommand(
-      'work-item-1', 'node-1', 'agent-1', 'model-1', 'user-123',
+      'work-item-1', 'node-1', 'agent-1', 'model-1', true, 'user-123',
     ));
-    expect(result).toMatchObject({ workItemId: 'work-item-1', executionNodeId: 'node-1', status: 'Queued' });
+    expect(result).toMatchObject({ workItemId: 'work-item-1', executionNodeId: 'node-1', status: 'Queued',
+      protectedActionsApproved: true });
     expect(repository.created).toEqual(result);
   });
 
@@ -32,7 +33,7 @@ describe('CreateExecutionJobHandler', () => {
     const repository = new RecordingExecutionJobRepository();
     selection.node.supportedModelProviders = [];
     await expect(new CreateExecutionJobHandler(repository).execute(new CreateExecutionJobCommand(
-      'work-item-1', 'node-1', 'agent-1', 'model-1', 'user-123',
+      'work-item-1', 'node-1', 'agent-1', 'model-1', false, 'user-123',
     ))).rejects.toThrow('incompatible');
     selection.node.supportedModelProviders = ['Local'];
   });

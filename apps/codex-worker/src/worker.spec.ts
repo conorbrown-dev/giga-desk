@@ -5,6 +5,7 @@ import { CodexWorker, type WorkerApi, type WorkExecutor } from './worker.js';
 
 const work: WorkPackage = {
   executionJobId: 'job-1',
+  authorization: { protectedActionsApproved: false },
   project: { id: 'project-1', key: 'GD', name: 'Giga Desk', description: 'Plan', businessGoal: 'Ship',
     repositoryUrl: 'https://github.com/conorbrown-dev/giga-desk.git', defaultBranch: 'main' },
   workItem: { id: 'work-1', type: 'Feature', title: 'Execute work', description: 'Do it', technicalNotes: null,
@@ -70,5 +71,33 @@ describe('CodexWorker', () => {
     await expect(worker.runNext()).rejects.toThrow('not approved');
     expect(actions).toEqual(['claim', 'fail']);
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  it('requires explicit approval before a protected production task can execute', async () => {
+    const { api, actions } = fakeApi([{ id: 'job-1', status: 'Queued' }]);
+    const sensitiveWork: WorkPackage = { ...work, workItem: {
+      ...work.workItem, description: 'Apply a Prisma migration to the production database',
+    } };
+    api.workPackage = vi.fn().mockResolvedValue(sensitiveWork);
+    const execute = vi.fn<WorkExecutor['execute']>();
+    const worker = new CodexWorker(api, { execute }, 'node-1', work.project.repositoryUrl ?? '', '/repo');
+
+    await expect(worker.runNext()).rejects.toThrow('explicit approval');
+    expect(actions).toEqual(['claim', 'fail']);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it('executes a reviewed protected task when its approval is persisted', async () => {
+    const { api, actions } = fakeApi([{ id: 'job-1', status: 'Queued' }]);
+    const sensitiveWork: WorkPackage = { ...work, authorization: { protectedActionsApproved: true }, workItem: {
+      ...work.workItem, description: 'Apply a Prisma migration to the production database',
+    } };
+    api.workPackage = vi.fn().mockResolvedValue(sensitiveWork);
+    const execute = vi.fn<WorkExecutor['execute']>().mockResolvedValue(result);
+    const worker = new CodexWorker(api, { execute }, 'node-1', work.project.repositoryUrl ?? '', '/repo');
+
+    await expect(worker.runNext()).resolves.toBe('job-1');
+    expect(actions.at(-1)).toBe('complete');
+    expect(execute).toHaveBeenCalledWith(sensitiveWork, '/repo');
   });
 });

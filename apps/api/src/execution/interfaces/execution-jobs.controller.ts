@@ -28,7 +28,8 @@ export class ExecutionJobsController {
     if (!request.user) throw new Error('Authenticated principal was not attached');
     try {
       return await this.commands.execute(new CreateExecutionJobCommand(
-        workItemId, input.executionNodeId, input.agentId, input.modelId, request.user.subject,
+        workItemId, input.executionNodeId, input.agentId, input.modelId,
+        input.protectedActionsApproved, request.user.subject,
       ));
     } catch (error) {
       if (error instanceof ExecutionSelectionNotFoundError) throw new NotFoundException(error.message);

@@ -100,21 +100,25 @@ describe('execution target registry API', () => {
     const heartbeatingNode = await database.executionNode.findUniqueOrThrow({ where: { id: nodeId } });
     expect(heartbeatingNode.lastHeartbeatAt?.toISOString()).toBe(heartbeatBody['lastHeartbeatAt']);
 
-    const executionInput = { executionNodeId: nodeId, agentId, modelId };
+    const executionInput = { executionNodeId: nodeId, agentId, modelId, protectedActionsApproved: true };
+    await request(server).post(`/api/work-items/${workItemId}/executions`)
+      .set('Authorization', 'Bearer valid-token').send({ executionNodeId: nodeId, agentId, modelId }).expect(400);
     await request(server).post(`/api/work-items/${workItemId}/executions`)
       .set('Authorization', 'Bearer read-only-token').send(executionInput).expect(403);
     const jobResponse = await request(server).post(`/api/work-items/${workItemId}/executions`)
       .set('Authorization', 'Bearer valid-token').send(executionInput).expect(201);
     const jobBody: unknown = jobResponse.body;
     if (!isRecord(jobBody) || typeof jobBody['id'] !== 'string') throw new Error('Expected a queued job');
-    expect(jobBody).toMatchObject({ workItemId, executionNodeId: nodeId, agentId, modelId, status: 'Queued' });
+    expect(jobBody).toMatchObject({ workItemId, executionNodeId: nodeId, agentId, modelId, status: 'Queued',
+      protectedActionsApproved: true });
     const [job, workItem, node, activities] = await Promise.all([
       database.executionJob.findUniqueOrThrow({ where: { id: jobBody['id'] } }),
       database.workItem.findUniqueOrThrow({ where: { id: workItemId } }),
       database.executionNode.findUniqueOrThrow({ where: { id: nodeId } }),
       database.activity.findMany({ where: { workItemId } }),
     ]);
-    expect([job.status, workItem.status, node.currentJobCount]).toEqual(['Queued', 'Ready', 1]);
+    expect([job.status, job.protectedActionsApproved, workItem.status, node.currentJobCount])
+      .toEqual(['Queued', true, 'Ready', 1]);
     expect(activities.map((activity) => activity.eventType)).toEqual(expect.arrayContaining([
       'ExecutionRequested', 'WorkItemStatusChanged',
     ]));
@@ -137,6 +141,7 @@ describe('execution target registry API', () => {
       || !isRecord(workPackage['expectations'])) throw new Error('Expected a structured Work Package');
     expect(workPackage['project']['key']).toBe(`ST${suffix.toUpperCase()}`);
     expect(workPackage['workItem']['title']).toBe('Queue execution');
+    expect(workPackage['authorization']).toEqual({ protectedActionsApproved: true });
     expect(workPackage['expectations']).toEqual({
       tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true,
     });
@@ -236,7 +241,8 @@ describe('execution target registry API', () => {
     expect(records(completedHistory['deployments']).some((deployment) => deployment['status'] === 'Succeeded')).toBe(true);
 
     const failureJob = await request(server).post(`/api/work-items/${failureWorkItemId}/executions`)
-      .set('Authorization', 'Bearer valid-token').send({ executionNodeId: nodeId, agentId, modelId }).expect(201);
+      .set('Authorization', 'Bearer valid-token').send({ executionNodeId: nodeId, agentId, modelId,
+        protectedActionsApproved: false }).expect(201);
     const failureJobBody: unknown = failureJob.body;
     if (!isRecord(failureJobBody) || typeof failureJobBody['id'] !== 'string') throw new Error('Expected failure job');
     const failureJobId = failureJobBody['id'];

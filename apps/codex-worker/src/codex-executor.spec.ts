@@ -5,6 +5,7 @@ import { CodexExecutor, type CommandRunner } from './codex-executor.js';
 
 const workPackage: WorkPackage = {
   executionJobId: 'job-1',
+  authorization: { protectedActionsApproved: false },
   project: { id: 'project-1', key: 'GD', name: 'Giga Desk', description: 'Plan work', businessGoal: 'Ship safely',
     repositoryUrl: 'https://github.com/conorbrown-dev/giga-desk.git', defaultBranch: 'main' },
   workItem: { id: 'work-1', type: 'Feature', title: 'Run Codex', description: 'Execute real work',

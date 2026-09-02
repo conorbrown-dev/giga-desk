@@ -14,7 +14,9 @@ export interface ExecutionTargets {
   models: readonly { id: string; displayName: string; provider: string; location: string }[];
 }
 
-export interface ExecutionSelection { executionNodeId: string; agentId: string; modelId: string }
+export interface ExecutionSelection {
+  executionNodeId: string; agentId: string; modelId: string; protectedActionsApproved: boolean;
+}
 
 export async function fetchExecutionHistory(workItemId: string, signal: AbortSignal): Promise<readonly ExecutionHistory[]> {
   const token = await getAuthToken();

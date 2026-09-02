@@ -4,6 +4,7 @@ export interface DiscoverableJob { id: string; status: 'Queued' }
 
 export interface WorkPackage {
   executionJobId: string;
+  authorization: { protectedActionsApproved: boolean };
   project: { id: string; key: string; name: string; description: string; businessGoal: string;
     repositoryUrl: string | null; defaultBranch: string | null };
   workItem: { id: string; type: string; title: string; description: string; technicalNotes: string | null;

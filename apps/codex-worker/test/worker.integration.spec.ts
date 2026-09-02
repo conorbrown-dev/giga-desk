@@ -6,6 +6,7 @@ import { CodexWorker, type WorkExecutor } from '../src/worker.js';
 
 const work: WorkPackage = {
   executionJobId: 'job-1',
+  authorization: { protectedActionsApproved: false },
   project: { id: 'project-1', key: 'GD', name: 'Giga Desk', description: 'Plan', businessGoal: 'Ship',
     repositoryUrl: 'https://github.com/conorbrown-dev/giga-desk.git', defaultBranch: 'main' },
   workItem: { id: 'work-1', type: 'Feature', title: 'Execute', description: 'Do it', technicalNotes: null,

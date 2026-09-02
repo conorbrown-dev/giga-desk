@@ -58,7 +58,8 @@ test('validates selections and handles Start Work success and conflict', async (
   } }));
   await page.route('**/api/work-items/*/executions', async (route) => {
     if (route.request().method() === 'POST') {
-      expect(route.request().postDataJSON()).toEqual({ executionNodeId: 'node-1', agentId: 'agent-1', modelId: 'model-1' });
+      expect(route.request().postDataJSON()).toEqual({ executionNodeId: 'node-1', agentId: 'agent-1', modelId: 'model-1',
+        protectedActionsApproved: true });
       submissions += 1;
       await route.fulfill({ status: submissions === 1 ? 201 : 409, json: {} });
     } else await route.fulfill({ json: [] });
@@ -69,6 +70,7 @@ test('validates selections and handles Start Work success and conflict', async (
   await page.getByLabel(/Execution node/).selectOption('node-1');
   await page.getByLabel(/Agent/).selectOption('agent-1');
   await page.getByLabel(/Model/).selectOption('model-1');
+  await page.getByLabel('Approve protected production actions').check();
   await page.getByRole('button', { name: 'Start work' }).click();
   await expect(page.getByRole('status')).toHaveText('Execution queued.');
   await page.getByRole('button', { name: 'Start work' }).click();

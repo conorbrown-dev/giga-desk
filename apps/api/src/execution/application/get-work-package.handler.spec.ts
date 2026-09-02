@@ -5,6 +5,7 @@ import { GetWorkPackageQuery, type WorkPackage } from './get-work-package.query.
 
 const workPackage: WorkPackage = {
   executionJobId: 'job-1',
+  authorization: { protectedActionsApproved: false },
   project: { id: 'project-1', key: 'GD', name: 'Giga Desk', description: '', businessGoal: 'Ship',
     repositoryUrl: null, defaultBranch: null },
   workItem: { id: 'item-1', type: 'Feature', title: 'Board', description: '', technicalNotes: null,

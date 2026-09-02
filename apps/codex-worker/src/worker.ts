@@ -12,6 +12,20 @@ export interface WorkExecutor { execute(work: WorkPackage, repositoryPath: strin
 
 const evidenceKey = (jobId: string, stage: string): string => `codex-worker:${jobId}:${stage}`;
 
+const protectedActionPatterns = [
+  /\b(production|prod)\b.{0,50}\b(database|schema|migration|backfill|data)\b/i,
+  /\b(database|schema|migration|backfill)\b.{0,50}\b(production|prod)\b/i,
+  /\b(prisma\s+migrate|migrate\s+deploy|drop\s+(table|database)|truncate|alter\s+table|delete\s+from)\b/i,
+  /\b(secret|credential|keycloak|auth0|dns|cloudflare|billing|paid resource|repository visibility)\b/i,
+];
+
+export const requiresProtectedActionApproval = (work: WorkPackage): boolean => {
+  const text = [work.workItem.title, work.workItem.description, work.workItem.technicalNotes,
+    work.workItem.implementationInstructions, ...work.workItem.acceptanceCriteria.map(({ text }) => text)]
+    .filter((value): value is string => value !== null).join('\n');
+  return protectedActionPatterns.some((pattern) => pattern.test(text));
+};
+
 const validateEvidence = (work: WorkPackage, result: CodexExecutionResult): void => {
   const expectedTests = new Set(work.expectations.tests);
   const actualTests = new Set(result.tests.map(({ type }) => type));
@@ -47,6 +61,9 @@ export class CodexWorker {
       const work = await this.api.workPackage(job.id);
       if (work.project.repositoryUrl !== this.repositoryUrl) {
         throw new Error('Work Package repository is not approved on this worker');
+      }
+      if (requiresProtectedActionApproval(work) && !work.authorization.protectedActionsApproved) {
+        throw new Error('Protected production actions require explicit approval before execution');
       }
       await this.api.post(job.id, 'start');
       await this.api.post(job.id, 'progress', {

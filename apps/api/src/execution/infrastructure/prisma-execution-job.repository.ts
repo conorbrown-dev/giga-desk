@@ -72,7 +72,8 @@ export class PrismaExecutionJobRepository extends ExecutionJobRepository {
           projectId: selection.projectId,
           workItemId: job.workItemId, actorId: requestedBy, eventType: 'ExecutionRequested',
           metadata: { executionJobId: job.id, executionNodeId: job.executionNodeId,
-            agentId: job.agentId, modelId: job.modelId },
+            agentId: job.agentId, modelId: job.modelId,
+            protectedActionsApproved: job.protectedActionsApproved },
         } });
         if (selection.workItemStatus === 'Backlog') await transaction.activity.create({ data: {
           projectId: selection.projectId, workItemId: job.workItemId, actorId: requestedBy,

@@ -17,6 +17,7 @@ export class CreateExecutionJobHandler implements ICommandHandler<CreateExecutio
     const job: QueuedExecutionJob = {
       id: randomUUID(), workItemId: command.workItemId, executionNodeId: command.executionNodeId,
       agentId: command.agentId, modelId: command.modelId, status: 'Queued',
+      protectedActionsApproved: command.protectedActionsApproved,
     };
     await this.jobs.create(job, selection, command.requestedBy);
     return job;
