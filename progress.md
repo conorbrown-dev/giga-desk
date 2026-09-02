@@ -23,6 +23,7 @@
 - Worker JWTs can carry an execution-node identity; that node alone can discover its oldest queued jobs and atomically claim one, with repeat claims rejected and attributed activity appended.
 - A machine-authenticated execution node can heartbeat only its own enabled registry record; the API records liveness and derives Online or Busy status from reserved capacity.
 - An idempotent provisioning command registers MIRIAM, the installed Codex CLI version, and a provider-neutral Codex default-model selection without storing credentials; superseded Codex agent versions are disabled.
+- Production now contains the offline MIRIAM/Codex CLI 0.152.0 target; it will remain unavailable for job selection until node-scoped Keycloak authentication and real heartbeats are active.
 - A node can retrieve a structured Work Package only for its claimed active job, including project/repository context, WorkItem criteria and relationships, selected runtime/model, and explicit test/deployment expectations.
 - PostgreSQL now stores idempotent execution progress, typed Unit/Integration/E2E results, and deployments linked to Project, WorkItem, and ExecutionJob, with evidence indexes and numeric checks.
 - A claimed node can atomically start execution, moving its job to Running and WorkItem to InProgress, then publish idempotent progress events while the job remains active.
@@ -123,6 +124,8 @@
 - `npm run build` — passed for the web, API, and agent-simulator production builds after execution-node heartbeat.
 - API `typecheck`, `lint`, and 34 unit tests across 19 source files passed for Codex target provisioning; all nine API integration files/ten tests passed, including idempotent metadata refresh and compatible node/agent/model persistence.
 - `npm run build` passed all three workspaces, and the built `target:codex` command successfully provisioned MIRIAM/Codex CLI 0.152.0 in the local development database with non-secret node, agent, and model IDs.
+- GitHub CI runs `33628752371` (heartbeat) and `33629261834` (Codex provisioning) passed every gate.
+- Railway production deployments for commit `9f067af` succeeded for API, web, and Keycloak; both PostgreSQL services remained healthy, the proxied `/api/health` returned `{"status":"ok"}`, and two production provisioner runs returned the same node (`47af9a18-dada-4bf8-ad8a-95a6fce737af`), agent, and model IDs.
 - `npm run test:integration` — passed all eight API integration files/nine tests; the real JOSE adapter maps a known Keycloak realm role and rejects non-application roles.
 - `npm run test:e2e` — passed all four browser flows through the real local Keycloak login, including protected routing, Start Work, and create-Project → create-Feature.
 - `npm run build` — passed for both applications after Keycloak integration.
@@ -155,6 +158,7 @@
 - Added an idempotent API-side command that provisions a Codex-capable execution node, the installed Codex CLI version, and its remote default-model selection as separate registry records.
 - Kept the node Offline until a real heartbeat, retained stable registry IDs on metadata refresh, and disabled superseded Codex CLI agent versions.
 - Added input-validation unit coverage, real PostgreSQL adapter coverage, and documented the no-secret operational command.
+- Deployed the command through Railway and idempotently provisioned the offline production MIRIAM/Codex CLI 0.152.0 target; no credential or new paid resource was created.
 
 ### Execution-node heartbeat
 
