@@ -41,6 +41,9 @@ import { PrismaExecutionNodeHeartbeatRepository } from './infrastructure/prisma-
 import { OpenCodeTargetProvisioner } from './application/opencode-target-provisioner.js';
 import { RegisterOpenCodeTargetHandler } from './application/register-opencode-target.command.js';
 import { PrismaOpenCodeTargetProvisioner } from './infrastructure/prisma-opencode-target.provisioner.js';
+import { CodexTargetProvisioner } from './application/codex-target-provisioner.js';
+import { RegisterCodexTargetHandler } from './application/register-codex-target.command.js';
+import { PrismaCodexTargetProvisioner } from './infrastructure/prisma-codex-target.provisioner.js';
 
 @Module({
   imports: [DatabaseModule],
@@ -60,6 +63,7 @@ import { PrismaOpenCodeTargetProvisioner } from './infrastructure/prisma-opencod
     ListWorkItemExecutionsHandler,
     HeartbeatExecutionNodeHandler,
     RegisterOpenCodeTargetHandler,
+    RegisterCodexTargetHandler,
     { provide: ExecutionTargetQueries, useClass: PrismaExecutionTargetQueries },
     { provide: ExecutionJobRepository, useClass: PrismaExecutionJobRepository },
     { provide: AgentJobRepository, useClass: PrismaAgentJobRepository },
@@ -72,6 +76,7 @@ import { PrismaOpenCodeTargetProvisioner } from './infrastructure/prisma-opencod
     { provide: WorkItemExecutionQueries, useClass: PrismaWorkItemExecutionQueries },
     { provide: ExecutionNodeHeartbeatRepository, useClass: PrismaExecutionNodeHeartbeatRepository },
     { provide: OpenCodeTargetProvisioner, useClass: PrismaOpenCodeTargetProvisioner },
+    { provide: CodexTargetProvisioner, useClass: PrismaCodexTargetProvisioner },
   ],
 })
 export class ExecutionModule {}

@@ -1,4 +1,5 @@
 export interface CodexTargetInput {
+  executionNodeId?: string;
   nodeName: string;
   hostname: string;
   operatingSystem: string;
@@ -21,7 +22,6 @@ export const validateCodexTargetInput = (input: CodexTargetInput): void => {
     ['nodeName', input.nodeName], ['hostname', input.hostname], ['operatingSystem', input.operatingSystem],
     ['architecture', input.architecture], ['agentVersion', input.agentVersion],
   ] as const;
-  for (const [name, value] of required) {
-    if (!value.trim()) throw new Error(`${name} is required`);
-  }
+  for (const [name, value] of required) if (!value.trim()) throw new Error(`${name} is required`);
+  if (input.executionNodeId !== undefined && !input.executionNodeId.trim()) throw new Error('executionNodeId is required');
 };

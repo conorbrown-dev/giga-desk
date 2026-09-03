@@ -51,11 +51,14 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Connect a work agent' })).toBeInTheDocument();
     expect(screen.getByText('Claude').closest('article')).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByRole('button', { name: /OpenCode/ })).not.toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getAllByText('Requires worker support')).toHaveLength(1);
+    expect(screen.queryByText('Requires worker support')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.sh');
+    expect(screen.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.ps1');
+    expect(screen.getByText(/registers only its node-scoped target through the API/)).toBeInTheDocument();
     expect(screen.getByText(/install the included systemd user service/i)).toBeInTheDocument();
     expect(screen.getByText(/systemctl --user enable --now giga-desk-codex-worker.service/)).toBeInTheDocument();
     expect(screen.getAllByRole('checkbox')[3]).toBeEnabled();
-    expect(screen.getAllByRole('checkbox')[4]).toBeDisabled();
+    expect(screen.getAllByRole('checkbox')[4]).toBeEnabled();
     const firstStep = screen.getAllByRole('checkbox')[0];
     if (!firstStep) throw new Error('Expected a setup checkbox');
     fireEvent.click(firstStep);

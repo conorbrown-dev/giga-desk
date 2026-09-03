@@ -7,6 +7,10 @@ export interface OpenCodeRegistration {
   agentVersion: string; modelIdentifier: string;
 }
 
+export interface CodexRegistration {
+  hostname: string; operatingSystem: string; architecture: string; agentVersion: string;
+}
+
 export interface WorkPackage {
   executionJobId: string;
   authorization: { protectedActionsApproved: boolean };
@@ -64,6 +68,10 @@ export class AgentApi {
 
   registerOpenCode(nodeId: string, registration: OpenCodeRegistration): Promise<unknown> {
     return this.send(`/api/agent/nodes/${nodeId}/opencode-registration`, 'POST', registration);
+  }
+
+  registerCodex(nodeId: string, registration: CodexRegistration): Promise<unknown> {
+    return this.send(`/api/agent/nodes/${nodeId}/codex-registration`, 'POST', registration);
   }
 
   workPackage(jobId: string): Promise<WorkPackage> {

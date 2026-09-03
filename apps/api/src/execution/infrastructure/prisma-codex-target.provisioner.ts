@@ -15,15 +15,15 @@ export class PrismaCodexTargetProvisioner extends CodexTargetProvisioner {
     validateCodexTargetInput(input);
     return this.database.$transaction(async (transaction) => {
       const node = await transaction.executionNode.upsert({
-        where: { name: input.nodeName },
+        where: input.executionNodeId ? { id: input.executionNodeId } : { name: input.nodeName },
         create: {
-          name: input.nodeName, description: 'Codex CLI execution host', hostname: input.hostname,
+          ...(input.executionNodeId ? { id: input.executionNodeId } : {}), name: input.nodeName, description: 'Codex CLI execution host', hostname: input.hostname,
           operatingSystem: input.operatingSystem, architecture: input.architecture, status: 'Offline',
           capabilities: { agentTypes: ['CodexCli'], modelProviders: ['OpenAI'] },
           maximumConcurrentJobs: 1, tags: ['codex'],
         },
         update: {
-          description: 'Codex CLI execution host', hostname: input.hostname,
+          name: input.nodeName, description: 'Codex CLI execution host', hostname: input.hostname,
           operatingSystem: input.operatingSystem, architecture: input.architecture, enabled: true,
           capabilities: { agentTypes: ['CodexCli'], modelProviders: ['OpenAI'] }, tags: ['codex'],
         },

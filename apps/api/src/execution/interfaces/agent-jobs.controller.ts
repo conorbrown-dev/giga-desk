@@ -30,10 +30,28 @@ import { ExecutionNodeHeartbeatRejectedError } from '../application/execution-no
 import { RegisterOpenCodeTargetCommand } from '../application/register-opencode-target.command.js';
 import type { ProvisionedOpenCodeTarget } from '../application/opencode-target-provisioner.js';
 import { RegisterOpenCodeTargetDto } from './register-opencode-target.dto.js';
+import { RegisterCodexTargetCommand } from '../application/register-codex-target.command.js';
+import type { ProvisionedCodexTarget } from '../application/codex-target-provisioner.js';
+import { RegisterCodexTargetDto } from './register-codex-target.dto.js';
 
 @Controller('agent')
 export class AgentJobsController {
   constructor(private readonly commands: CommandBus, private readonly queries: QueryBus) {}
+
+  @Post('nodes/:nodeId/codex-registration')
+  @RequirePermissions('agent:jobs')
+  registerCodex(
+    @Param('nodeId', ParseUUIDPipe) nodeId: string, @Body() input: RegisterCodexTargetDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<ProvisionedCodexTarget> {
+    try {
+      assertWorkerNode(nodeId, request.user?.executionNodeId ?? null);
+      return this.commands.execute(new RegisterCodexTargetCommand(nodeId, input));
+    } catch (error) {
+      if (error instanceof WorkerNodeMismatchError) throw new ForbiddenException(error.message);
+      throw error;
+    }
+  }
 
   @Post('nodes/:nodeId/opencode-registration')
   @RequirePermissions('agent:jobs')

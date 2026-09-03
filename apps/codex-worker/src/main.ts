@@ -4,6 +4,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { CodexExecutor } from './codex-executor.js';
 import { OpenCodeExecutor } from './opencode-executor.js';
 import { resolveOpenCodeRegistration } from './opencode-registration.js';
+import { resolveCodexRegistration } from './codex-registration.js';
 import { CodexWorker, type ApprovedRepositories } from './worker.js';
 
 const required = (name: string): string => {
@@ -43,6 +44,7 @@ const provider = new ClientCredentialsTokenProvider(
 const api = new AgentApi(required('GIGA_DESK_AGENT_API_URL'), provider.getToken.bind(provider));
 const agentType = process.env['GIGA_DESK_WORKER_AGENT_TYPE']?.trim() ?? 'CodexCli';
 if (agentType === 'OpenCode') await api.registerOpenCode(nodeId, resolveOpenCodeRegistration());
+if (agentType === 'CodexCli') await api.registerCodex(nodeId, resolveCodexRegistration());
 const executor = agentType === 'OpenCode'
   ? new OpenCodeExecutor() : new CodexExecutor();
 const worker = new CodexWorker(api, executor, nodeId, approvedRepositories());

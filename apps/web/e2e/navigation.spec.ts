@@ -67,13 +67,20 @@ test('walks through Codex agent setup in the authenticated app', async ({ page }
   await expect(page.getByRole('heading', { name: 'Connect a work agent' })).toBeVisible();
   await expect(page.getByText('Claude').locator('..')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.getByText(/install the included systemd user service/i)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.sh');
+  await expect(page.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.ps1');
+  await expect(page.getByText(/registers only its node-scoped target through the API/)).toBeVisible();
   await expect(page.getByText(/systemctl --user enable --now giga-desk-codex-worker.service/)).toBeVisible();
   await expect(page.getByLabel('Step completed').nth(3)).toBeEnabled();
-  await expect(page.getByLabel('Step completed').last()).toBeDisabled();
+  await expect(page.getByLabel('Step completed').last()).toBeEnabled();
   await page.getByLabel('Step completed').first().check();
   await expect(page.getByText('1 of 5 complete')).toBeVisible();
   await page.reload();
   await expect(page.getByLabel('Step completed').first()).toBeChecked();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: 'test-results/visual-review/codex-connect-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/codex-connect-mobile.png', fullPage: true });
 });
 
 test('shows only OpenCode setup when OpenCode is selected', async ({ page }) => {

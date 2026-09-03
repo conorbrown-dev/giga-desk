@@ -24,8 +24,7 @@ const steps: readonly SetupStep[] = [
   },
   {
     title: 'Register the execution target',
-    detail: 'A Giga Desk administrator runs this on the API host. With no arguments, it detects the hostname, operating system, architecture, and installed Codex CLI version, then stores machine metadata and registry IDs without storing credentials. Supply all five original fields only when you need to override the detected values.',
-    command: 'npm run target:codex -w @giga-desk/api --',
+    detail: 'The authenticated worker detects the hostname, operating system, architecture, and installed Codex CLI version when it starts, then registers only its node-scoped target through the API. No database URL is needed.',
   },
   {
     title: 'Create the machine identity',
@@ -36,7 +35,6 @@ const steps: readonly SetupStep[] = [
     title: 'Start and verify the worker',
     detail: 'From the Giga Desk checkout, install the included systemd user service. It loads the agent.env and worker.env files from Step 4, runs the Codex worker, and restarts it if it exits. Configure GIGA_DESK_WORKER_REPOSITORIES with each project repository URL and its local checkout path; the worker will only edit those approved checkouts. Then enable and start the service, confirm the node changes to Online in Giga Desk, and assign a small test work item.',
     command: 'mkdir -p ~/.config/systemd/user\ncp ops/giga-desk-codex-worker.service ~/.config/systemd/user/\nsystemctl --user daemon-reload\nsystemctl --user enable --now giga-desk-codex-worker.service\nsystemctl --user status giga-desk-codex-worker.service\njournalctl --user -u giga-desk-codex-worker.service -f',
-    pending: true,
   },
 ];
 
@@ -112,7 +110,8 @@ export function AgentSetupGuide() {
         <label className="step-check"><input type="checkbox" checked={completed.includes(index)} disabled={step.pending}
           onChange={(event) => { setStep(index, event.target.checked); }} /> Step completed</label>
       </li>)}</ol></section> : <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
-      <p>Complete these steps on the machine that will run Codex. The final step stays locked until the real worker is installed.</p>
+      <p>Download the installer for the worker host. It detects Codex and prompts only for its node-scoped OIDC credentials and repository mappings. Registration happens through the authenticated API when the worker starts.</p>
+      <p><a className="button-link" href="/scripts/install-codex-worker.sh" download>Download Bash installer</a>{' '}<a className="button-link button-secondary" href="/scripts/install-codex-worker.ps1" download>Download PowerShell installer</a></p>
       <ol className="setup-steps">{steps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
         <p>{step.detail}</p>{step.command && <pre><code>{step.command}</code></pre>}

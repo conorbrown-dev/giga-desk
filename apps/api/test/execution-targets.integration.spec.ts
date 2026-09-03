@@ -12,6 +12,8 @@ import './test-environment.js';
 
 const suffix = randomUUID().slice(0, 8);
 const registeredNodeId = randomUUID();
+const registeredCodexNodeId = randomUUID();
+const registeredCodexVersion = `1.2.3-test-${suffix}`;
 const registeredAgentName = `OpenCode ${suffix}`;
 const registeredModel = `ollama/qwen-${suffix}`;
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
@@ -75,8 +77,10 @@ describe('execution target registry API', () => {
     await database.project.deleteMany({ where: { key: `FL${suffix.toUpperCase()}` } });
     await database.executionNode.deleteMany({ where: { name: `Registry Node ${suffix}` } });
     await database.executionNode.deleteMany({ where: { id: registeredNodeId } });
+    await database.executionNode.deleteMany({ where: { id: registeredCodexNodeId } });
     await database.agent.deleteMany({ where: { name: `Registry Agent ${suffix}` } });
     await database.agent.deleteMany({ where: { name: registeredAgentName } });
+    await database.agent.deleteMany({ where: { name: 'Codex CLI', version: registeredCodexVersion } });
     await database.aiModel.deleteMany({ where: { modelIdentifier: `registry-${suffix}` } });
     await database.aiModel.deleteMany({ where: { modelIdentifier: registeredModel } });
     await app.close();
@@ -106,6 +110,15 @@ describe('execution target registry API', () => {
     expect(records(body['agents']).some((agent) => agent['name'] === registeredAgentName && agent['agentType'] === 'OpenCode')).toBe(true);
     expect(records(body['models']).some((model) => model['modelIdentifier'] === `registry-${suffix}`)).toBe(true);
     expect(records(body['models']).some((model) => model['modelIdentifier'] === registeredModel)).toBe(true);
+
+    const codexRegistration = { hostname: 'codex.local', operatingSystem: 'linux', architecture: 'x64', agentVersion: registeredCodexVersion };
+    await request(server).post(`/api/agent/nodes/${registeredCodexNodeId}/codex-registration`)
+      .set('Authorization', 'Bearer worker-00000000-0000-4000-8000-000000000001').send(codexRegistration).expect(403);
+    await request(server).post(`/api/agent/nodes/${registeredCodexNodeId}/codex-registration`)
+      .set('Authorization', `Bearer worker-${registeredCodexNodeId}`).send(codexRegistration).expect(201);
+    const codexNode = await database.executionNode.findUniqueOrThrow({ where: { id: registeredCodexNodeId } });
+    expect(codexNode).toMatchObject({ name: 'codex.local', status: 'Offline',
+      capabilities: { agentTypes: ['CodexCli'], modelProviders: ['OpenAI'] } });
 
     await request(server).post(`/api/agent/nodes/${nodeId}/heartbeat`)
       .set('Authorization', 'Bearer worker-00000000-0000-4000-8000-000000000001').expect(403);
