@@ -212,7 +212,7 @@
 
 ## Next steps
 
-- Obtain explicit approval for the production database registration, push/deploy the self-registration change, restart the local MIRIAM worker, and verify the live registry and authenticated Start Work choices show MIRIAM/OpenCode/Qwen.
+- Verify one harmless real production Work Package through the newly visible MIRIAM/OpenCode target before unlocking the final tutorial step.
 - Design a future recursive Project JSON export contract for portable Project metadata, nested work items, acceptance criteria, dependencies, and deliberately selected related history.
 - Queue one harmless real production Work Package and verify live heartbeat, claim, lifecycle callbacks, and the browser flow; do not use the simulator against production.
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
@@ -225,7 +225,7 @@
 - Added a node-scoped `POST /api/agent/nodes/:nodeId/opencode-registration` boundary. A worker can create or refresh only the node ID signed into its token, along with its OpenCode agent and provider/model records, before its first heartbeat/poll.
 - Updated Bash and PowerShell installers to store the agent name and model choice. Removed the superseded standalone registration downloads, which required an impractical direct production database URL, and updated the in-app guide to describe authenticated registration.
 - Verification passed: Bash syntax, repository typecheck, lint, 59 unit/component tests, 13 integration tests, all five workspace builds, and six authenticated Playwright flows. The OpenCode guide was rendered and inspected at 1440x900 and 390x844. The first integration run failed only because the sandbox denied PostgreSQL/listener access; the permitted rerun passed. PowerShell syntax remains unverified because `pwsh` is unavailable on this host.
-- Conservatively counting the setup scripts as product code, the focused feature changes 194 added-plus-deleted product-code lines, within the 228-line push limit. No push, deployment, production registry mutation, or worker restart has been performed; those remain approval-gated.
+- Conservatively counting the setup scripts as product code, the focused feature changes 194 added-plus-deleted product-code lines, within the 228-line push limit. Commit `6f4acb8` was pushed with approval, CI run `33753948779` passed, Railway API/web/Keycloak deployed successfully, and the local MIRIAM worker was restarted. Live production readback now shows MIRIAM Online with OpenCode `1.18.26` and `ollama/qwen3-coder-next:q4_K_M`; no Work Package has been queued or claimed.
 
 ### Responsive admin dashboard visual system
 
