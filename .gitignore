@@ -7,6 +7,7 @@ build/
 coverage/
 playwright-report/
 test-results/
+apps/web/public/releases/
 *.tsbuildinfo
 
 # Environment and local overrides

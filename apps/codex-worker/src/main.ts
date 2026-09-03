@@ -22,7 +22,7 @@ const positiveInteger = (name: string, fallback: number): number => {
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
 const approvedRepositories = (): ApprovedRepositories => {
-  const raw = required('GIGA_DESK_WORKER_REPOSITORIES');
+  const raw = process.env['GIGA_DESK_WORKER_REPOSITORIES']?.trim() || '[]';
   let entries: unknown;
   try { entries = JSON.parse(raw); } catch { throw new Error('GIGA_DESK_WORKER_REPOSITORIES must be valid JSON'); }
   if (!Array.isArray(entries)) throw new Error('GIGA_DESK_WORKER_REPOSITORIES must be a JSON array');
@@ -32,7 +32,6 @@ const approvedRepositories = (): ApprovedRepositories => {
       || !entry['url'].trim() || !entry['path'].trim()) throw new Error('Each approved repository needs a URL and local path');
     repositories.set(entry['url'].trim(), entry['path'].trim());
   }
-  if (repositories.size === 0) throw new Error('At least one approved repository is required');
   return repositories;
 };
 
@@ -47,7 +46,8 @@ if (agentType === 'OpenCode') await api.registerOpenCode(nodeId, resolveOpenCode
 if (agentType === 'CodexCli') await api.registerCodex(nodeId, resolveCodexRegistration());
 const executor = agentType === 'OpenCode'
   ? new OpenCodeExecutor() : new CodexExecutor();
-const worker = new CodexWorker(api, executor, nodeId, approvedRepositories());
+const repositories = approvedRepositories();
+const worker = new CodexWorker(api, executor, nodeId, repositories);
 const pollInterval = positiveInteger('GIGA_DESK_AGENT_POLL_INTERVAL_MS', 5_000);
 const heartbeatInterval = positiveInteger('GIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS', 30_000);
 const stop = new AbortController();
@@ -63,8 +63,9 @@ const heartbeat = setInterval(() => {
 try {
   while (!stop.signal.aborted) {
     try {
-      const jobId = await worker.runNext();
-      process.stdout.write(jobId ? `Completed execution ${jobId}\n` : 'No queued jobs\n');
+      const jobId = repositories.size === 0 ? null : await worker.runNext();
+      process.stdout.write(jobId ? `Completed execution ${jobId}\n` : repositories.size === 0
+        ? 'No approved repositories configured; waiting for configuration\n' : 'No queued jobs\n');
       if (jobId) continue;
     } catch (error) {
       process.stderr.write(`Worker cycle failed: ${error instanceof Error ? error.message : 'unknown error'}\n`);

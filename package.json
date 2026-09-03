@@ -9,7 +9,7 @@
     "mysql2": "3.22.0"
   },
   "scripts": {
-    "build": "npm run build -ws",
+    "build": "npm run build -ws && node scripts/build-worker-release.mjs && npm run build -w @giga-desk/web",
     "typecheck": "npm run typecheck -ws",
     "lint": "npm run lint -ws",
     "test": "npm run test -ws",

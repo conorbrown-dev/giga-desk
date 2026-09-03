@@ -33,8 +33,7 @@ const steps: readonly SetupStep[] = [
   },
   {
     title: 'Start and verify the worker',
-    detail: 'From the Giga Desk checkout, install the included systemd user service. It loads the agent.env and worker.env files from Step 4, runs the Codex worker, and restarts it if it exits. Configure GIGA_DESK_WORKER_REPOSITORIES with each project repository URL and its local checkout path; the worker will only edit those approved checkouts. Then enable and start the service, confirm the node changes to Online in Giga Desk, and assign a small test work item.',
-    command: 'mkdir -p ~/.config/systemd/user\ncp ops/giga-desk-codex-worker.service ~/.config/systemd/user/\nsystemctl --user daemon-reload\nsystemctl --user enable --now giga-desk-codex-worker.service\nsystemctl --user status giga-desk-codex-worker.service\njournalctl --user -u giga-desk-codex-worker.service -f',
+    detail: 'Run the downloaded installer. It downloads a verified, versioned worker bundle from Giga Desk, installs the systemd user service, and registers the node. The worker can come Online before project checkouts exist; add GIGA_DESK_WORKER_REPOSITORIES after cloning an approved customer repository, then rerun the installer.',
   },
 ];
 
@@ -54,7 +53,7 @@ chmod 600 ~/.config/giga-desk/agent.env`,
   },
   {
     title: 'Configure the OpenCode worker',
-    detail: 'Choose the displayed agent name and default provider/model, then map every project repository to its local checkout. The worker rejects unmapped repositories.',
+    detail: 'Choose the displayed agent name and default provider/model. After cloning a customer project on this node, map its repository URL to that local checkout; the worker will not claim work until a repository is mapped.',
     command: `$EDITOR ~/.config/giga-desk/worker.env
 GIGA_DESK_WORKER_AGENT_TYPE=OpenCode
 GIGA_DESK_WORKER_AGENT_NAME=MIRIAM
@@ -63,15 +62,7 @@ GIGA_DESK_WORKER_REPOSITORIES=[{"url":"https://github.com/example/project.git","
   },
   {
     title: 'Start and verify the worker',
-    detail: 'Install the user service and restart it after changing either env file. On startup the authenticated worker registers its node, OpenCode agent, and model through the API, then heartbeats Online. No database URL is needed.',
-    command: `mkdir -p ~/.config/systemd/user
-cp ops/giga-desk-codex-worker.service ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable --now giga-desk-codex-worker.service
-systemctl --user restart giga-desk-codex-worker.service
-systemctl --user status giga-desk-codex-worker.service
-journalctl --user -u giga-desk-codex-worker.service -f`,
-    pending: true,
+    detail: 'Run the downloaded installer. It downloads a verified, versioned worker bundle from Giga Desk, installs the user service, and registers the node. The worker can come Online before project checkouts exist; after mapping a customer repository, rerun the installer.',
   },
 ];
 
@@ -102,7 +93,7 @@ export function AgentSetupGuide() {
       <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></article>
     </section>
     {provider === 'opencode' ? <section aria-labelledby="opencode-setup"><div className="row"><div><p className="eyebrow">OpenCode</p><h2 id="opencode-setup">Connect an OpenCode worker</h2></div><span>{completed.length} of {openCodeSteps.length} complete</span></div>
-      <p>Download the installer for the worker host. Run it from the Giga Desk checkout, or set GIGA_DESK_WORKER_CHECKOUT to that checkout's absolute path. It reuses the protected machine configuration when present, derives its repository map from the checkout's Git remote, and uses MIRIAM with ollama/qwen3-coder-next:q4_K_M unless configured otherwise. Registration happens through the authenticated API when the worker starts.</p>
+      <p>Download the installer for the worker host. It installs a verified worker bundle from Giga Desk; no Giga Desk source checkout is needed. It reuses the protected machine configuration when present and uses MIRIAM with ollama/qwen3-coder-next:q4_K_M unless configured otherwise. The worker can register before project checkouts exist and waits safely until customer repositories are mapped. Registration happens through the authenticated API when the worker starts.</p>
       <p><a className="button-link" href="/scripts/install-opencode-worker.sh" download>Download Bash installer</a>{' '}<a className="button-link button-secondary" href="/scripts/install-opencode-worker.ps1" download>Download PowerShell installer</a></p>
       <ol className="setup-steps">{openCodeSteps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
@@ -110,7 +101,7 @@ export function AgentSetupGuide() {
         <label className="step-check"><input type="checkbox" checked={completed.includes(index)} disabled={step.pending}
           onChange={(event) => { setStep(index, event.target.checked); }} /> Step completed</label>
       </li>)}</ol></section> : <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
-      <p>Download the installer for the worker host. It detects Codex, reuses the protected machine configuration when present, and derives the current checkout mapping from its Git remote. It never prompts for credentials; an administrator must supply the node-scoped OIDC configuration through the protected machine environment. Registration happens through the authenticated API when the worker starts.</p>
+      <p>Download the installer for the worker host. It detects Codex, downloads a verified worker bundle from Giga Desk, and reuses the protected machine configuration when present. It never prompts for credentials; an administrator must supply the node-scoped OIDC configuration through the protected machine environment. The worker can register before project checkouts exist and waits safely until customer repositories are mapped. Registration happens through the authenticated API when the worker starts.</p>
       <p><a className="button-link" href="/scripts/install-codex-worker.sh" download>Download Bash installer</a>{' '}<a className="button-link button-secondary" href="/scripts/install-codex-worker.ps1" download>Download PowerShell installer</a></p>
       <ol className="setup-steps">{steps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>

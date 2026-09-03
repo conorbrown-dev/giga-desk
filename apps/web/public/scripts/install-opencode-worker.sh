@@ -10,13 +10,9 @@ if ! command -v systemctl >/dev/null 2>&1; then
   exit 1
 fi
 
-CHECKOUT=${GIGA_DESK_WORKER_CHECKOUT:-$(pwd)}
-if [[ ! -f "$CHECKOUT/package.json" ]] || [[ ! -d "$CHECKOUT/apps/codex-worker" ]]; then
-  echo "The checkout '$CHECKOUT' must contain the Giga Desk package.json and apps/codex-worker. Run this from the Giga Desk checkout or set GIGA_DESK_WORKER_CHECKOUT to its absolute path." >&2
+if ! command -v node >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1 || ! command -v sha256sum >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1; then
+  echo 'This installer requires Node.js, curl, sha256sum, and tar on PATH.' >&2
   exit 1
-fi
-if [[ ! -d "$CHECKOUT/node_modules" ]]; then
-  (cd "$CHECKOUT" && npm ci)
 fi
 
 config_dir="$HOME/.config/giga-desk"
@@ -41,12 +37,7 @@ CLIENT_SECRET=${GIGA_DESK_AGENT_OIDC_CLIENT_SECRET:-}
 AGENT_NAME=${GIGA_DESK_WORKER_AGENT_NAME:-MIRIAM}
 MODEL=${GIGA_DESK_WORKER_MODEL_IDENTIFIER:-ollama/qwen3-coder-next:q4_K_M}
 REPOSITORIES=${GIGA_DESK_WORKER_REPOSITORIES:-}
-if [[ -z "$REPOSITORIES" ]]; then
-  remote_url=$(git -C "$CHECKOUT" remote get-url origin 2>/dev/null || true)
-  if [[ -n "$remote_url" ]]; then
-    REPOSITORIES=$(node -e 'console.log(JSON.stringify([{ url: process.argv[1], path: process.argv[2] }]))' "$remote_url" "$CHECKOUT")
-  fi
-fi
+REPOSITORIES=${REPOSITORIES:-[]}
 missing=()
 for setting in GIGA_DESK_AGENT_API_URL GIGA_DESK_AGENT_NODE_ID GIGA_DESK_AGENT_OIDC_TOKEN_URL GIGA_DESK_AGENT_OIDC_CLIENT_ID GIGA_DESK_AGENT_OIDC_CLIENT_SECRET; do
   [[ -n "${!setting:-}" ]] || missing+=("$setting")
@@ -55,9 +46,25 @@ if (( ${#missing[@]} > 0 )); then
   echo "Worker identity is not configured. Provide the protected agent.env file or export: ${missing[*]}" >&2
   exit 1
 fi
-if [[ -z "$REPOSITORIES" ]]; then
-  echo 'No repository mapping is configured and no origin remote could be derived. Set GIGA_DESK_WORKER_REPOSITORIES.' >&2
+release_url=${GIGA_DESK_WORKER_RELEASE_URL:-}
+if [[ -z "$release_url" ]]; then
+  release_origin=$(node -e 'console.log(new URL(process.argv[1]).origin)' "$API_URL")
+  release_url="$release_origin/releases/giga-desk-worker.tgz"
+fi
+download_dir=$(mktemp -d)
+trap 'rm -rf "$download_dir"' EXIT
+curl --fail --silent --show-error --location "$release_url" --output "$download_dir/worker.tgz"
+curl --fail --silent --show-error --location "$release_url.sha256" --output "$download_dir/worker.tgz.sha256"
+expected_sha=$(awk '{ print $1 }' "$download_dir/worker.tgz.sha256")
+actual_sha=$(sha256sum "$download_dir/worker.tgz" | awk '{ print $1 }')
+if [[ "$expected_sha" != "$actual_sha" ]]; then
+  echo 'The downloaded worker bundle checksum does not match.' >&2
   exit 1
+fi
+release_dir="$HOME/.local/share/giga-desk/worker/releases/$actual_sha"
+if [[ ! -d "$release_dir" ]]; then
+  mkdir -p "$release_dir"
+  tar -xzf "$download_dir/worker.tgz" -C "$release_dir"
 fi
 
 mkdir -p "$config_dir" "$service_dir"
@@ -66,7 +73,7 @@ printf 'GIGA_DESK_AGENT_API_URL=%s\nGIGA_DESK_AGENT_NODE_ID=%s\nGIGA_DESK_AGENT_
 printf 'GIGA_DESK_WORKER_AGENT_TYPE=OpenCode\nGIGA_DESK_WORKER_AGENT_NAME=%s\nGIGA_DESK_WORKER_MODEL_IDENTIFIER=%s\nGIGA_DESK_WORKER_REPOSITORIES=%s\nGIGA_DESK_AGENT_POLL_INTERVAL_MS=5000\nGIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS=30000\n' "$AGENT_NAME" "$MODEL" "$REPOSITORIES" > "$config_dir/worker.env"
 chmod 600 "$config_dir/agent.env" "$config_dir/worker.env"
 
-(cd "$CHECKOUT" && npm run build -w @giga-desk/agent-client && npm run build -w @giga-desk/codex-worker)
+node_bin=$(command -v node)
 cat > "$service_dir/giga-desk-codex-worker.service" <<EOF
 [Unit]
 Description=Giga Desk OpenCode worker
@@ -75,11 +82,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=$CHECKOUT
+WorkingDirectory=$release_dir
 Environment=PATH=$HOME/.opencode/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
 EnvironmentFile=$config_dir/agent.env
 EnvironmentFile=$config_dir/worker.env
-ExecStart=/usr/bin/npm run start -w @giga-desk/codex-worker
+ExecStart=$node_bin apps/codex-worker/dist/main.js
 Restart=on-failure
 RestartSec=10
 NoNewPrivileges=true
@@ -94,4 +101,4 @@ systemctl --user daemon-reload
 systemctl --user enable --now giga-desk-codex-worker.service
 systemctl --user restart giga-desk-codex-worker.service
 systemctl --user --no-pager status giga-desk-codex-worker.service
-echo 'The node should become Online in Giga Desk. View logs with: journalctl --user -u giga-desk-codex-worker.service -f'
+echo 'The node should become Online in Giga Desk. It will wait safely until GIGA_DESK_WORKER_REPOSITORIES maps a customer repository checkout. View logs with: journalctl --user -u giga-desk-codex-worker.service -f'

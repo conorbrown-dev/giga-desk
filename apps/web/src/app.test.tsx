@@ -54,10 +54,9 @@ describe('App', () => {
     expect(screen.queryByText('Requires worker support')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.sh');
     expect(screen.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.ps1');
-    expect(screen.getByText(/It never prompts for credentials/)).toBeInTheDocument();
+    expect(screen.getByText(/downloads a verified worker bundle/)).toBeInTheDocument();
     expect(screen.getByText(/registers only its node-scoped target through the API/)).toBeInTheDocument();
-    expect(screen.getByText(/install the included systemd user service/i)).toBeInTheDocument();
-    expect(screen.getByText(/systemctl --user enable --now giga-desk-codex-worker.service/)).toBeInTheDocument();
+    expect(screen.getByText(/The worker can come Online before project checkouts exist/)).toBeInTheDocument();
     expect(screen.getAllByRole('checkbox')[3]).toBeEnabled();
     expect(screen.getAllByRole('checkbox')[4]).toBeEnabled();
     const firstStep = screen.getAllByRole('checkbox')[0];
@@ -78,10 +77,10 @@ describe('App', () => {
     expect(screen.getByText(/Registration happens through the authenticated API/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.sh');
     expect(screen.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.ps1');
-    expect(screen.getByText(/Run it from the Giga Desk checkout/)).toBeInTheDocument();
+    expect(screen.getByText(/no Giga Desk source checkout is needed/)).toBeInTheDocument();
     expect(screen.getByText(/GIGA_DESK_WORKER_AGENT_TYPE=OpenCode/)).toBeInTheDocument();
     expect(screen.getByText(/GIGA_DESK_WORKER_MODEL_IDENTIFIER=ollama\/qwen3-coder-next:q4_K_M/)).toBeInTheDocument();
-    expect(screen.getByText(/systemctl --user restart giga-desk-codex-worker.service/)).toBeInTheDocument();
+    expect(screen.getByText(/The worker can come Online before project checkouts exist/)).toBeInTheDocument();
     expect(screen.queryByText(/openai\/gpt-5/)).not.toBeInTheDocument();
   });
 
