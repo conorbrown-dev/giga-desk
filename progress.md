@@ -60,6 +60,7 @@
 - OpenCode workers now self-register their authenticated node, agent, and provider/model through the machine API before polling; setup no longer requires direct database access, and a token cannot register a different node ID.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 - The authenticated web app now uses a responsive admin-dashboard shell with desktop sidebar/mobile navigation, bright semantic status chips, portfolio metrics, compact creation disclosures, and consistent operational empty/error surfaces.
+- The supplied Giga Desk icon, square logo, and banner logo are now integrated into the navigation, favicon/touch icon, and sign-in surface; the theme's primary interactive treatment is neon orange with accessible dark text on orange and light text on secondary controls.
 
 ## Handoff — 2026-09-03
 
@@ -218,6 +219,13 @@
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Giga Desk branding and neon-orange theme
+
+- Added the supplied icon to the authenticated desktop rail and mobile navigation, the banner logo to the sign-in card, and the square logo as the browser favicon and Apple touch icon.
+- Replaced neon-purple primary gradients, focus accents, active navigation markers, disclosure actions, and form/action buttons with the supplied logo's neon-orange palette; preserved cyan/lime/amber/red semantic status roles.
+- Added component and browser assertions for the brand assets, rendered the authenticated and unauthenticated routes at 1440x900 and 390x844, and inspected the resulting desktop/mobile screenshots for scaling, contrast, clipping, and responsive reflow.
+- Verification passed: web typecheck, lint, 10 component tests, production build, and six authenticated Playwright flows. Product-code diff is 83 added-plus-deleted lines; supplied image assets are excluded from the limit.
 
 ### Authenticated OpenCode self-registration
 

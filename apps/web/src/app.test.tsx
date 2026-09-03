@@ -10,6 +10,7 @@ describe('App', () => {
     const login = vi.fn().mockResolvedValue(undefined);
     const authentication: AuthenticationState = { configured: true, authenticated: false, username: null, error: null, login, logout: vi.fn() };
     render(<MemoryRouter><App authentication={authentication} /></MemoryRouter>);
+    expect(screen.getByRole('img', { name: 'Giga Desk' })).toHaveAttribute('src', '/images/giga-desk-banner-logo.png');
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(login).toHaveBeenCalledOnce();
     expect(screen.queryByRole('heading', { name: 'Projects' })).not.toBeInTheDocument();
@@ -36,6 +37,7 @@ describe('App', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) }));
     render(<MemoryRouter initialEntries={['/projects']}><App authentication={authentication} /></MemoryRouter>);
     const navigation = screen.getByRole('navigation', { name: 'Primary navigation' });
+    expect(navigation.querySelector('img')).toHaveAttribute('src', '/images/giga-desk-icon.png');
     expect(navigation).toHaveTextContent('conor');
     expect(screen.getByRole('link', { name: 'Giga Desk' })).toHaveAttribute('href', '/projects');
     expect(screen.getByRole('link', { name: 'Connect agent' })).toHaveAttribute('href', '/agents/connect');

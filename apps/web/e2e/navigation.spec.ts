@@ -25,6 +25,7 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   await signIn(page);
   const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
   await expect(navigation.getByRole('link', { name: 'Giga Desk' })).toBeVisible();
+  await expect(navigation.locator('img')).toHaveAttribute('src', '/images/giga-desk-icon.png');
   await expect(navigation.getByRole('button', { name: 'Sign out' })).toBeVisible();
   await page.getByRole('link', { name: 'View projects' }).click();
   await expect(page.getByText('Production workspace')).toBeVisible();
@@ -38,8 +39,13 @@ test('navigates from projects to a work item execution dashboard', async ({ page
 });
 
 test('requires Keycloak authentication for project access', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/projects');
   await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Giga Desk' })).toHaveAttribute('src', '/images/giga-desk-banner-logo.png');
+  await page.screenshot({ path: 'test-results/visual-review/auth-brand-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/auth-brand-mobile.png', fullPage: true });
   await expect(page.getByRole('heading', { name: 'Projects' })).not.toBeVisible();
 });
 
