@@ -44,7 +44,7 @@ describe('App', () => {
     const view = render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
     expect(screen.getByRole('heading', { name: 'Connect a work agent' })).toBeInTheDocument();
     expect(screen.getByText('Claude').closest('article')).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getAllByText('OpenCode')[0]?.closest('article')).not.toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: /OpenCode/ })).not.toHaveAttribute('aria-disabled', 'true');
     expect(screen.getAllByText('Requires worker support')).toHaveLength(1);
     expect(screen.getByText(/install the included systemd user service/i)).toBeInTheDocument();
     expect(screen.getByText(/systemctl --user enable --now giga-desk-codex-worker.service/)).toBeInTheDocument();
@@ -57,6 +57,15 @@ describe('App', () => {
     view.unmount();
     render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
     expect(screen.getAllByRole('checkbox')[0]).toBeChecked();
+  });
+
+  it('shows only the selected provider setup', () => {
+    render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: /OpenCode/ }));
+    expect(screen.getByRole('heading', { name: 'Register a named OpenCode agent' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Machine setup' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Install Codex CLI/)).not.toBeInTheDocument();
+    expect(screen.getByText(/target:opencode/)).toBeInTheDocument();
   });
 
   it('links project work items to execution history', async () => {

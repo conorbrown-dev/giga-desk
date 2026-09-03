@@ -51,6 +51,15 @@ test('walks through Codex agent setup in the authenticated app', async ({ page }
   await expect(page.getByLabel('Step completed').first()).toBeChecked();
 });
 
+test('shows only OpenCode setup when OpenCode is selected', async ({ page }) => {
+  await signIn(page, '/agents/connect');
+  await page.getByRole('button', { name: /OpenCode/ }).click();
+  await expect(page.getByRole('heading', { name: 'Register a named OpenCode agent' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Machine setup' })).not.toBeVisible();
+  await expect(page.getByText(/Install Codex CLI/)).not.toBeVisible();
+  await expect(page.getByText(/target:opencode/)).toBeVisible();
+});
+
 test('validates selections and handles Start Work success and conflict', async ({ page }) => {
   let submissions = 0;
   await page.route('**/api/execution/targets', async (route) => route.fulfill({ json: {

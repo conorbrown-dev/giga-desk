@@ -335,6 +335,10 @@ small {
   border-radius: 0.75rem;
   padding: 1.25rem;
   background: #111621;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
   transition: border-color 0.2s;
 }
 
@@ -360,6 +364,10 @@ small {
 
 .provider-disabled {
   opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.provider-card:disabled {
   cursor: not-allowed;
 }
 

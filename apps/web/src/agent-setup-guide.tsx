@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+type Provider = 'codex' | 'opencode';
+
 const storageKey = 'giga-desk-agent-setup:codex';
 
 interface SetupStep {
@@ -48,6 +50,7 @@ const loadCompleted = (): readonly number[] => {
 };
 
 export function AgentSetupGuide() {
+  const [provider, setProvider] = useState<Provider>('codex');
   const [completed, setCompleted] = useState<readonly number[]>(loadCompleted);
   const setStep = (index: number, checked: boolean): void => {
     const next = checked ? [...new Set([...completed, index])] : completed.filter((item) => item !== index);
@@ -58,13 +61,12 @@ export function AgentSetupGuide() {
   return <main><p className="eyebrow">Agent integrations</p><h1>Connect a work agent</h1>
     <p>Prepare a development machine to claim work, edit a repository, run verification, and report evidence to Giga Desk.</p>
     <section className="provider-grid" aria-label="Agent providers">
-      <article className="card provider-card provider-selected"><span className="badge">Setup available</span><h2>Codex</h2><p>OpenAI Codex CLI</p></article>
-      <article className="card provider-card provider-selected"><span className="badge">Setup available</span><h2>OpenCode</h2><p>Choose a custom agent name, such as MIRIAM</p></article>
+      <button className={`card provider-card ${provider === 'codex' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'codex'} onClick={() => { setProvider('codex'); }}><span className="badge">Setup available</span><h2>Codex</h2><p>OpenAI Codex CLI</p></button>
+      <button className={`card provider-card ${provider === 'opencode' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'opencode'} onClick={() => { setProvider('opencode'); }}><span className="badge">Setup available</span><h2>OpenCode</h2><p>Choose a custom agent name, such as MIRIAM</p></button>
       <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Claude</h2><p>Provider adapter planned</p></article>
       <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></article>
     </section>
-    <section className="card" aria-labelledby="opencode-setup"><p className="eyebrow">OpenCode</p><h2 id="opencode-setup">Register a named OpenCode agent</h2><p>Run this after installing OpenCode. Replace <code>MIRIAM</code> with any agent name you want users to see when assigning work, and use a provider/model identifier configured in OpenCode.</p><pre><code>npm run target:opencode -w @giga-desk/api -- MIRIAM MIRIAM miriam.local Linux x64 1.18.26 openai/gpt-5</code></pre><p>Set <code>GIGA_DESK_WORKER_AGENT_TYPE=OpenCode</code> on that worker. Its project checkout map remains separate from the Giga Desk product repository.</p></section>
-    <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
+    {provider === 'opencode' ? <section className="card" aria-labelledby="opencode-setup"><p className="eyebrow">OpenCode</p><h2 id="opencode-setup">Register a named OpenCode agent</h2><p>Run this after installing OpenCode. Replace <code>MIRIAM</code> with any agent name you want users to see when assigning work, and use a provider/model identifier configured in OpenCode.</p><pre><code>npm run target:opencode -w @giga-desk/api -- MIRIAM MIRIAM miriam.local Linux x64 1.18.26 openai/gpt-5</code></pre><p>Set <code>GIGA_DESK_WORKER_AGENT_TYPE=OpenCode</code> on that worker. Its project checkout map remains separate from the Giga Desk product repository.</p></section> : <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
       <p>Complete these steps on the machine that will run Codex. The final step stays locked until the real worker is installed.</p>
       <ol className="setup-steps">{steps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
@@ -74,6 +76,6 @@ export function AgentSetupGuide() {
       </li>)}</ol>
       <p className="security-note"><strong>Keep credentials private.</strong> Never paste a Codex token or Giga Desk machine secret into a Project, Work Item, command output, or source-controlled file.</p>
       <p>Authentication details follow the <a href="https://learn.chatgpt.com/docs/enterprise/service-accounts" target="_blank" rel="noreferrer">official OpenAI service-account guidance</a>.</p>
-    </section>
+    </section>}
   </main>;
 }
