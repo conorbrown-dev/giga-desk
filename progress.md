@@ -239,6 +239,13 @@
 - Remaining work: deploy the OpenCode target changes, configure the worker's OIDC identity and project checkout map, and run one harmless real OpenCode Work Package. The local OpenCode smoke command reached an environment/provider error, so no real OpenCode model execution is claimed yet.
 - Verification passed: repository-wide typecheck, lint, 60 unit tests, repository integration tests (10 API tests plus shared-client and worker integration tests), five authenticated Playwright E2E flows including `/agents/connect`, all workspace production builds, and a real zero-argument resolution check returning the current host metadata.
 
+### OpenCode setup copy and host-derived registration
+
+- Reformatted the OpenCode guide into separate paragraphs with an explicit npm code block and clarified that the script derives hostname, operating system, architecture, and OpenCode version from the host.
+- Changed the shown default model from the previous OpenAI target to the local Qwen target `ollama/qwen3-coder-next:q4_K_M`.
+- Changed `target:opencode` to accept only `<agent-name> <provider/model>`; it now derives the node name and host metadata and parses `opencode --version` locally.
+- Added host-resolution unit coverage and updated the OpenCode component/browser assertions. Verification passed: repository typecheck, lint, 66 unit/component tests, 11 API integration tests, six authenticated Playwright E2E flows, all five workspace production builds, and desktop/mobile visual inspection of the rendered guide. The first integration/E2E attempt was blocked by sandbox loopback/listener isolation; the permitted rerun passed. No production deployment or live OpenCode model execution is claimed.
+
 ### Fail-closed UI visual review
 
 - Added an explicit Feature option for desktop/mobile screenshot review; selecting visual references automatically enables it, while non-visual work remains opt-in.

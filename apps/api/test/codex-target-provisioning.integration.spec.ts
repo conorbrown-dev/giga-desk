@@ -11,7 +11,7 @@ const nodeName = `Codex Node ${suffix}`;
 const agentVersion = `test-${suffix}`;
 const openCodeNodeName = `OpenCode Node ${suffix}`;
 const openCodeAgentName = `MIRIAM ${suffix}`;
-const openCodeModel = `openai/test-${suffix}`;
+const openCodeModel = `ollama/qwen-test-${suffix}`;
 let priorAgents: readonly { id: string; enabled: boolean }[] = [];
 let priorModel: { id: string; enabled: boolean } | null = null;
 
@@ -72,8 +72,8 @@ describe('Codex target provisioner', () => {
       database.agent.findUniqueOrThrow({ where: { id: target.agentId } }),
       database.aiModel.findUniqueOrThrow({ where: { id: target.modelId } }),
     ]);
-    expect(node).toMatchObject({ name: openCodeNodeName, capabilities: { agentTypes: ['OpenCode'], modelProviders: ['openai'] } });
-    expect(agent).toMatchObject({ name: openCodeAgentName, agentType: 'OpenCode', supportedModelProviders: ['openai'] });
-    expect(model).toMatchObject({ provider: 'openai', modelIdentifier: openCodeModel });
+    expect(node).toMatchObject({ name: openCodeNodeName, capabilities: { agentTypes: ['OpenCode'], modelProviders: ['ollama'] } });
+    expect(agent).toMatchObject({ name: openCodeAgentName, agentType: 'OpenCode', supportedModelProviders: ['ollama'] });
+    expect(model).toMatchObject({ provider: 'ollama', modelIdentifier: openCodeModel });
   });
 });

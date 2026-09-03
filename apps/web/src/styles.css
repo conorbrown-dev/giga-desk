@@ -414,6 +414,27 @@ small {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+.setup-guide {
+  line-height: 1.6;
+}
+
+.setup-guide p {
+  margin: 0 0 1rem;
+}
+
+.setup-guide pre {
+  margin: 1.25rem 0;
+  background: #0d1117;
+  border: 1px solid #2d3748;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.setup-guide code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
 .step-check {
   display: flex;
   gap: 0.6rem;

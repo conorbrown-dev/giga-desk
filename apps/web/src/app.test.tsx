@@ -65,7 +65,11 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Register a named OpenCode agent' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Machine setup' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Install Codex CLI/)).not.toBeInTheDocument();
-    expect(screen.getByText(/target:opencode/)).toBeInTheDocument();
+    expect(screen.getByText('Run this after installing OpenCode.')).toBeInTheDocument();
+    expect(screen.getByText(/Replace/)).toHaveTextContent('MIRIAM');
+    expect(screen.getByText('npm run target:opencode -w @giga-desk/api -- MIRIAM ollama/qwen3-coder-next:q4_K_M')).toBeInTheDocument();
+    expect(screen.getByText(/The script derives the host name/)).toBeInTheDocument();
+    expect(screen.queryByText(/openai\/gpt-5/)).not.toBeInTheDocument();
   });
 
   it('links project work items to execution history', async () => {

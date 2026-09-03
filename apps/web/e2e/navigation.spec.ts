@@ -57,7 +57,10 @@ test('shows only OpenCode setup when OpenCode is selected', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Register a named OpenCode agent' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Machine setup' })).not.toBeVisible();
   await expect(page.getByText(/Install Codex CLI/)).not.toBeVisible();
-  await expect(page.getByText(/target:opencode/)).toBeVisible();
+  await expect(page.getByText('Run this after installing OpenCode.')).toBeVisible();
+  await expect(page.getByText('npm run target:opencode -w @giga-desk/api -- MIRIAM ollama/qwen3-coder-next:q4_K_M')).toBeVisible();
+  await expect(page.getByText(/The script derives the host name/)).toBeVisible();
+  await expect(page.getByText(/openai\/gpt-5/)).not.toBeVisible();
 });
 
 test('validates selections and handles Start Work success and conflict', async ({ page }) => {
