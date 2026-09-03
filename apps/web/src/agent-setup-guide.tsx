@@ -32,7 +32,7 @@ const steps: readonly SetupStep[] = [
   },
   {
     title: 'Start and verify the worker',
-    detail: 'From the repository root, install the included systemd user service. It loads the agent.env and worker.env files from Step 4, runs the Codex worker, and restarts it if it exits. Enable and start the service, then confirm the node changes to Online in Giga Desk and assign a small test work item. If your repository is not at /home/conor/repos/giga-desk, update WorkingDirectory, EnvironmentFile, and ExecStart in the service file first.',
+    detail: 'From the Giga Desk checkout, install the included systemd user service. It loads the agent.env and worker.env files from Step 4, runs the Codex worker, and restarts it if it exits. Configure GIGA_DESK_WORKER_REPOSITORIES with each project repository URL and its local checkout path; the worker will only edit those approved checkouts. Then enable and start the service, confirm the node changes to Online in Giga Desk, and assign a small test work item.',
     command: 'mkdir -p ~/.config/systemd/user\ncp ops/giga-desk-codex-worker.service ~/.config/systemd/user/\nsystemctl --user daemon-reload\nsystemctl --user enable --now giga-desk-codex-worker.service\nsystemctl --user status giga-desk-codex-worker.service\njournalctl --user -u giga-desk-codex-worker.service -f',
     pending: true,
   },
@@ -59,9 +59,11 @@ export function AgentSetupGuide() {
     <p>Prepare a development machine to claim work, edit a repository, run verification, and report evidence to Giga Desk.</p>
     <section className="provider-grid" aria-label="Agent providers">
       <article className="card provider-card provider-selected"><span className="badge">Setup available</span><h2>Codex</h2><p>OpenAI Codex CLI</p></article>
+      <article className="card provider-card provider-selected"><span className="badge">Setup available</span><h2>OpenCode</h2><p>Choose a custom agent name, such as MIRIAM</p></article>
       <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Claude</h2><p>Provider adapter planned</p></article>
       <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></article>
     </section>
+    <section className="card" aria-labelledby="opencode-setup"><p className="eyebrow">OpenCode</p><h2 id="opencode-setup">Register a named OpenCode agent</h2><p>Run this after installing OpenCode. Replace <code>MIRIAM</code> with any agent name you want users to see when assigning work, and use a provider/model identifier configured in OpenCode.</p><pre><code>npm run target:opencode -w @giga-desk/api -- MIRIAM MIRIAM miriam.local Linux x64 1.18.26 openai/gpt-5</code></pre><p>Set <code>GIGA_DESK_WORKER_AGENT_TYPE=OpenCode</code> on that worker. Its project checkout map remains separate from the Giga Desk product repository.</p></section>
     <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
       <p>Complete these steps on the machine that will run Codex. The final step stays locked until the real worker is installed.</p>
       <ol className="setup-steps">{steps.map((step, index) => <li className="card" key={step.title}>

@@ -60,7 +60,7 @@ const imageExtension = (mediaType: string): string => ({
   'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp',
 })[mediaType] ?? '.img';
 
-const parseResult = (value: unknown): CodexExecutionResult => {
+export const parseExecutionResult = (value: unknown): CodexExecutionResult => {
   if (!isRecord(value) || typeof value['summary'] !== 'string' || !value['summary'].trim()
     || !Array.isArray(value['tests']) || !Array.isArray(value['visualEvidence']) || !isRecord(value['deployment'])
     || !Array.isArray(value['satisfiedAcceptanceCriterionIds'])
@@ -91,7 +91,7 @@ const parseResult = (value: unknown): CodexExecutionResult => {
   return value as unknown as CodexExecutionResult;
 };
 
-const validateVisualEvidence = async (
+export const validateVisualEvidence = async (
   work: WorkPackage, result: CodexExecutionResult, repositoryPath: string,
 ): Promise<void> => {
   const viewports = new Set(result.visualEvidence.map(({ viewport }) => viewport));
@@ -116,7 +116,7 @@ const validateVisualEvidence = async (
   }
 };
 
-const promptFor = (work: WorkPackage): string => {
+export const promptFor = (work: WorkPackage): string => {
   const promptWork = { ...work, workItem: { ...work.workItem,
     visualReferences: work.workItem.visualReferences.map(({ name, mediaType }) => ({ name, mediaType, attached: true })) } };
   return `Complete this Giga Desk Work Package in the current repository.
@@ -153,7 +153,7 @@ export class CodexExecutor {
         '--output-schema', schemaPath, '--output-last-message', resultPath, ...imageArguments, ...modelArguments,
         '--cd', repositoryPath, promptFor(work)], { cwd: repositoryPath, timeout: this.timeoutMs, maxBuffer: 1_000_000 });
       const parsed: unknown = JSON.parse(await readFile(resultPath, 'utf8'));
-      const result = parseResult(parsed);
+      const result = parseExecutionResult(parsed);
       await validateVisualEvidence(work, result, repositoryPath);
       return result;
     } finally {

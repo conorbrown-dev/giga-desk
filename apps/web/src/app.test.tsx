@@ -44,6 +44,7 @@ describe('App', () => {
     const view = render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
     expect(screen.getByRole('heading', { name: 'Connect a work agent' })).toBeInTheDocument();
     expect(screen.getByText('Claude').closest('article')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getAllByText('OpenCode')[0]?.closest('article')).not.toHaveAttribute('aria-disabled', 'true');
     expect(screen.getAllByText('Requires worker support')).toHaveLength(1);
     expect(screen.getByText(/install the included systemd user service/i)).toBeInTheDocument();
     expect(screen.getByText(/systemctl --user enable --now giga-desk-codex-worker.service/)).toBeInTheDocument();
@@ -85,10 +86,11 @@ describe('App', () => {
     fireEvent.change(screen.getByLabelText(/Project key/), { target: { value: 'RY' } });
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Ryan Demo' } });
     fireEvent.change(screen.getByLabelText(/Business goal/), { target: { value: 'Show the workflow' } });
+    fireEvent.change(screen.getByLabelText(/Repository URL/), { target: { value: 'https://github.com/example/ryan-demo.git' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Project created.');
     expect(await screen.findByRole('link', { name: 'RY · Ryan Demo' })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith('/api/projects', expect.objectContaining({ method: 'POST', body: JSON.stringify({ key: 'RY', name: 'Ryan Demo', description: '', businessGoal: 'Show the workflow' }) }));
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects', expect.objectContaining({ method: 'POST', body: JSON.stringify({ key: 'RY', name: 'Ryan Demo', description: '', businessGoal: 'Show the workflow', repositoryUrl: 'https://github.com/example/ryan-demo.git', defaultBranch: 'main' }) }));
   });
 
   it('creates a feature with structured criteria and refreshes the project', async () => {

@@ -56,6 +56,7 @@
 - A production Codex executor launches non-interactive ephemeral runs without a shell, restricts edits to workspace-write, and rejects malformed or incomplete structured evidence.
 - `target:codex` can now discover the local hostname, operating system, architecture, and installed Codex CLI version when run without arguments; explicit five-field metadata overrides remain supported.
 - The MIRIAM worker runtime polls one job at a time, enforces an exact repository allowlist and evidence set, reports the real lifecycle in API order, and heartbeats continuously under a restartable user service.
+- OpenCode execution is now supported through the same worker lifecycle: administrators can provision a named OpenCode agent (for example, MIRIAM), the assigned Work Package model selects the `provider/model` CLI target, and the worker parses OpenCode JSON text events into the existing strict evidence contract.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 
 ## Handoff — 2026-09-02
@@ -218,6 +219,22 @@
 - `target:codex` now supports a zero-argument form that derives the registry name and hostname from the local host, the OS and architecture from Node, and the Codex version from `codex --version`.
 - The original five-argument form remains supported for explicit metadata overrides; invalid partial arguments and unparseable version output fail clearly.
 - The `/agents/connect` Step 3 guide now explains automatic detection and when to use the explicit override form.
+
+### Project-specific repositories and worker checkout routing
+
+- Project creation now requires an HTTP(S) repository URL and default branch, so a Work Package has an explicit project repository instead of implicitly targeting the Giga Desk product checkout.
+- Codex workers now accept `GIGA_DESK_WORKER_REPOSITORIES`, a JSON list mapping each approved project repository URL to its local checkout path, and resolve the checkout per claimed Work Package. Unmapped repositories still fail closed.
+- Updated the project form, authenticated browser fixture, setup guide, and `ops/worker.env.example` to document project-specific repositories and worker-local access.
+- Verification passed: `npm run typecheck`, `npm run lint`, `npm test` (58 tests), `npm run test:integration` (10 API, one agent-client, one worker integration test), `npm run build` (five workspaces), and `npm run test:e2e` (five browser flows). The first sandboxed integration/E2E attempts were blocked by local PostgreSQL/listener isolation; permitted reruns passed.
+- Remaining work: deploy this focused change and configure each real worker's repository map; no production worker execution was claimed in this slice.
+
+### Named OpenCode agents
+
+- Added `target:opencode` provisioning with separate node name and custom agent name, OpenCode capability registration, provider/model compatibility, and idempotent persistence.
+- Added OpenCode non-interactive execution through `opencode run --format json --auto --dir ... --model provider/model`; completed text events must contain the existing structured execution evidence.
+- The Connect Agent page now documents registering `MIRIAM` or another custom name and selecting `GIGA_DESK_WORKER_AGENT_TYPE=OpenCode`; OpenCode is shown as available while Claude remains unavailable until its adapter exists.
+- Verification passed: `npm run typecheck`, `npm run lint`, `npm test` (63 tests), `npm run test:integration` (11 API, one shared-client, one worker test), `npm run build` (five workspaces), and `npm run test:e2e` (five browser flows).
+- Remaining work: deploy the OpenCode target changes, configure the worker's OIDC identity and project checkout map, and run one harmless real OpenCode Work Package. The local OpenCode smoke command reached an environment/provider error, so no real OpenCode model execution is claimed yet.
 - Verification passed: repository-wide typecheck, lint, 60 unit tests, repository integration tests (10 API tests plus shared-client and worker integration tests), five authenticated Playwright E2E flows including `/agents/connect`, all workspace production builds, and a real zero-argument resolution check returning the current host metadata.
 
 ### Fail-closed UI visual review

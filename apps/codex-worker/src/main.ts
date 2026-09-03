@@ -2,7 +2,8 @@ import { AgentApi } from '@giga-desk/agent-client/agent-api';
 import { ClientCredentialsTokenProvider } from '@giga-desk/agent-client/machine-token';
 import { setTimeout as delay } from 'node:timers/promises';
 import { CodexExecutor } from './codex-executor.js';
-import { CodexWorker } from './worker.js';
+import { OpenCodeExecutor } from './opencode-executor.js';
+import { CodexWorker, type ApprovedRepositories } from './worker.js';
 
 const required = (name: string): string => {
   const value = process.env[name]?.trim();
@@ -16,14 +17,33 @@ const positiveInteger = (name: string, fallback: number): number => {
   return value;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+const approvedRepositories = (): ApprovedRepositories => {
+  const raw = required('GIGA_DESK_WORKER_REPOSITORIES');
+  let entries: unknown;
+  try { entries = JSON.parse(raw); } catch { throw new Error('GIGA_DESK_WORKER_REPOSITORIES must be valid JSON'); }
+  if (!Array.isArray(entries)) throw new Error('GIGA_DESK_WORKER_REPOSITORIES must be a JSON array');
+  const repositories = new Map<string, string>();
+  for (const entry of entries) {
+    if (!isRecord(entry) || typeof entry['url'] !== 'string' || typeof entry['path'] !== 'string'
+      || !entry['url'].trim() || !entry['path'].trim()) throw new Error('Each approved repository needs a URL and local path');
+    repositories.set(entry['url'].trim(), entry['path'].trim());
+  }
+  if (repositories.size === 0) throw new Error('At least one approved repository is required');
+  return repositories;
+};
+
 const nodeId = required('GIGA_DESK_AGENT_NODE_ID');
 const provider = new ClientCredentialsTokenProvider(
   required('GIGA_DESK_AGENT_OIDC_TOKEN_URL'), required('GIGA_DESK_AGENT_OIDC_CLIENT_ID'),
   required('GIGA_DESK_AGENT_OIDC_CLIENT_SECRET'),
 );
 const api = new AgentApi(required('GIGA_DESK_AGENT_API_URL'), provider.getToken.bind(provider));
-const worker = new CodexWorker(api, new CodexExecutor(), nodeId,
-  required('GIGA_DESK_WORKER_REPOSITORY_URL'), required('GIGA_DESK_WORKER_REPOSITORY_PATH'));
+const agentType = process.env['GIGA_DESK_WORKER_AGENT_TYPE']?.trim() ?? 'CodexCli';
+const executor = agentType === 'OpenCode'
+  ? new OpenCodeExecutor() : new CodexExecutor();
+const worker = new CodexWorker(api, executor, nodeId, approvedRepositories());
 const pollInterval = positiveInteger('GIGA_DESK_AGENT_POLL_INTERVAL_MS', 5_000);
 const heartbeatInterval = positiveInteger('GIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS', 30_000);
 const stop = new AbortController();

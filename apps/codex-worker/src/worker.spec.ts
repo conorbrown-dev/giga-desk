@@ -47,7 +47,7 @@ describe('CodexWorker', () => {
   it('heartbeats without claiming when the queue is empty', async () => {
     const { api, actions, heartbeat } = fakeApi([]);
     const executor: WorkExecutor = { execute: vi.fn() };
-    await expect(new CodexWorker(api, executor, 'node-1', 'repo', '/repo').runNext()).resolves.toBeNull();
+    await expect(new CodexWorker(api, executor, 'node-1', new Map()).runNext()).resolves.toBeNull();
     expect(heartbeat).toHaveBeenCalledWith('node-1');
     expect(actions).toEqual([]);
   });
@@ -56,18 +56,20 @@ describe('CodexWorker', () => {
     const { api, actions } = fakeApi([{ id: 'job-1', status: 'Queued' }]);
     const execute = vi.fn<WorkExecutor['execute']>().mockResolvedValue(result);
     const executor: WorkExecutor = { execute };
-    const worker = new CodexWorker(api, executor, 'node-1', work.project.repositoryUrl ?? '', '/repo');
+    const worker = new CodexWorker(api, executor, 'node-1', new Map([
+      ['https://github.com/example/other.git', '/other'], [work.project.repositoryUrl ?? '', '/project'],
+    ]));
 
     await expect(worker.runNext()).resolves.toBe('job-1');
     expect(actions).toEqual(['claim', 'start', 'progress', 'tests', 'tests', 'deployment', 'tests', 'complete']);
-    expect(execute).toHaveBeenCalledWith(work, '/repo');
+    expect(execute).toHaveBeenCalledWith(work, '/project');
   });
 
   it('fails a claimed job before execution when its repository is not approved', async () => {
     const { api, actions } = fakeApi([{ id: 'job-1', status: 'Queued' }]);
     const execute = vi.fn<WorkExecutor['execute']>();
     const executor: WorkExecutor = { execute };
-    const worker = new CodexWorker(api, executor, 'node-1', 'https://github.com/other/repo.git', '/repo');
+    const worker = new CodexWorker(api, executor, 'node-1', new Map([['https://github.com/other/repo.git', '/repo']]));
 
     await expect(worker.runNext()).rejects.toThrow('not approved');
     expect(actions).toEqual(['claim', 'fail']);
@@ -81,7 +83,7 @@ describe('CodexWorker', () => {
     } };
     api.workPackage = vi.fn().mockResolvedValue(sensitiveWork);
     const execute = vi.fn<WorkExecutor['execute']>();
-    const worker = new CodexWorker(api, { execute }, 'node-1', work.project.repositoryUrl ?? '', '/repo');
+    const worker = new CodexWorker(api, { execute }, 'node-1', new Map([[work.project.repositoryUrl ?? '', '/repo']]));
 
     await expect(worker.runNext()).rejects.toThrow('explicit approval');
     expect(actions).toEqual(['claim', 'fail']);
@@ -95,7 +97,7 @@ describe('CodexWorker', () => {
     } };
     api.workPackage = vi.fn().mockResolvedValue(sensitiveWork);
     const execute = vi.fn<WorkExecutor['execute']>().mockResolvedValue(result);
-    const worker = new CodexWorker(api, { execute }, 'node-1', work.project.repositoryUrl ?? '', '/repo');
+    const worker = new CodexWorker(api, { execute }, 'node-1', new Map([[work.project.repositoryUrl ?? '', '/repo']]));
 
     await expect(worker.runNext()).resolves.toBe('job-1');
     expect(actions.at(-1)).toBe('complete');

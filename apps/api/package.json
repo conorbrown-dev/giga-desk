@@ -10,6 +10,7 @@
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "target:codex": "node dist/provision-codex-target.js",
+    "target:opencode": "node dist/provision-opencode-target.js",
     "test": "vitest run src",
     "test:integration": "vitest run test"
   },

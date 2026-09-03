@@ -1,4 +1,4 @@
-import { IsString, Length, Matches, MaxLength } from 'class-validator';
+import { IsString, IsUrl, Length, Matches, MaxLength } from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()
@@ -18,4 +18,12 @@ export class CreateProjectDto {
   @Length(1, 10_000)
   @Matches(/\S/)
   declare businessGoal: string;
+
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
+  declare repositoryUrl: string;
+
+  @IsString()
+  @Length(1, 255)
+  @Matches(/\S/)
+  declare defaultBranch: string;
 }

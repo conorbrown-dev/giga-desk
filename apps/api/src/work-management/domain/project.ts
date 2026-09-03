@@ -6,6 +6,8 @@ export interface ProjectProps {
   name: string;
   description: string;
   businessGoal: string;
+  repositoryUrl: string;
+  defaultBranch: string;
   status: ProjectStatus;
 }
 
@@ -17,6 +19,8 @@ export class Project {
     if (!/^[A-Z][A-Z0-9]{1,11}$/.test(key)) throw new Error('Project key must contain 2-12 letters or numbers');
     if (!props.name.trim()) throw new Error('Project name is required');
     if (!props.businessGoal.trim()) throw new Error('Project business goal is required');
-    return new Project({ ...props, key, name: props.name.trim() });
+    if (!props.repositoryUrl.trim()) throw new Error('Project repository URL is required');
+    if (!props.defaultBranch.trim()) throw new Error('Project default branch is required');
+    return new Project({ ...props, key, name: props.name.trim(), repositoryUrl: props.repositoryUrl.trim(), defaultBranch: props.defaultBranch.trim() });
   }
 }

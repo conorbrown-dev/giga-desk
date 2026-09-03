@@ -9,6 +9,7 @@ export interface WorkerApi {
 }
 
 export interface WorkExecutor { execute(work: WorkPackage, repositoryPath: string): Promise<CodexExecutionResult> }
+export type ApprovedRepositories = ReadonlyMap<string, string>;
 
 const evidenceKey = (jobId: string, stage: string): string => `codex-worker:${jobId}:${stage}`;
 
@@ -49,7 +50,7 @@ const failureReason = (error: unknown): string => {
 export class CodexWorker {
   constructor(
     private readonly api: WorkerApi, private readonly executor: WorkExecutor,
-    private readonly nodeId: string, private readonly repositoryUrl: string, private readonly repositoryPath: string,
+    private readonly nodeId: string, private readonly approvedRepositories: ApprovedRepositories,
   ) {}
 
   async runNext(): Promise<string | null> {
@@ -59,7 +60,8 @@ export class CodexWorker {
     await this.api.post(job.id, 'claim');
     try {
       const work = await this.api.workPackage(job.id);
-      if (work.project.repositoryUrl !== this.repositoryUrl) {
+      const repositoryPath = work.project.repositoryUrl === null ? undefined : this.approvedRepositories.get(work.project.repositoryUrl);
+      if (!repositoryPath) {
         throw new Error('Work Package repository is not approved on this worker');
       }
       if (requiresProtectedActionApproval(work) && !work.authorization.protectedActionsApproved) {
@@ -67,9 +69,9 @@ export class CodexWorker {
       }
       await this.api.post(job.id, 'start');
       await this.api.post(job.id, 'progress', {
-        phase: 'Codex', message: `Executing ${work.workItem.title}`, idempotencyKey: evidenceKey(job.id, 'progress'),
+        phase: work.execution.agent.type, message: `Executing ${work.workItem.title}`, idempotencyKey: evidenceKey(job.id, 'progress'),
       });
-      const result = await this.executor.execute(work, this.repositoryPath);
+      const result = await this.executor.execute(work, repositoryPath);
       validateEvidence(work, result);
       for (const type of ['Unit', 'Integration'] as const) {
         const test = result.tests.find((candidate) => candidate.type === type);

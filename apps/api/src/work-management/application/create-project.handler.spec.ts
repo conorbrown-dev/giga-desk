@@ -19,6 +19,7 @@ describe('CreateProjectHandler', () => {
     const handler = new CreateProjectHandler(repository);
     const result = await handler.execute(new CreateProjectCommand({
       key: 'gd', name: ' Giga Desk ', description: 'Orchestrator', businessGoal: 'Ship reliably',
+      repositoryUrl: 'https://github.com/example/giga-desk.git', defaultBranch: 'main',
     }, 'user-123'));
 
     expect(result).toMatchObject({ key: 'GD', name: 'Giga Desk', status: 'Idea' });

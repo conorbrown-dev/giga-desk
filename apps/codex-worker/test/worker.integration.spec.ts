@@ -49,7 +49,7 @@ describe('Codex worker HTTP lifecycle', () => {
     if (!address || typeof address === 'string') throw new Error('Expected a TCP test server');
     const api = new AgentApi(`http://127.0.0.1:${String(address.port)}`, 'machine-token');
     const execute = vi.fn<WorkExecutor['execute']>().mockResolvedValue(result);
-    const worker = new CodexWorker(api, { execute }, 'node-1', work.project.repositoryUrl ?? '', '/repo');
+    const worker = new CodexWorker(api, { execute }, 'node-1', new Map([[work.project.repositoryUrl ?? '', '/repo']]));
 
     await expect(worker.runNext()).resolves.toBe('job-1');
     expect(received).toEqual(['claim', 'start', 'progress', 'tests', 'tests', 'deployment', 'tests', 'complete']);

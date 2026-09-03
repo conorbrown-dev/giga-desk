@@ -20,7 +20,7 @@ export interface ProjectWorkItem {
   criteria: readonly { id: string; text: string; satisfied: boolean; sortOrder: number }[];
 }
 
-export interface CreateProjectInput { key: string; name: string; description: string; businessGoal: string }
+export interface CreateProjectInput { key: string; name: string; description: string; businessGoal: string; repositoryUrl: string; defaultBranch: string }
 export interface VisualReferenceInput { name: string; mediaType: string; dataBase64: string }
 export interface CreateFeatureInput { title: string; description: string; acceptanceCriteria: readonly string[];
   visualReferences?: readonly VisualReferenceInput[]; visualReviewRequired?: boolean }

@@ -15,6 +15,8 @@ export interface CreateProjectInput {
   name: string;
   description: string;
   businessGoal: string;
+  repositoryUrl: string;
+  defaultBranch: string;
 }
 
 export class CreateProjectCommand extends Command<CreatedProject> {
