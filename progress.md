@@ -61,10 +61,11 @@
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 - The authenticated web app now uses a responsive admin-dashboard shell with desktop sidebar/mobile navigation, bright semantic status chips, portfolio metrics, compact creation disclosures, and consistent operational empty/error surfaces.
 - The supplied Giga Desk icon, square logo, and banner logo are now integrated into the navigation, favicon/touch icon, and sign-in surface; the theme's primary interactive treatment is neon orange with accessible dark text on orange and light text on secondary controls.
+- Keycloak now ships a responsive `giga-desk` login theme that carries the same charcoal surfaces, supplied banner logo, neon-orange primary action and focus treatment, and accessible mobile layout into the identity flow.
 
 ## Handoff — 2026-09-03
 
-- Refined the authenticated UI into one cohesive Expo/Railway-inspired administration experience without copying either product's branding: charcoal operational surfaces, violet primary actions, cyan/lime/amber/red state roles, an active-route navigation rail, workspace context, and responsive project metrics. Project and Feature creation remain keyboard-native and are now collapsed behind explicit disclosure actions so data stays primary.
+- Refined the authenticated UI into one cohesive Expo/Railway-inspired administration experience without copying either product's branding: charcoal operational surfaces, orange primary actions, cyan/lime/amber/red state roles, an active-route navigation rail, workspace context, and responsive project metrics. Project and Feature creation remain keyboard-native and are now collapsed behind explicit disclosure actions so data stays primary.
 - Added component assertions for active navigation, portfolio metrics, and semantic status treatment. Added real-browser assertions and inspected final screenshots at 1440×900 and 390×844: `apps/web/test-results/visual-review/admin-dashboard-desktop.png` and `apps/web/test-results/visual-review/admin-dashboard-mobile.png`.
 - Verification passed: `npm run typecheck -w @giga-desk/web`, `npm run lint -w @giga-desk/web`, `npm test -w @giga-desk/web -- --run` (10 tests), `npm run build -w @giga-desk/web`, focused Playwright dashboard flow (1 test), and the complete real-Keycloak Playwright suite (6 tests). The first browser attempt ran while local Keycloak was stopped and is not counted; after starting the repository's local PostgreSQL/Keycloak services, the focused and full reruns passed.
 - The final feature diff contains 227 added-plus-deleted product-code lines, within the 228-line push limit. No production deployment is claimed.
@@ -219,6 +220,13 @@
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Branded Keycloak login theme
+
+- Added a Keycloak 26 `giga-desk` login theme with the supplied transparent banner, charcoal card and ambient background, orange primary/focus states, high-contrast fields, mobile reflow, and reduced-motion handling.
+- Selected the theme in the disposable local realm, mounted it for local development, packaged it into the production Keycloak image, and documented the production realm-selection step without changing the live realm.
+- Added a real-Keycloak Playwright flow that asserts the theme resource and captures `keycloak-login-desktop.png` at 1440x900 plus `keycloak-login-mobile.png` at 390x844. Both final images were inspected for hierarchy, alignment, clipping, contrast, and responsive reflow.
+- Verification passed: web typecheck, lint, 10 component tests, production web build, focused themed-login Playwright flow, all seven real-Keycloak Playwright flows, and a production Keycloak image build. The first focused browser run reached the themed page but its broad stylesheet locator matched three resources; the narrowed assertion passed. Conservatively counting theme and container/realm configuration, the feature changes 172 added-plus-deleted product-code lines, within the 228-line limit. No production deployment or live realm change is claimed.
 
 ### Giga Desk branding and neon-orange theme
 

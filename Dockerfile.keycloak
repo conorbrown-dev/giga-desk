@@ -7,6 +7,7 @@ RUN /opt/keycloak/bin/kc.sh build
 
 FROM quay.io/keycloak/keycloak:26.3
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
+COPY keycloak/themes/giga-desk /opt/keycloak/themes/giga-desk
 
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true

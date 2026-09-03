@@ -49,6 +49,19 @@ test('requires Keycloak authentication for project access', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Projects' })).not.toBeVisible();
 });
 
+test('uses the responsive Giga Desk theme for Keycloak sign in', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/projects');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page).toHaveURL(/\/realms\/giga-desk\//);
+  await expect(page).toHaveTitle('Sign in to Giga Desk');
+  await expect(page.locator('link[href*="/login/giga-desk/css/login.css"]')).toBeAttached();
+  await expect(page.getByRole('heading', { name: 'Sign in to your account' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/visual-review/keycloak-login-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/keycloak-login-mobile.png', fullPage: true });
+});
+
 test('walks through Codex agent setup in the authenticated app', async ({ page }) => {
   await signIn(page, '/agents/connect');
   await expect(page.getByRole('heading', { name: 'Connect a work agent' })).toBeVisible();

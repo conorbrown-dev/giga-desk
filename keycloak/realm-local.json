@@ -2,6 +2,7 @@
   "realm": "giga-desk",
   "enabled": true,
   "displayName": "Giga Desk",
+  "loginTheme": "giga-desk",
   "roles": {
     "realm": [
       { "name": "projects:read" },

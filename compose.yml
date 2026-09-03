@@ -46,6 +46,7 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./keycloak/realm-local.json:/opt/keycloak/data/import/giga-desk-realm.json:ro
+      - ./keycloak/themes/giga-desk:/opt/keycloak/themes/giga-desk:ro
 
 volumes:
   giga_desk_postgres:
