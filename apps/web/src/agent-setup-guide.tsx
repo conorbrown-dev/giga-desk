@@ -102,7 +102,7 @@ export function AgentSetupGuide() {
       <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></article>
     </section>
     {provider === 'opencode' ? <section aria-labelledby="opencode-setup"><div className="row"><div><p className="eyebrow">OpenCode</p><h2 id="opencode-setup">Connect an OpenCode worker</h2></div><span>{completed.length} of {openCodeSteps.length} complete</span></div>
-      <p>Download the installer for the worker host. It detects host details and prompts only for its node-scoped OIDC credentials, agent choices, and repository mappings. Registration happens through the authenticated API when the worker starts.</p>
+      <p>Download the installer for the worker host. Run it from the Giga Desk checkout, or set GIGA_DESK_WORKER_CHECKOUT to that checkout's absolute path. It reuses the protected machine configuration when present, derives its repository map from the checkout's Git remote, and uses MIRIAM with ollama/qwen3-coder-next:q4_K_M unless configured otherwise. Registration happens through the authenticated API when the worker starts.</p>
       <p><a className="button-link" href="/scripts/install-opencode-worker.sh" download>Download Bash installer</a>{' '}<a className="button-link button-secondary" href="/scripts/install-opencode-worker.ps1" download>Download PowerShell installer</a></p>
       <ol className="setup-steps">{openCodeSteps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>

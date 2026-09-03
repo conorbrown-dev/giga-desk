@@ -10,35 +10,56 @@ if ! command -v systemctl >/dev/null 2>&1; then
   exit 1
 fi
 
-default_checkout=$(pwd)
-read -r -p "Giga Desk checkout [$default_checkout]: " CHECKOUT
-CHECKOUT=${CHECKOUT:-$default_checkout}
+CHECKOUT=${GIGA_DESK_WORKER_CHECKOUT:-$(pwd)}
 if [[ ! -f "$CHECKOUT/package.json" ]] || [[ ! -d "$CHECKOUT/apps/codex-worker" ]]; then
-  echo 'The checkout must contain the Giga Desk package.json and apps/codex-worker.' >&2
+  echo "The checkout '$CHECKOUT' must contain the Giga Desk package.json and apps/codex-worker. Run this from the Giga Desk checkout or set GIGA_DESK_WORKER_CHECKOUT to its absolute path." >&2
   exit 1
 fi
 if [[ ! -d "$CHECKOUT/node_modules" ]]; then
   (cd "$CHECKOUT" && npm ci)
 fi
 
-read -r -p 'Giga Desk worker API URL: ' API_URL
-read -r -p 'Execution node ID: ' NODE_ID
-read -r -p 'OIDC token URL: ' TOKEN_URL
-read -r -p 'OIDC client ID: ' CLIENT_ID
-read -r -s -p 'OIDC client secret: ' CLIENT_SECRET
-printf '\n'
-read -r -p 'OpenCode agent name [MIRIAM]: ' AGENT_NAME
-AGENT_NAME=${AGENT_NAME:-MIRIAM}
-read -r -p 'OpenCode provider/model [ollama/qwen3-coder-next:q4_K_M]: ' MODEL
-MODEL=${MODEL:-ollama/qwen3-coder-next:q4_K_M}
-read -r -p 'Project repository map as JSON: ' REPOSITORIES
+config_dir="$HOME/.config/giga-desk"
+service_dir="$HOME/.config/systemd/user"
+if [[ -f "$config_dir/agent.env" ]]; then
+  set -a
+  # This file is created by this installer with mode 0600.
+  source "$config_dir/agent.env"
+  set +a
+fi
+if [[ -f "$config_dir/worker.env" ]]; then
+  set -a
+  source "$config_dir/worker.env"
+  set +a
+fi
+
+API_URL=${GIGA_DESK_AGENT_API_URL:-}
+NODE_ID=${GIGA_DESK_AGENT_NODE_ID:-}
+TOKEN_URL=${GIGA_DESK_AGENT_OIDC_TOKEN_URL:-}
+CLIENT_ID=${GIGA_DESK_AGENT_OIDC_CLIENT_ID:-}
+CLIENT_SECRET=${GIGA_DESK_AGENT_OIDC_CLIENT_SECRET:-}
+AGENT_NAME=${GIGA_DESK_WORKER_AGENT_NAME:-MIRIAM}
+MODEL=${GIGA_DESK_WORKER_MODEL_IDENTIFIER:-ollama/qwen3-coder-next:q4_K_M}
+REPOSITORIES=${GIGA_DESK_WORKER_REPOSITORIES:-}
 if [[ -z "$REPOSITORIES" ]]; then
-  echo 'A repository map is required.' >&2
+  remote_url=$(git -C "$CHECKOUT" remote get-url origin 2>/dev/null || true)
+  if [[ -n "$remote_url" ]]; then
+    REPOSITORIES=$(node -e 'console.log(JSON.stringify([{ url: process.argv[1], path: process.argv[2] }]))' "$remote_url" "$CHECKOUT")
+  fi
+fi
+missing=()
+for setting in GIGA_DESK_AGENT_API_URL GIGA_DESK_AGENT_NODE_ID GIGA_DESK_AGENT_OIDC_TOKEN_URL GIGA_DESK_AGENT_OIDC_CLIENT_ID GIGA_DESK_AGENT_OIDC_CLIENT_SECRET; do
+  [[ -n "${!setting:-}" ]] || missing+=("$setting")
+done
+if (( ${#missing[@]} > 0 )); then
+  echo "Worker identity is not configured. Provide the protected agent.env file or export: ${missing[*]}" >&2
+  exit 1
+fi
+if [[ -z "$REPOSITORIES" ]]; then
+  echo 'No repository mapping is configured and no origin remote could be derived. Set GIGA_DESK_WORKER_REPOSITORIES.' >&2
   exit 1
 fi
 
-config_dir="$HOME/.config/giga-desk"
-service_dir="$HOME/.config/systemd/user"
 mkdir -p "$config_dir" "$service_dir"
 umask 077
 printf 'GIGA_DESK_AGENT_API_URL=%s\nGIGA_DESK_AGENT_NODE_ID=%s\nGIGA_DESK_AGENT_OIDC_TOKEN_URL=%s\nGIGA_DESK_AGENT_OIDC_CLIENT_ID=%s\nGIGA_DESK_AGENT_OIDC_CLIENT_SECRET=%s\n' "$API_URL" "$NODE_ID" "$TOKEN_URL" "$CLIENT_ID" "$CLIENT_SECRET" > "$config_dir/agent.env"

@@ -78,6 +78,7 @@ describe('App', () => {
     expect(screen.getByText(/Registration happens through the authenticated API/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.sh');
     expect(screen.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.ps1');
+    expect(screen.getByText(/Run it from the Giga Desk checkout/)).toBeInTheDocument();
     expect(screen.getByText(/GIGA_DESK_WORKER_AGENT_TYPE=OpenCode/)).toBeInTheDocument();
     expect(screen.getByText(/GIGA_DESK_WORKER_MODEL_IDENTIFIER=ollama\/qwen3-coder-next:q4_K_M/)).toBeInTheDocument();
     expect(screen.getByText(/systemctl --user restart giga-desk-codex-worker.service/)).toBeInTheDocument();
