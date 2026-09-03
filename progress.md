@@ -58,6 +58,14 @@
 - The MIRIAM worker runtime polls one job at a time, enforces an exact repository allowlist and evidence set, reports the real lifecycle in API order, and heartbeats continuously under a restartable user service.
 - OpenCode execution is now supported through the same worker lifecycle: administrators can provision a named OpenCode agent (for example, MIRIAM), the assigned Work Package model selects the `provider/model` CLI target, and the worker parses OpenCode JSON text events into the existing strict evidence contract.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
+- The authenticated web app now uses a responsive admin-dashboard shell with desktop sidebar/mobile navigation, bright semantic status chips, portfolio metrics, compact creation disclosures, and consistent operational empty/error surfaces.
+
+## Handoff — 2026-09-03
+
+- Refined the authenticated UI into one cohesive Expo/Railway-inspired administration experience without copying either product's branding: charcoal operational surfaces, violet primary actions, cyan/lime/amber/red state roles, an active-route navigation rail, workspace context, and responsive project metrics. Project and Feature creation remain keyboard-native and are now collapsed behind explicit disclosure actions so data stays primary.
+- Added component assertions for active navigation, portfolio metrics, and semantic status treatment. Added real-browser assertions and inspected final screenshots at 1440×900 and 390×844: `apps/web/test-results/visual-review/admin-dashboard-desktop.png` and `apps/web/test-results/visual-review/admin-dashboard-mobile.png`.
+- Verification passed: `npm run typecheck -w @giga-desk/web`, `npm run lint -w @giga-desk/web`, `npm test -w @giga-desk/web -- --run` (10 tests), `npm run build -w @giga-desk/web`, focused Playwright dashboard flow (1 test), and the complete real-Keycloak Playwright suite (6 tests). The first browser attempt ran while local Keycloak was stopped and is not counted; after starting the repository's local PostgreSQL/Keycloak services, the focused and full reruns passed.
+- The final feature diff contains 227 added-plus-deleted product-code lines, within the 228-line push limit. No production deployment is claimed.
 
 ## Handoff — 2026-09-02
 
@@ -208,6 +216,14 @@
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Responsive admin dashboard visual system
+
+- Replaced the horizontal authenticated shell with a desktop navigation rail that becomes a compact mobile header, including active-route state, workspace identity, account context, and visible focus behavior.
+- Applied shared high-contrast color roles to primary actions, status chips, metrics, cards, fields, validation, evidence, and deployment states; reduced-motion behavior is respected.
+- Added portfolio summary metrics and consistent state panels, moved Project and Feature creation into native disclosure panels, and removed page-local execution-history styles.
+- Rendered and inspected the actual authenticated Project route at desktop and mobile sizes; all affected web gates and the complete authenticated browser suite passed.
+- The feature changes 227 product-code lines; tests and documentation are excluded from the 228-line limit.
 
 ### Downloadable OpenCode setup scripts
 

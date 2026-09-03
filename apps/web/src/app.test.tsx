@@ -24,6 +24,9 @@ describe('App', () => {
     render(<MemoryRouter initialEntries={['/projects']}><App /></MemoryRouter>);
     expect(await screen.findByRole('link', { name: 'GD · Giga Desk' })).toHaveAttribute('href', '/projects/project-1');
     expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { name: 'Project Portfolio' }));
+    expect(screen.getByText('Production workspace')).toBeInTheDocument();
+    expect(screen.getByText('Active', { selector: '.status-chip' })).toHaveClass('status-positive');
+    expect(screen.getByLabelText('Portfolio summary')).toHaveTextContent('High priority1');
     expect(fetch).toHaveBeenCalledWith('/api/projects', expect.objectContaining({ headers: { Authorization: 'Bearer test-token' } }));
   });
 
@@ -36,6 +39,7 @@ describe('App', () => {
     expect(navigation).toHaveTextContent('conor');
     expect(screen.getByRole('link', { name: 'Giga Desk' })).toHaveAttribute('href', '/projects');
     expect(screen.getByRole('link', { name: 'Connect agent' })).toHaveAttribute('href', '/agents/connect');
+    expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute('aria-current', 'page');
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(logout).toHaveBeenCalledOnce();
   });
@@ -98,6 +102,7 @@ describe('App', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     render(<MemoryRouter initialEntries={['/projects']}><App /></MemoryRouter>);
+    fireEvent.click(screen.getByText('Add project', { selector: 'summary' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Add project' }));
     expect(await screen.findByText('Enter a project key.')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Project key/), { target: { value: 'RY' } });
@@ -122,6 +127,7 @@ describe('App', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     render(<MemoryRouter initialEntries={['/projects/project-2']}><App /></MemoryRouter>);
+    fireEvent.click(screen.getByText('Add feature', { selector: 'summary' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Add feature' }));
     expect(await screen.findByText('Enter a feature title.')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Title/), { target: { value: 'Show Ryan the demo' } });

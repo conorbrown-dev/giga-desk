@@ -11,6 +11,7 @@ const signIn = async (page: Page, path = '/'): Promise<void> => {
 };
 
 test('navigates from projects to a work item execution dashboard', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.route('**/api/projects', async (route) => route.fulfill({ json: [{
     id: '00000000-0000-4000-8000-000000000001', key: 'GD', name: 'Giga Desk', businessGoal: 'Ship work reliably',
     status: 'Active', priority: 'High', updatedAt: '2026-09-01T00:00:00.000Z',
@@ -26,6 +27,11 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   await expect(navigation.getByRole('link', { name: 'Giga Desk' })).toBeVisible();
   await expect(navigation.getByRole('button', { name: 'Sign out' })).toBeVisible();
   await page.getByRole('link', { name: 'View projects' }).click();
+  await expect(page.getByText('Production workspace')).toBeVisible();
+  await expect(page.getByLabel('Projects').getByText('Active', { exact: true })).toBeVisible();
+  await page.screenshot({ path: 'test-results/visual-review/admin-dashboard-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/admin-dashboard-mobile.png', fullPage: true });
   await page.getByRole('link', { name: 'GD · Giga Desk' }).click();
   await page.getByRole('link', { name: 'Project navigation' }).click();
   await expect(page.getByText('No execution attempts yet.')).toBeVisible();
@@ -122,6 +128,7 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
   expect(content).not.toBeNull();
   expect(content?.width).toBeLessThanOrEqual(1200);
   expect(content?.x).toBeGreaterThan(0);
+  await page.locator('summary').filter({ hasText: 'Add project' }).click();
   await page.getByRole('button', { name: 'Add project' }).click();
   await expect(page.getByText('Enter a project key.')).toBeVisible();
   await page.getByLabel(/Project key/).fill('RY');
@@ -131,6 +138,7 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
   await page.getByLabel(/Repository URL/).fill('https://github.com/example/ryan-demo.git');
   await page.getByRole('button', { name: 'Add project' }).click();
   await page.getByRole('link', { name: 'RY · Ryan Demo' }).click();
+  await page.locator('summary').filter({ hasText: 'Add feature' }).click();
   await page.getByRole('button', { name: 'Add feature' }).click();
   await expect(page.getByText('Enter a feature title.')).toBeVisible();
   await page.getByLabel(/Title/).fill('Coworker showcase');

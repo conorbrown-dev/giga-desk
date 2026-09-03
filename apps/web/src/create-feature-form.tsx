@@ -31,7 +31,7 @@ const schema = Yup.object({
 
 export function CreateFeatureForm({ projectId, onCreated }: { projectId: string; onCreated: () => void }) {
   const fileInput = useRef<HTMLInputElement>(null);
-  return <section className="card" aria-labelledby="create-feature-heading"><h2 id="create-feature-heading">Add feature</h2><Formik<FeatureFormValues> initialValues={initialValues} validationSchema={schema} onSubmit={async (values, { resetForm, setStatus }) => {
+  return <details className="card action-panel"><summary>Add feature</summary><h2 id="create-feature-heading">Feature details</h2><Formik<FeatureFormValues> initialValues={initialValues} validationSchema={schema} onSubmit={async (values, { resetForm, setStatus }) => {
     setStatus(undefined);
     try { const visualReferences = await Promise.all(values.visualReferences.map(encodeImage)); await createFeature(projectId, { title: values.title, description: values.description, acceptanceCriteria: criteria(values.acceptanceCriteria), visualReviewRequired: values.visualReviewRequired || visualReferences.length > 0, ...(visualReferences.length > 0 ? { visualReferences } : {}) }); resetForm(); if (fileInput.current) fileInput.current.value = ''; setStatus({ success: 'Feature created.' }); onCreated(); }
     catch (reason: unknown) { setStatus({ error: reason instanceof Error ? reason.message : 'Unable to create the feature.' }); }
@@ -47,5 +47,5 @@ export function CreateFeatureForm({ projectId, onCreated }: { projectId: string;
       <button type="submit" disabled={form.isSubmitting}>{form.isSubmitting ? 'Adding…' : 'Add feature'}</button>
       {feedback?.error && <p role="alert">{feedback.error}</p>}{feedback?.success && <p role="status">{feedback.success}</p>}
     </Form>;
-  }}</Formik></section>;
+  }}</Formik></details>;
 }
