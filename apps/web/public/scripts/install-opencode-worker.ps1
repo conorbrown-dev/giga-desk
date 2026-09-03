@@ -6,6 +6,12 @@ $node = Get-Command node -ErrorAction SilentlyContinue
 if ($null -eq $node) { throw 'Node.js 22 or later is required to run the worker.' }
 $configDir = Join-Path $env:USERPROFILE '.config/giga-desk'
 $agentFile = Join-Path $configDir 'agent.env.ps1'; $workerFile = Join-Path $configDir 'worker.env.ps1'
+$taskDir = Join-Path $configDir 'task'; $runnerFile = Join-Path $taskDir 'run-worker.ps1'; $releaseRoot = Join-Path $env:LOCALAPPDATA 'GigaDesk\worker'
+if ((Test-Path $runnerFile) -or (Test-Path $releaseRoot) -or $null -ne (Get-ScheduledTask -TaskName 'Giga Desk OpenCode Worker' -ErrorAction SilentlyContinue)) {
+  $removePrevious = Read-Host 'A previous Giga Desk worker installation was found. Remove its task and downloaded worker artifacts before continuing? [y/N]'
+  if ($removePrevious -notmatch '^[Yy]$') { throw 'Existing installation left unchanged.' }
+  Unregister-ScheduledTask -TaskName 'Giga Desk OpenCode Worker' -Confirm:$false -ErrorAction SilentlyContinue; Remove-Item -Force $runnerFile -ErrorAction SilentlyContinue; Remove-Item -Recurse -Force $releaseRoot -ErrorAction SilentlyContinue
+}
 if (Test-Path $agentFile) { . $agentFile }; if (Test-Path $workerFile) { . $workerFile }
 $required = @('GIGA_DESK_AGENT_API_URL', 'GIGA_DESK_AGENT_NODE_ID', 'GIGA_DESK_AGENT_OIDC_TOKEN_URL', 'GIGA_DESK_AGENT_OIDC_CLIENT_ID', 'GIGA_DESK_AGENT_OIDC_CLIENT_SECRET')
 $missing = $required | Where-Object { [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_)) }
@@ -20,10 +26,10 @@ try {
   $archive = Join-Path $downloadDirectory 'worker.tgz'; Invoke-WebRequest -Uri $releaseUrl -OutFile $archive; Invoke-WebRequest -Uri "$releaseUrl.sha256" -OutFile "$archive.sha256"
   $expectedHash = (Get-Content "$archive.sha256" -Raw).Split([char[]]' ')[0]; $actualHash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
   if ($expectedHash.ToLowerInvariant() -ne $actualHash) { throw 'The downloaded worker bundle checksum does not match.' }
-  $releaseDirectory = Join-Path $env:LOCALAPPDATA "GigaDesk\worker\releases\$actualHash"
+  $releaseDirectory = Join-Path $releaseRoot "releases\$actualHash"
   if (-not (Test-Path $releaseDirectory)) { New-Item -ItemType Directory -Force -Path $releaseDirectory | Out-Null; & tar -xzf $archive -C $releaseDirectory }
 } finally { Remove-Item -Recurse -Force $downloadDirectory }
-$taskDir = Join-Path $configDir 'task'; New-Item -ItemType Directory -Force -Path $taskDir | Out-Null; $runnerFile = Join-Path $taskDir 'run-worker.ps1'; $utf8 = [Text.UTF8Encoding]::new($false)
+New-Item -ItemType Directory -Force -Path $taskDir | Out-Null; $utf8 = [Text.UTF8Encoding]::new($false)
 [IO.File]::WriteAllText($agentFile, "`$env:GIGA_DESK_AGENT_API_URL = '$(Quote $apiUrl)'`n`$env:GIGA_DESK_AGENT_NODE_ID = '$(Quote $nodeId)'`n`$env:GIGA_DESK_AGENT_OIDC_TOKEN_URL = '$(Quote $tokenUrl)'`n`$env:GIGA_DESK_AGENT_OIDC_CLIENT_ID = '$(Quote $clientId)'`n`$env:GIGA_DESK_AGENT_OIDC_CLIENT_SECRET = '$(Quote $clientSecret)'`n", $utf8)
 [IO.File]::WriteAllText($workerFile, "`$env:GIGA_DESK_WORKER_AGENT_TYPE = 'OpenCode'`n`$env:GIGA_DESK_WORKER_AGENT_NAME = '$(Quote $agentName)'`n`$env:GIGA_DESK_WORKER_MODEL_IDENTIFIER = '$(Quote $model)'`n`$env:GIGA_DESK_WORKER_REPOSITORIES = '$(Quote $repositories)'`n`$env:GIGA_DESK_AGENT_POLL_INTERVAL_MS = '5000'`n`$env:GIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS = '30000'`n", $utf8)
 $runner = "`$ErrorActionPreference = 'Stop'`n. `"`$env:USERPROFILE\.config\giga-desk\agent.env.ps1`"`n. `"`$env:USERPROFILE\.config\giga-desk\worker.env.ps1`"`n`$env:Path = '$(Quote (Split-Path -Parent $opencode.Source));' + `$env:Path`nSet-Location -LiteralPath '$(Quote $releaseDirectory)'`n& '$(Quote $node.Source)' apps/codex-worker/dist/main.js`n"

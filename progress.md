@@ -66,6 +66,8 @@
 
 ## Handoff — 2026-09-03
 
+- All four installers now detect an existing worker installation and ask before removing the prior service/task, runner, and downloaded worker releases. Declining exits without changes; protected machine configuration is retained when removal is approved so the replacement can reuse the node identity. `bash -n` and a mocked declined-removal flow passed; repository typecheck, lint, 73 unit tests, and production build passed. PowerShell execution remains unverified because it is unavailable on this Linux host.
+
 - Fixed legacy Bash installer repository-map corruption. Existing unquoted JSON mappings are now detected before installation, reset safely to `[]`, and future mappings are quoted so both Bash and systemd preserve valid JSON. `bash -n` and a mocked legacy-config installation verified recovery and the persisted JSON value; repository typecheck, lint, 73 unit tests, production build, and seven real-Keycloak browser flows passed.
 
 - All customer installers now follow the bundle-based distribution model. The Codex and OpenCode PowerShell installers now reuse protected configuration, derive or accept a worker release URL, download and SHA-256 verify the worker bundle, install it below the customer profile, create the scheduled-task runtime, and default to an empty repository map that waits safely for customer checkouts. `AGENTS.md` now records the customer-facing product boundary. PowerShell execution remains unavailable on this Linux host; a static check confirms no checkout, npm-build, or interactive prompt assumptions remain. Repository typecheck, lint, 73 unit tests, 13 integration tests, seven real-Keycloak browser flows, and the production build passed.

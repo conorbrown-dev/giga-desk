@@ -17,6 +17,19 @@ fi
 
 config_dir="$HOME/.config/giga-desk"
 service_dir="$HOME/.config/systemd/user"
+service_file="$service_dir/giga-desk-codex-worker.service"
+release_root="$HOME/.local/share/giga-desk/worker"
+runner_file="$config_dir/task/run-worker.ps1"
+if [[ -f "$service_file" || -d "$release_root" || -f "$runner_file" ]]; then
+  read -r -p 'A previous Giga Desk worker installation was found. Remove its service and downloaded worker artifacts before continuing? [y/N] ' remove_previous
+  if [[ ! "$remove_previous" =~ ^[Yy]$ ]]; then
+    echo 'Existing installation left unchanged.' >&2
+    exit 1
+  fi
+  systemctl --user disable --now giga-desk-codex-worker.service >/dev/null 2>&1 || true
+  rm -f "$service_file" "$runner_file"
+  rm -rf "$release_root"
+fi
 if [[ -f "$config_dir/agent.env" ]]; then
   set -a
   # This file is created by this installer with mode 0600.
@@ -63,7 +76,7 @@ if [[ "$expected_sha" != "$actual_sha" ]]; then
   echo 'The downloaded worker bundle checksum does not match.' >&2
   exit 1
 fi
-release_dir="$HOME/.local/share/giga-desk/worker/releases/$actual_sha"
+release_dir="$release_root/releases/$actual_sha"
 if [[ ! -d "$release_dir" ]]; then
   mkdir -p "$release_dir"
   tar -xzf "$download_dir/worker.tgz" -C "$release_dir"
