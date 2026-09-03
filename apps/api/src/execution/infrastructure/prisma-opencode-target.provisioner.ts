@@ -19,7 +19,9 @@ export class PrismaOpenCodeTargetProvisioner extends OpenCodeTargetProvisioner {
         operatingSystem: input.operatingSystem, architecture: input.architecture, status: 'Offline',
         capabilities: { agentTypes: ['OpenCode'], modelProviders: [provider] }, maximumConcurrentJobs: 1, tags: ['opencode'],
       }, update: { name: input.nodeName, hostname: input.hostname, operatingSystem: input.operatingSystem, architecture: input.architecture, enabled: true,
-        capabilities: { agentTypes: ['OpenCode'], modelProviders: [provider] }, tags: ['opencode'] } });
+        tags: ['opencode'] } });
+      const existingCapabilities = node.capabilities && typeof node.capabilities === 'object' && !Array.isArray(node.capabilities) ? node.capabilities as Record<string, unknown> : {};
+      await transaction.executionNode.update({ where: { id: node.id }, data: { capabilities: { ...existingCapabilities, agentTypes: ['OpenCode'], modelProviders: [provider] } } });
       const agent = await transaction.agent.upsert({ where: { name_version: { name: input.agentName, version: input.agentVersion } }, create: {
         name: input.agentName, agentType: 'OpenCode', version: input.agentVersion, supportedCapabilities: ['code', 'tests', 'source-control'],
         configuration: { command: 'opencode run', output: 'json-events', sandbox: 'worker-configured' }, supportedModelProviders: [provider],

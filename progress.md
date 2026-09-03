@@ -659,3 +659,4 @@
 - Added the Connect agent UI node selector, repository URL/local path form, save action, and success/error states; updated setup copy to describe app-managed configuration.
 - Updated AGENTS.md and durable memory to prefer Giga Desk app/API configuration wherever securely possible.
 - Verification: `npm run typecheck -ws`, `npm run lint -ws`, and `npm run test -ws` passed. API integration suite and browser E2E were not run in this slice.
+- Follow-up fixed worker self-registration overwriting saved repository mappings; registration now preserves app-managed mappings while refreshing runtime capabilities. API typecheck and unit tests passed.

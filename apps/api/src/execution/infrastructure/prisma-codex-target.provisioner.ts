@@ -25,9 +25,11 @@ export class PrismaCodexTargetProvisioner extends CodexTargetProvisioner {
         update: {
           name: input.nodeName, description: 'Codex CLI execution host', hostname: input.hostname,
           operatingSystem: input.operatingSystem, architecture: input.architecture, enabled: true,
-          capabilities: { agentTypes: ['CodexCli'], modelProviders: ['OpenAI'] }, tags: ['codex'],
+          tags: ['codex'],
         },
       });
+      const existingCapabilities = node.capabilities && typeof node.capabilities === 'object' && !Array.isArray(node.capabilities) ? node.capabilities as Record<string, unknown> : {};
+      await transaction.executionNode.update({ where: { id: node.id }, data: { capabilities: { ...existingCapabilities, agentTypes: ['CodexCli'], modelProviders: ['OpenAI'] } } });
       await transaction.agent.updateMany({
         where: { name: 'Codex CLI', version: { not: input.agentVersion } }, data: { enabled: false },
       });
