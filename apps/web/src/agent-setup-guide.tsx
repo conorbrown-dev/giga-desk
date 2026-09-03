@@ -110,7 +110,7 @@ export function AgentSetupGuide() {
         <label className="step-check"><input type="checkbox" checked={completed.includes(index)} disabled={step.pending}
           onChange={(event) => { setStep(index, event.target.checked); }} /> Step completed</label>
       </li>)}</ol></section> : <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
-      <p>Download the installer for the worker host. It detects Codex and prompts only for its node-scoped OIDC credentials and repository mappings. Registration happens through the authenticated API when the worker starts.</p>
+      <p>Download the installer for the worker host. It detects Codex, reuses the protected machine configuration when present, and derives the current checkout mapping from its Git remote. It never prompts for credentials; an administrator must supply the node-scoped OIDC configuration through the protected machine environment. Registration happens through the authenticated API when the worker starts.</p>
       <p><a className="button-link" href="/scripts/install-codex-worker.sh" download>Download Bash installer</a>{' '}<a className="button-link button-secondary" href="/scripts/install-codex-worker.ps1" download>Download PowerShell installer</a></p>
       <ol className="setup-steps">{steps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>

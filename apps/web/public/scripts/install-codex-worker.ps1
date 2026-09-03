@@ -1,33 +1,36 @@
 $ErrorActionPreference = 'Stop'
 
-function Read-SecretText([string]$Prompt) {
-  $secure = Read-Host -Prompt $Prompt -AsSecureString
-  $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-  try { return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer) }
-  finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer) }
-}
-
 function ConvertTo-PowerShellSingleQuotedText([string]$Value) {
   return $Value.Replace("'", "''")
 }
 
 $codex = Get-Command codex -ErrorAction SilentlyContinue
 if ($null -eq $codex) { throw 'Codex is not installed or is not on PATH. Install it, then run this script again.' }
-$checkout = Read-Host "Giga Desk checkout [$((Get-Location).Path)]"
-if ([string]::IsNullOrWhiteSpace($checkout)) { $checkout = (Get-Location).Path }
+$checkout = if ([string]::IsNullOrWhiteSpace($env:GIGA_DESK_WORKER_CHECKOUT)) { (Get-Location).Path } else { $env:GIGA_DESK_WORKER_CHECKOUT }
 $checkout = (Resolve-Path $checkout).Path
 if (-not (Test-Path (Join-Path $checkout 'package.json')) -or -not (Test-Path (Join-Path $checkout 'apps/codex-worker'))) {
   throw 'The checkout must contain the Giga Desk package.json and apps/codex-worker.'
 }
 if (-not (Test-Path (Join-Path $checkout 'node_modules'))) { Push-Location $checkout; npm ci; Pop-Location }
 
-$apiUrl = Read-Host 'Giga Desk worker API URL'
-$nodeId = Read-Host 'Execution node ID'
-$tokenUrl = Read-Host 'OIDC token URL'
-$clientId = Read-Host 'OIDC client ID'
-$clientSecret = Read-SecretText 'OIDC client secret'
-$repositories = Read-Host 'Project repository map as JSON'
-if ([string]::IsNullOrWhiteSpace($repositories)) { throw 'A repository map is required.' }
+$configDir = Join-Path $env:USERPROFILE '.config/giga-desk'
+$agentFile = Join-Path $configDir 'agent.env.ps1'
+$workerFile = Join-Path $configDir 'worker.env.ps1'
+if (Test-Path $agentFile) { . $agentFile }
+if (Test-Path $workerFile) { . $workerFile }
+$missing = @('GIGA_DESK_AGENT_API_URL', 'GIGA_DESK_AGENT_NODE_ID', 'GIGA_DESK_AGENT_OIDC_TOKEN_URL', 'GIGA_DESK_AGENT_OIDC_CLIENT_ID', 'GIGA_DESK_AGENT_OIDC_CLIENT_SECRET') | Where-Object { [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_)) }
+if ($missing.Count -gt 0) { throw "Worker identity is not configured. Provide the protected agent.env.ps1 file or set: $($missing -join ', ')" }
+$apiUrl = $env:GIGA_DESK_AGENT_API_URL
+$nodeId = $env:GIGA_DESK_AGENT_NODE_ID
+$tokenUrl = $env:GIGA_DESK_AGENT_OIDC_TOKEN_URL
+$clientId = $env:GIGA_DESK_AGENT_OIDC_CLIENT_ID
+$clientSecret = $env:GIGA_DESK_AGENT_OIDC_CLIENT_SECRET
+$repositories = $env:GIGA_DESK_WORKER_REPOSITORIES
+if ([string]::IsNullOrWhiteSpace($repositories)) {
+  $remoteUrl = & git -C $checkout remote get-url origin 2>$null
+  if (-not [string]::IsNullOrWhiteSpace($remoteUrl)) { $repositories = @(@{ url = $remoteUrl; path = $checkout }) | ConvertTo-Json -Compress }
+}
+if ([string]::IsNullOrWhiteSpace($repositories)) { throw 'No repository mapping is configured and no origin remote could be derived. Set GIGA_DESK_WORKER_REPOSITORIES.' }
 $safeApiUrl = ConvertTo-PowerShellSingleQuotedText $apiUrl
 $safeNodeId = ConvertTo-PowerShellSingleQuotedText $nodeId
 $safeTokenUrl = ConvertTo-PowerShellSingleQuotedText $tokenUrl
@@ -35,11 +38,8 @@ $safeClientId = ConvertTo-PowerShellSingleQuotedText $clientId
 $safeClientSecret = ConvertTo-PowerShellSingleQuotedText $clientSecret
 $safeRepositories = ConvertTo-PowerShellSingleQuotedText $repositories
 
-$configDir = Join-Path $env:USERPROFILE '.config/giga-desk'
 $taskDir = Join-Path $configDir 'task'
 New-Item -ItemType Directory -Force -Path $taskDir | Out-Null
-$agentFile = Join-Path $configDir 'agent.env.ps1'
-$workerFile = Join-Path $configDir 'worker.env.ps1'
 $runnerFile = Join-Path $taskDir 'run-worker.ps1'
 $utf8 = [Text.UTF8Encoding]::new($false)
 [IO.File]::WriteAllText($agentFile, "`$env:GIGA_DESK_AGENT_API_URL = '$safeApiUrl'`n`$env:GIGA_DESK_AGENT_NODE_ID = '$safeNodeId'`n`$env:GIGA_DESK_AGENT_OIDC_TOKEN_URL = '$safeTokenUrl'`n`$env:GIGA_DESK_AGENT_OIDC_CLIENT_ID = '$safeClientId'`n`$env:GIGA_DESK_AGENT_OIDC_CLIENT_SECRET = '$safeClientSecret'`n", $utf8)

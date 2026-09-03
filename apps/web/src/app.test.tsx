@@ -54,6 +54,7 @@ describe('App', () => {
     expect(screen.queryByText('Requires worker support')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.sh');
     expect(screen.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.ps1');
+    expect(screen.getByText(/It never prompts for credentials/)).toBeInTheDocument();
     expect(screen.getByText(/registers only its node-scoped target through the API/)).toBeInTheDocument();
     expect(screen.getByText(/install the included systemd user service/i)).toBeInTheDocument();
     expect(screen.getByText(/systemctl --user enable --now giga-desk-codex-worker.service/)).toBeInTheDocument();
