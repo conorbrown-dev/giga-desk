@@ -23,6 +23,10 @@ $nodeId = Read-Host 'Execution node ID'
 $tokenUrl = Read-Host 'OIDC token URL'
 $clientId = Read-Host 'OIDC client ID'
 $clientSecret = Read-SecretText 'OIDC client secret'
+$agentName = Read-Host 'OpenCode agent name [MIRIAM]'
+if ([string]::IsNullOrWhiteSpace($agentName)) { $agentName = 'MIRIAM' }
+$model = Read-Host 'OpenCode provider/model [ollama/qwen3-coder-next:q4_K_M]'
+if ([string]::IsNullOrWhiteSpace($model)) { $model = 'ollama/qwen3-coder-next:q4_K_M' }
 $repositories = Read-Host 'Project repository map as JSON'
 if ([string]::IsNullOrWhiteSpace($repositories)) { throw 'A repository map is required.' }
 
@@ -34,7 +38,7 @@ $workerFile = Join-Path $configDir 'worker.env.ps1'
 $runnerFile = Join-Path $taskDir 'run-worker.ps1'
 $utf8 = [Text.UTF8Encoding]::new($false)
 [IO.File]::WriteAllText($agentFile, "`$env:GIGA_DESK_AGENT_API_URL = '$apiUrl'`n`$env:GIGA_DESK_AGENT_NODE_ID = '$nodeId'`n`$env:GIGA_DESK_AGENT_OIDC_TOKEN_URL = '$tokenUrl'`n`$env:GIGA_DESK_AGENT_OIDC_CLIENT_ID = '$clientId'`n`$env:GIGA_DESK_AGENT_OIDC_CLIENT_SECRET = '$clientSecret'`n", $utf8)
-[IO.File]::WriteAllText($workerFile, "`$env:GIGA_DESK_WORKER_AGENT_TYPE = 'OpenCode'`n`$env:GIGA_DESK_WORKER_REPOSITORIES = '$repositories'`n`$env:GIGA_DESK_AGENT_POLL_INTERVAL_MS = '5000'`n`$env:GIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS = '30000'`n", $utf8)
+[IO.File]::WriteAllText($workerFile, "`$env:GIGA_DESK_WORKER_AGENT_TYPE = 'OpenCode'`n`$env:GIGA_DESK_WORKER_AGENT_NAME = '$agentName'`n`$env:GIGA_DESK_WORKER_MODEL_IDENTIFIER = '$model'`n`$env:GIGA_DESK_WORKER_REPOSITORIES = '$repositories'`n`$env:GIGA_DESK_AGENT_POLL_INTERVAL_MS = '5000'`n`$env:GIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS = '30000'`n", $utf8)
 [IO.File]::WriteAllText($runnerFile, @'
 $ErrorActionPreference = 'Stop'
 . "$env:USERPROFILE\.config\giga-desk\agent.env.ps1"
@@ -60,4 +64,4 @@ $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive
 Register-ScheduledTask -TaskName 'Giga Desk OpenCode Worker' -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force | Out-Null
 Start-ScheduledTask -TaskName 'Giga Desk OpenCode Worker'
 Get-ScheduledTask -TaskName 'Giga Desk OpenCode Worker' | Format-List TaskName,State
-Write-Host 'The node should become Online in Giga Desk. Inspect the task history if it does not.'
+Write-Host 'The worker registers OpenCode on startup. The node and agent should become visible in Giga Desk.'

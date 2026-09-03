@@ -27,10 +27,28 @@ import { ExecutionFailureRejectedError } from '../application/agent-failure-repo
 import { ReportExecutionFailureDto } from './report-execution-failure.dto.js';
 import { HeartbeatExecutionNodeCommand, type HeartbeatingExecutionNode } from '../application/heartbeat-execution-node.command.js';
 import { ExecutionNodeHeartbeatRejectedError } from '../application/execution-node-heartbeat-repository.js';
+import { RegisterOpenCodeTargetCommand } from '../application/register-opencode-target.command.js';
+import type { ProvisionedOpenCodeTarget } from '../application/opencode-target-provisioner.js';
+import { RegisterOpenCodeTargetDto } from './register-opencode-target.dto.js';
 
 @Controller('agent')
 export class AgentJobsController {
   constructor(private readonly commands: CommandBus, private readonly queries: QueryBus) {}
+
+  @Post('nodes/:nodeId/opencode-registration')
+  @RequirePermissions('agent:jobs')
+  registerOpenCode(
+    @Param('nodeId', ParseUUIDPipe) nodeId: string, @Body() input: RegisterOpenCodeTargetDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<ProvisionedOpenCodeTarget> {
+    try {
+      assertWorkerNode(nodeId, request.user?.executionNodeId ?? null);
+      return this.commands.execute(new RegisterOpenCodeTargetCommand(nodeId, input));
+    } catch (error) {
+      if (error instanceof WorkerNodeMismatchError) throw new ForbiddenException(error.message);
+      throw error;
+    }
+  }
 
   @Post('nodes/:nodeId/heartbeat')
   @RequirePermissions('agent:jobs')

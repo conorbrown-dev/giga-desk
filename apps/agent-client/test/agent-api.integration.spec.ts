@@ -18,7 +18,10 @@ describe('agent API HTTP boundary', () => {
         return;
       }
       received.push(request.headers.authorization ?? '');
-      if (request.url?.endsWith('/heartbeat')) {
+      if (request.url?.endsWith('/opencode-registration')) {
+        response.writeHead(201, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({ agentId: 'agent-1' }));
+      } else if (request.url?.endsWith('/heartbeat')) {
         response.writeHead(201, { 'Content-Type': 'application/json' });
         response.end(JSON.stringify({ status: 'Online' }));
       } else if (request.url?.endsWith('/jobs')) {
@@ -35,12 +38,15 @@ describe('agent API HTTP boundary', () => {
     const provider = new ClientCredentialsTokenProvider(`${baseUrl}/token`, 'worker', 'secret');
     const api = new AgentApi(baseUrl, provider.getToken.bind(provider));
 
+    await expect(api.registerOpenCode('node-1', { agentName: 'MIRIAM', hostname: 'miriam.local',
+      operatingSystem: 'linux', architecture: 'x64', agentVersion: '1.18.26', modelIdentifier: 'ollama/qwen' }))
+      .resolves.toEqual({ agentId: 'agent-1' });
     await expect(api.heartbeat('node-1')).resolves.toEqual({ status: 'Online' });
     await expect(api.discover('node-1')).resolves.toEqual([]);
     await expect(api.post('job-1', 'claim')).rejects.toEqual(
       expect.objectContaining<Partial<AgentApiError>>({ status: 409, message: 'already claimed' }),
     );
     expect(tokenRequests).toBe(1);
-    expect(received).toEqual(['Bearer worker-token', 'Bearer worker-token', 'Bearer worker-token']);
+    expect(received).toEqual(['Bearer worker-token', 'Bearer worker-token', 'Bearer worker-token', 'Bearer worker-token']);
   });
 });

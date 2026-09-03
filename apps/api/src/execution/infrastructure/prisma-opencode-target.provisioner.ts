@@ -12,11 +12,13 @@ export class PrismaOpenCodeTargetProvisioner extends OpenCodeTargetProvisioner {
     const provider = separator > 0 ? input.modelIdentifier.slice(0, separator) : '';
     if (!provider || separator === input.modelIdentifier.length - 1) throw new Error('modelIdentifier must use provider/model format');
     return this.database.$transaction(async (transaction) => {
-      const node = await transaction.executionNode.upsert({ where: { name: input.nodeName }, create: {
+      const node = await transaction.executionNode.upsert({
+        where: input.executionNodeId ? { id: input.executionNodeId } : { name: input.nodeName }, create: {
+        ...(input.executionNodeId ? { id: input.executionNodeId } : {}),
         name: input.nodeName, description: 'OpenCode execution host', hostname: input.hostname,
         operatingSystem: input.operatingSystem, architecture: input.architecture, status: 'Offline',
         capabilities: { agentTypes: ['OpenCode'], modelProviders: [provider] }, maximumConcurrentJobs: 1, tags: ['opencode'],
-      }, update: { hostname: input.hostname, operatingSystem: input.operatingSystem, architecture: input.architecture, enabled: true,
+      }, update: { name: input.nodeName, hostname: input.hostname, operatingSystem: input.operatingSystem, architecture: input.architecture, enabled: true,
         capabilities: { agentTypes: ['OpenCode'], modelProviders: [provider] }, tags: ['opencode'] } });
       const agent = await transaction.agent.upsert({ where: { name_version: { name: input.agentName, version: input.agentVersion } }, create: {
         name: input.agentName, agentType: 'OpenCode', version: input.agentVersion, supportedCapabilities: ['code', 'tests', 'source-control'],

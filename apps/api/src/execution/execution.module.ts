@@ -38,6 +38,9 @@ import { ExecutionTargetsController } from './interfaces/execution-targets.contr
 import { HeartbeatExecutionNodeHandler } from './application/heartbeat-execution-node.handler.js';
 import { ExecutionNodeHeartbeatRepository } from './application/execution-node-heartbeat-repository.js';
 import { PrismaExecutionNodeHeartbeatRepository } from './infrastructure/prisma-execution-node-heartbeat.repository.js';
+import { OpenCodeTargetProvisioner } from './application/opencode-target-provisioner.js';
+import { RegisterOpenCodeTargetHandler } from './application/register-opencode-target.command.js';
+import { PrismaOpenCodeTargetProvisioner } from './infrastructure/prisma-opencode-target.provisioner.js';
 
 @Module({
   imports: [DatabaseModule],
@@ -56,6 +59,7 @@ import { PrismaExecutionNodeHeartbeatRepository } from './infrastructure/prisma-
     ReportExecutionFailureHandler,
     ListWorkItemExecutionsHandler,
     HeartbeatExecutionNodeHandler,
+    RegisterOpenCodeTargetHandler,
     { provide: ExecutionTargetQueries, useClass: PrismaExecutionTargetQueries },
     { provide: ExecutionJobRepository, useClass: PrismaExecutionJobRepository },
     { provide: AgentJobRepository, useClass: PrismaAgentJobRepository },
@@ -67,6 +71,7 @@ import { PrismaExecutionNodeHeartbeatRepository } from './infrastructure/prisma-
     { provide: AgentFailureRepository, useClass: PrismaAgentFailureRepository },
     { provide: WorkItemExecutionQueries, useClass: PrismaWorkItemExecutionQueries },
     { provide: ExecutionNodeHeartbeatRepository, useClass: PrismaExecutionNodeHeartbeatRepository },
+    { provide: OpenCodeTargetProvisioner, useClass: PrismaOpenCodeTargetProvisioner },
   ],
 })
 export class ExecutionModule {}

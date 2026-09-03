@@ -27,6 +27,10 @@ read -r -p 'OIDC token URL: ' TOKEN_URL
 read -r -p 'OIDC client ID: ' CLIENT_ID
 read -r -s -p 'OIDC client secret: ' CLIENT_SECRET
 printf '\n'
+read -r -p 'OpenCode agent name [MIRIAM]: ' AGENT_NAME
+AGENT_NAME=${AGENT_NAME:-MIRIAM}
+read -r -p 'OpenCode provider/model [ollama/qwen3-coder-next:q4_K_M]: ' MODEL
+MODEL=${MODEL:-ollama/qwen3-coder-next:q4_K_M}
 read -r -p 'Project repository map as JSON: ' REPOSITORIES
 if [[ -z "$REPOSITORIES" ]]; then
   echo 'A repository map is required.' >&2
@@ -38,7 +42,7 @@ service_dir="$HOME/.config/systemd/user"
 mkdir -p "$config_dir" "$service_dir"
 umask 077
 printf 'GIGA_DESK_AGENT_API_URL=%s\nGIGA_DESK_AGENT_NODE_ID=%s\nGIGA_DESK_AGENT_OIDC_TOKEN_URL=%s\nGIGA_DESK_AGENT_OIDC_CLIENT_ID=%s\nGIGA_DESK_AGENT_OIDC_CLIENT_SECRET=%s\n' "$API_URL" "$NODE_ID" "$TOKEN_URL" "$CLIENT_ID" "$CLIENT_SECRET" > "$config_dir/agent.env"
-printf 'GIGA_DESK_WORKER_AGENT_TYPE=OpenCode\nGIGA_DESK_WORKER_REPOSITORIES=%s\nGIGA_DESK_AGENT_POLL_INTERVAL_MS=5000\nGIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS=30000\n' "$REPOSITORIES" > "$config_dir/worker.env"
+printf 'GIGA_DESK_WORKER_AGENT_TYPE=OpenCode\nGIGA_DESK_WORKER_AGENT_NAME=%s\nGIGA_DESK_WORKER_MODEL_IDENTIFIER=%s\nGIGA_DESK_WORKER_REPOSITORIES=%s\nGIGA_DESK_AGENT_POLL_INTERVAL_MS=5000\nGIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS=30000\n' "$AGENT_NAME" "$MODEL" "$REPOSITORIES" > "$config_dir/worker.env"
 chmod 600 "$config_dir/agent.env" "$config_dir/worker.env"
 
 (cd "$CHECKOUT" && npm run build -w @giga-desk/agent-client && npm run build -w @giga-desk/codex-worker)

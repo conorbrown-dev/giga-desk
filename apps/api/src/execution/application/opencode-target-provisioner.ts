@@ -1,4 +1,5 @@
 export interface OpenCodeTargetInput {
+  executionNodeId?: string;
   nodeName: string; agentName: string; hostname: string; operatingSystem: string; architecture: string; agentVersion: string; modelIdentifier: string;
 }
 
@@ -15,4 +16,5 @@ export const validateOpenCodeTargetInput = (input: OpenCodeTargetInput): void =>
     ['agentVersion', input.agentVersion], ['modelIdentifier', input.modelIdentifier],
   ];
   for (const [name, value] of required) if (!value.trim()) throw new Error(`${name} is required`);
+  if (input.executionNodeId !== undefined && !input.executionNodeId.trim()) throw new Error('executionNodeId is required');
 };

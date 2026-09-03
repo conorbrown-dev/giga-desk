@@ -57,6 +57,7 @@
 - `target:codex` can now discover the local hostname, operating system, architecture, and installed Codex CLI version when run without arguments; explicit five-field metadata overrides remain supported.
 - The MIRIAM worker runtime polls one job at a time, enforces an exact repository allowlist and evidence set, reports the real lifecycle in API order, and heartbeats continuously under a restartable user service.
 - OpenCode execution is now supported through the same worker lifecycle: administrators can provision a named OpenCode agent (for example, MIRIAM), the assigned Work Package model selects the `provider/model` CLI target, and the worker parses OpenCode JSON text events into the existing strict evidence contract.
+- OpenCode workers now self-register their authenticated node, agent, and provider/model through the machine API before polling; setup no longer requires direct database access, and a token cannot register a different node ID.
 - Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
 - The authenticated web app now uses a responsive admin-dashboard shell with desktop sidebar/mobile navigation, bright semantic status chips, portfolio metrics, compact creation disclosures, and consistent operational empty/error surfaces.
 
@@ -211,11 +212,20 @@
 
 ## Next steps
 
+- Obtain explicit approval for the production database registration, push/deploy the self-registration change, restart the local MIRIAM worker, and verify the live registry and authenticated Start Work choices show MIRIAM/OpenCode/Qwen.
 - Design a future recursive Project JSON export contract for portable Project metadata, nested work items, acceptance criteria, dependencies, and deliberately selected related history.
 - Queue one harmless real production Work Package and verify live heartbeat, claim, lifecycle callbacks, and the browser flow; do not use the simulator against production.
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Authenticated OpenCode self-registration
+
+- Production diagnosis found the running worker authenticated and heartbeating node `47af9a18-dada-4bf8-ad8a-95a6fce737af`, while that node and the only production agent/model remained registered as Codex CLI/OpenAI. `GIGA_DESK_WORKER_AGENT_TYPE=OpenCode` selected the executable but did not create registry records, which is why OpenCode was absent in the app.
+- Added a node-scoped `POST /api/agent/nodes/:nodeId/opencode-registration` boundary. A worker can create or refresh only the node ID signed into its token, along with its OpenCode agent and provider/model records, before its first heartbeat/poll.
+- Updated Bash and PowerShell installers to store the agent name and model choice. Removed the superseded standalone registration downloads, which required an impractical direct production database URL, and updated the in-app guide to describe authenticated registration.
+- Verification passed: Bash syntax, repository typecheck, lint, 59 unit/component tests, 13 integration tests, all five workspace builds, and six authenticated Playwright flows. The OpenCode guide was rendered and inspected at 1440x900 and 390x844. The first integration run failed only because the sandbox denied PostgreSQL/listener access; the permitted rerun passed. PowerShell syntax remains unverified because `pwsh` is unavailable on this host.
+- Conservatively counting the setup scripts as product code, the focused feature changes 194 added-plus-deleted product-code lines, within the 228-line push limit. No push, deployment, production registry mutation, or worker restart has been performed; those remain approval-gated.
 
 ### Responsive admin dashboard visual system
 

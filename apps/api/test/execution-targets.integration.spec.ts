@@ -11,6 +11,9 @@ import { FakeAuthTokenVerifier } from './fake-auth-token-verifier.js';
 import './test-environment.js';
 
 const suffix = randomUUID().slice(0, 8);
+const registeredNodeId = randomUUID();
+const registeredAgentName = `OpenCode ${suffix}`;
+const registeredModel = `ollama/qwen-${suffix}`;
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 const records = (value: unknown): readonly Record<string, unknown>[] => {
   if (!Array.isArray(value) || !value.every(isRecord)) throw new Error('Expected an array of registry records');
@@ -71,13 +74,25 @@ describe('execution target registry API', () => {
     await database.project.deleteMany({ where: { key: `ST${suffix.toUpperCase()}` } });
     await database.project.deleteMany({ where: { key: `FL${suffix.toUpperCase()}` } });
     await database.executionNode.deleteMany({ where: { name: `Registry Node ${suffix}` } });
+    await database.executionNode.deleteMany({ where: { id: registeredNodeId } });
     await database.agent.deleteMany({ where: { name: `Registry Agent ${suffix}` } });
+    await database.agent.deleteMany({ where: { name: registeredAgentName } });
     await database.aiModel.deleteMany({ where: { modelIdentifier: `registry-${suffix}` } });
+    await database.aiModel.deleteMany({ where: { modelIdentifier: registeredModel } });
     await app.close();
   });
 
   it('authorizes and returns enabled nodes, agents, and models', async () => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];
+    const registration = { agentName: registeredAgentName, hostname: 'opencode.local', operatingSystem: 'linux',
+      architecture: 'x64', agentVersion: '1.18.26', modelIdentifier: registeredModel };
+    await request(server).post(`/api/agent/nodes/${registeredNodeId}/opencode-registration`)
+      .set('Authorization', 'Bearer worker-00000000-0000-4000-8000-000000000001').send(registration).expect(403);
+    await request(server).post(`/api/agent/nodes/${registeredNodeId}/opencode-registration`)
+      .set('Authorization', `Bearer worker-${registeredNodeId}`).send(registration).expect(201);
+    const registeredNode = await database.executionNode.findUniqueOrThrow({ where: { id: registeredNodeId } });
+    expect(registeredNode).toMatchObject({ name: registeredAgentName, status: 'Offline',
+      capabilities: { agentTypes: ['OpenCode'], modelProviders: ['ollama'] } });
     await request(server).get('/api/execution/targets').expect(401);
     await request(server).get('/api/execution/targets')
       .set('Authorization', 'Bearer read-only-token').expect(403);
@@ -88,7 +103,9 @@ describe('execution target registry API', () => {
     expect(records(body['nodes']).some((node) =>
       node['name'] === `Registry Node ${suffix}` && node['status'] === 'Online')).toBe(true);
     expect(records(body['agents']).some((agent) => agent['name'] === `Registry Agent ${suffix}`)).toBe(true);
+    expect(records(body['agents']).some((agent) => agent['name'] === registeredAgentName && agent['agentType'] === 'OpenCode')).toBe(true);
     expect(records(body['models']).some((model) => model['modelIdentifier'] === `registry-${suffix}`)).toBe(true);
+    expect(records(body['models']).some((model) => model['modelIdentifier'] === registeredModel)).toBe(true);
 
     await request(server).post(`/api/agent/nodes/${nodeId}/heartbeat`)
       .set('Authorization', 'Bearer worker-00000000-0000-4000-8000-000000000001').expect(403);

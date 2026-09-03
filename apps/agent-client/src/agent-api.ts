@@ -2,6 +2,11 @@ import type { AccessTokenProvider } from './machine-token.js';
 
 export interface DiscoverableJob { id: string; status: 'Queued' }
 
+export interface OpenCodeRegistration {
+  agentName: string; hostname: string; operatingSystem: string; architecture: string;
+  agentVersion: string; modelIdentifier: string;
+}
+
 export interface WorkPackage {
   executionJobId: string;
   authorization: { protectedActionsApproved: boolean };
@@ -55,6 +60,10 @@ export class AgentApi {
 
   heartbeat(nodeId: string): Promise<unknown> {
     return this.send(`/api/agent/nodes/${nodeId}/heartbeat`, 'POST');
+  }
+
+  registerOpenCode(nodeId: string, registration: OpenCodeRegistration): Promise<unknown> {
+    return this.send(`/api/agent/nodes/${nodeId}/opencode-registration`, 'POST', registration);
   }
 
   workPackage(jobId: string): Promise<WorkPackage> {
