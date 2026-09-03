@@ -2,6 +2,7 @@
 
 ## Working agreement
 
+- Giga Desk is a customer-facing web application. Customer worker installers must use the versioned worker bundle provided by the application; never require a customer to have the private Giga Desk source checkout. A newly installed worker may register and heartbeat before customer repositories exist, but must not claim work until its approved customer repository mappings are configured.
 - Read `progress.md` before making any change. Compare it with the current codebase and update stale entries before relying on it.
 - Update `progress.md` with every change. Record what changed, the current state, verification performed, and any remaining work.
 - Make the smallest focused change that completes one feature. Do not mix features in a push.

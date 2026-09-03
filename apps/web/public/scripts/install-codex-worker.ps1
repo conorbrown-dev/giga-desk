@@ -6,12 +6,8 @@ function ConvertTo-PowerShellSingleQuotedText([string]$Value) {
 
 $codex = Get-Command codex -ErrorAction SilentlyContinue
 if ($null -eq $codex) { throw 'Codex is not installed or is not on PATH. Install it, then run this script again.' }
-$checkout = if ([string]::IsNullOrWhiteSpace($env:GIGA_DESK_WORKER_CHECKOUT)) { (Get-Location).Path } else { $env:GIGA_DESK_WORKER_CHECKOUT }
-$checkout = (Resolve-Path $checkout).Path
-if (-not (Test-Path (Join-Path $checkout 'package.json')) -or -not (Test-Path (Join-Path $checkout 'apps/codex-worker'))) {
-  throw 'The checkout must contain the Giga Desk package.json and apps/codex-worker.'
-}
-if (-not (Test-Path (Join-Path $checkout 'node_modules'))) { Push-Location $checkout; npm ci; Pop-Location }
+$node = Get-Command node -ErrorAction SilentlyContinue
+if ($null -eq $node) { throw 'Node.js 22 or later is required to run the worker.' }
 
 $configDir = Join-Path $env:USERPROFILE '.config/giga-desk'
 $agentFile = Join-Path $configDir 'agent.env.ps1'
@@ -25,12 +21,21 @@ $nodeId = $env:GIGA_DESK_AGENT_NODE_ID
 $tokenUrl = $env:GIGA_DESK_AGENT_OIDC_TOKEN_URL
 $clientId = $env:GIGA_DESK_AGENT_OIDC_CLIENT_ID
 $clientSecret = $env:GIGA_DESK_AGENT_OIDC_CLIENT_SECRET
-$repositories = $env:GIGA_DESK_WORKER_REPOSITORIES
-if ([string]::IsNullOrWhiteSpace($repositories)) {
-  $remoteUrl = & git -C $checkout remote get-url origin 2>$null
-  if (-not [string]::IsNullOrWhiteSpace($remoteUrl)) { $repositories = @(@{ url = $remoteUrl; path = $checkout }) | ConvertTo-Json -Compress }
-}
-if ([string]::IsNullOrWhiteSpace($repositories)) { throw 'No repository mapping is configured and no origin remote could be derived. Set GIGA_DESK_WORKER_REPOSITORIES.' }
+$repositories = if ([string]::IsNullOrWhiteSpace($env:GIGA_DESK_WORKER_REPOSITORIES)) { '[]' } else { $env:GIGA_DESK_WORKER_REPOSITORIES }
+$releaseUrl = $env:GIGA_DESK_WORKER_RELEASE_URL
+if ([string]::IsNullOrWhiteSpace($releaseUrl)) { $releaseUrl = "$(([uri]$apiUrl).GetLeftPart([UriPartial]::Authority))/releases/giga-desk-worker.tgz" }
+$downloadDirectory = Join-Path ([IO.Path]::GetTempPath()) "giga-desk-worker-$([guid]::NewGuid())"
+New-Item -ItemType Directory -Path $downloadDirectory | Out-Null
+try {
+  $archive = Join-Path $downloadDirectory 'worker.tgz'
+  Invoke-WebRequest -Uri $releaseUrl -OutFile $archive
+  Invoke-WebRequest -Uri "$releaseUrl.sha256" -OutFile "$archive.sha256"
+  $expectedHash = (Get-Content "$archive.sha256" -Raw).Split([char[]]' ')[0]
+  $actualHash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+  if ($expectedHash.ToLowerInvariant() -ne $actualHash) { throw 'The downloaded worker bundle checksum does not match.' }
+  $releaseDirectory = Join-Path $env:LOCALAPPDATA "GigaDesk\worker\releases\$actualHash"
+  if (-not (Test-Path $releaseDirectory)) { New-Item -ItemType Directory -Force -Path $releaseDirectory | Out-Null; & tar -xzf $archive -C $releaseDirectory }
+} finally { Remove-Item -Recurse -Force $downloadDirectory }
 $safeApiUrl = ConvertTo-PowerShellSingleQuotedText $apiUrl
 $safeNodeId = ConvertTo-PowerShellSingleQuotedText $nodeId
 $safeTokenUrl = ConvertTo-PowerShellSingleQuotedText $tokenUrl
@@ -49,19 +54,15 @@ $ErrorActionPreference = 'Stop'
 . "$env:USERPROFILE\.config\giga-desk\agent.env.ps1"
 . "$env:USERPROFILE\.config\giga-desk\worker.env.ps1"
 $env:Path = '__CODEX_DIRECTORY__;' + $env:Path
-Set-Location -LiteralPath '__CHECKOUT__'
-npm run start -w @giga-desk/codex-worker
-'@.Replace('__CODEX_DIRECTORY__', (Split-Path -Parent $codex.Source).Replace("'", "''")).Replace('__CHECKOUT__', $checkout.Replace("'", "''")), $utf8)
+Set-Location -LiteralPath '__RELEASE_DIRECTORY__'
+& '__NODE_PATH__' apps/codex-worker/dist/main.js
+'@.Replace('__CODEX_DIRECTORY__', (Split-Path -Parent $codex.Source).Replace("'", "''")).Replace('__RELEASE_DIRECTORY__', $releaseDirectory.Replace("'", "''")).Replace('__NODE_PATH__', $node.Source.Replace("'", "''")), $utf8)
 
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 icacls $configDir /inheritance:r /grant:r "${identity}:(OI)(CI)F" | Out-Null
 icacls $agentFile /inheritance:r /grant:r "${identity}:F" | Out-Null
 icacls $workerFile /inheritance:r /grant:r "${identity}:F" | Out-Null
 icacls $runnerFile /inheritance:r /grant:r "${identity}:F" | Out-Null
-Push-Location $checkout
-try { npm run build -w @giga-desk/agent-client; npm run build -w @giga-desk/codex-worker }
-finally { Pop-Location }
-
 $action = New-ScheduledTaskAction -Execute "$PSHOME\powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$runnerFile`""
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $identity
 $settings = New-ScheduledTaskSettingsSet -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
@@ -69,4 +70,4 @@ $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive
 Register-ScheduledTask -TaskName 'Giga Desk Codex Worker' -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force | Out-Null
 Start-ScheduledTask -TaskName 'Giga Desk Codex Worker'
 Get-ScheduledTask -TaskName 'Giga Desk Codex Worker' | Format-List TaskName,State
-Write-Host 'The authenticated worker registers Codex on startup. The node and agent should become visible in Giga Desk.'
+Write-Host 'The authenticated worker registers Codex on startup. It waits safely until customer repositories are mapped.'
