@@ -57,6 +57,10 @@ describe('App', () => {
     expect(screen.getByText(/downloads a verified worker bundle/)).toBeInTheDocument();
     expect(screen.getByText(/registers only its node-scoped target through the API/)).toBeInTheDocument();
     expect(screen.getByText(/The worker can come Online before project checkouts exist/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Configure a customer repository' })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Repository URL'), { target: { value: 'https://github.com/example/project.git' } });
+    fireEvent.change(screen.getByLabelText('Local checkout path'), { target: { value: '/home/user/repos/project' } });
+    expect(screen.getByText(/GIGA_DESK_WORKER_REPOSITORIES='\[\{"url":"https:\/\/github.com\/example\/project.git"/)).toBeInTheDocument();
     expect(screen.getAllByRole('checkbox')[3]).toBeEnabled();
     expect(screen.getAllByRole('checkbox')[4]).toBeEnabled();
     const firstStep = screen.getAllByRole('checkbox')[0];
@@ -81,6 +85,7 @@ describe('App', () => {
     expect(screen.getByText(/GIGA_DESK_WORKER_AGENT_TYPE=OpenCode/)).toBeInTheDocument();
     expect(screen.getByText(/GIGA_DESK_WORKER_MODEL_IDENTIFIER=ollama\/qwen3-coder-next:q4_K_M/)).toBeInTheDocument();
     expect(screen.getByText(/The worker can come Online before project checkouts exist/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Configure a customer repository' })).toBeInTheDocument();
     expect(screen.queryByText(/openai\/gpt-5/)).not.toBeInTheDocument();
   });
 

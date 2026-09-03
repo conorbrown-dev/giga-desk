@@ -75,6 +75,18 @@ const loadCompleted = (): readonly number[] => {
   }
 };
 
+function RepositoryMappingHelper() {
+  const [url, setUrl] = useState('');
+  const [path, setPath] = useState('');
+  const mapping = url.trim() && path.trim() ? JSON.stringify([{ url: url.trim(), path: path.trim() }]) : '[]';
+  return <section className="card" aria-labelledby="repository-mapping-heading"><h3 id="repository-mapping-heading">Configure a customer repository</h3>
+    <p>Repository mappings stay on the worker host. Enter the project URL exactly as it appears in Giga Desk and the local checkout path, then copy the generated setting into that host's worker configuration.</p>
+    <div className="form-grid"><label>Repository URL<input value={url} onChange={(event) => { setUrl(event.target.value); }} placeholder="https://github.com/example/project.git" /></label><label>Local checkout path<input value={path} onChange={(event) => { setPath(event.target.value); }} placeholder="/home/user/repos/project" /></label></div>
+    <pre><code>{`GIGA_DESK_WORKER_REPOSITORIES='${mapping}'`}</code></pre>
+    <p className="form-help">After saving it in <code>~/.config/giga-desk/worker.env</code> (or the Windows worker configuration), restart or rerun the installer. The node will then be eligible for matching work.</p>
+  </section>;
+}
+
 export function AgentSetupGuide() {
   const [provider, setProvider] = useState<Provider>('codex');
   const [completed, setCompleted] = useState<readonly number[]>(loadCompleted);
@@ -95,6 +107,7 @@ export function AgentSetupGuide() {
     {provider === 'opencode' ? <section aria-labelledby="opencode-setup"><div className="row"><div><p className="eyebrow">OpenCode</p><h2 id="opencode-setup">Connect an OpenCode worker</h2></div><span>{completed.length} of {openCodeSteps.length} complete</span></div>
       <p>Download the installer for the worker host. It installs a verified worker bundle from Giga Desk; no Giga Desk source checkout is needed. It reuses the protected machine configuration when present and uses MIRIAM with ollama/qwen3-coder-next:q4_K_M unless configured otherwise. The worker can register before project checkouts exist and waits safely until customer repositories are mapped. Registration happens through the authenticated API when the worker starts.</p>
       <p><a className="button-link" href="/scripts/install-opencode-worker.sh" download>Download Bash installer</a>{' '}<a className="button-link button-secondary" href="/scripts/install-opencode-worker.ps1" download>Download PowerShell installer</a></p>
+      <RepositoryMappingHelper />
       <ol className="setup-steps">{openCodeSteps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
         <p>{step.detail}</p>{step.command && <pre><code>{step.command}</code></pre>}
@@ -103,6 +116,7 @@ export function AgentSetupGuide() {
       </li>)}</ol></section> : <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
       <p>Download the installer for the worker host. It detects Codex, downloads a verified worker bundle from Giga Desk, and reuses the protected machine configuration when present. It never prompts for credentials; an administrator must supply the node-scoped OIDC configuration through the protected machine environment. The worker can register before project checkouts exist and waits safely until customer repositories are mapped. Registration happens through the authenticated API when the worker starts.</p>
       <p><a className="button-link" href="/scripts/install-codex-worker.sh" download>Download Bash installer</a>{' '}<a className="button-link button-secondary" href="/scripts/install-codex-worker.ps1" download>Download PowerShell installer</a></p>
+      <RepositoryMappingHelper />
       <ol className="setup-steps">{steps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
         <p>{step.detail}</p>{step.command && <pre><code>{step.command}</code></pre>}
