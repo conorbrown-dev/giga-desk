@@ -13,6 +13,7 @@ export interface ExecutionTargets {
   agents: readonly { id: string; name: string; agentType: string; version: string; supportedModelProviders: readonly string[] }[];
   models: readonly { id: string; displayName: string; provider: string; location: string }[];
 }
+export interface RepositoryMapping { url: string; path: string }
 
 export interface ExecutionSelection {
   executionNodeId: string; agentId: string; modelId: string; protectedActionsApproved: boolean;
@@ -38,5 +39,14 @@ export async function createExecution(workItemId: string, selection: ExecutionSe
     method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(selection),
   });
   if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'Sign in to start work.' : response.status === 409 ? 'Work is already active or the selected targets are incompatible.' : 'Unable to start work.');
+}
+
+export async function updateRepositoryMappings(nodeId: string, mappings: readonly RepositoryMapping[]): Promise<void> {
+  const token = await getAuthToken();
+  const response = await fetch(`/api/execution/targets/${nodeId}/repositories`, {
+    method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mappings }),
+  });
+  if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'Sign in to configure the worker.' : 'Unable to save repository mapping.');
 }
 import { getAuthToken } from './auth-token.js';

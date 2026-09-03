@@ -110,6 +110,11 @@ describe('execution target registry API', () => {
     expect(records(body['agents']).some((agent) => agent['name'] === registeredAgentName && agent['agentType'] === 'OpenCode')).toBe(true);
     expect(records(body['models']).some((model) => model['modelIdentifier'] === `registry-${suffix}`)).toBe(true);
     expect(records(body['models']).some((model) => model['modelIdentifier'] === registeredModel)).toBe(true);
+    await request(server).put(`/api/execution/targets/${registeredNodeId}/repositories`)
+      .set('Authorization', 'Bearer valid-token').send({ mappings: [{ url: 'https://github.com/example/project.git', path: '/srv/project' }] }).expect(200);
+    const mappingResponse = await request(server).get(`/api/agent/nodes/${registeredNodeId}/repositories`)
+      .set('Authorization', `Bearer worker-${registeredNodeId}`).expect(200);
+    expect(mappingResponse.body).toEqual({ mappings: [{ url: 'https://github.com/example/project.git', path: '/srv/project' }] });
 
     const codexRegistration = { hostname: 'codex.local', operatingSystem: 'linux', architecture: 'x64', agentVersion: registeredCodexVersion };
     await request(server).post(`/api/agent/nodes/${registeredCodexNodeId}/codex-registration`)

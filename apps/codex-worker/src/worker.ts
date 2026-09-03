@@ -50,8 +50,10 @@ const failureReason = (error: unknown): string => {
 export class CodexWorker {
   constructor(
     private readonly api: WorkerApi, private readonly executor: WorkExecutor,
-    private readonly nodeId: string, private readonly approvedRepositories: ApprovedRepositories,
+    private readonly nodeId: string, private approvedRepositories: ApprovedRepositories,
   ) {}
+
+  setApprovedRepositories(repositories: ApprovedRepositories): void { this.approvedRepositories = repositories; }
 
   async runNext(): Promise<string | null> {
     await this.api.heartbeat(this.nodeId);

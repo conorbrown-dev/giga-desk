@@ -653,3 +653,9 @@
 
 - Added `AGENTS.md` with full-stack architecture, test, accessibility, code-quality, and push-scope rules.
 - Added repository usage guidance and a pull-request checklist.
+## 2026-09-03 — App-managed worker repository mappings
+
+- Added authenticated Giga Desk configuration for node-scoped repository mappings, with worker API retrieval and polling so node-side `worker.env` edits and restarts are not required.
+- Added the Connect agent UI node selector, repository URL/local path form, save action, and success/error states; updated setup copy to describe app-managed configuration.
+- Updated AGENTS.md and durable memory to prefer Giga Desk app/API configuration wherever securely possible.
+- Verification: `npm run typecheck -ws`, `npm run lint -ws`, and `npm run test -ws` passed. API integration suite and browser E2E were not run in this slice.

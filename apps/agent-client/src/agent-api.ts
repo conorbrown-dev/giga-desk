@@ -10,6 +10,7 @@ export interface OpenCodeRegistration {
 export interface CodexRegistration {
   hostname: string; operatingSystem: string; architecture: string; agentVersion: string;
 }
+export interface RepositoryMapping { url: string; path: string }
 
 export interface WorkPackage {
   executionJobId: string;
@@ -60,6 +61,10 @@ export class AgentApi {
 
   discover(nodeId: string): Promise<readonly DiscoverableJob[]> {
     return this.send(`/api/agent/nodes/${nodeId}/jobs`, 'GET');
+  }
+
+  repositories(nodeId: string): Promise<{ mappings: readonly RepositoryMapping[] }> {
+    return this.send(`/api/agent/nodes/${nodeId}/repositories`, 'GET');
   }
 
   heartbeat(nodeId: string): Promise<unknown> {

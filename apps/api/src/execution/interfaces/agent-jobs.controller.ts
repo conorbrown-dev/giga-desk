@@ -33,10 +33,27 @@ import { RegisterOpenCodeTargetDto } from './register-opencode-target.dto.js';
 import { RegisterCodexTargetCommand } from '../application/register-codex-target.command.js';
 import type { ProvisionedCodexTarget } from '../application/codex-target-provisioner.js';
 import { RegisterCodexTargetDto } from './register-codex-target.dto.js';
+import { PrismaService } from '../../shared/infrastructure/prisma.service.js';
 
 @Controller('agent')
 export class AgentJobsController {
-  constructor(private readonly commands: CommandBus, private readonly queries: QueryBus) {}
+  constructor(private readonly commands: CommandBus, private readonly queries: QueryBus, private readonly database: PrismaService) {}
+
+  @Get('nodes/:nodeId/repositories')
+  @RequirePermissions('agent:jobs')
+  async repositories(@Param('nodeId', ParseUUIDPipe) nodeId: string, @Req() request: AuthenticatedRequest) {
+    try {
+      assertWorkerNode(nodeId, request.user?.executionNodeId ?? null);
+      const node = await this.database.executionNode.findUnique({ where: { id: nodeId }, select: { capabilities: true } });
+      const capabilities = node?.capabilities && typeof node.capabilities === 'object' && !Array.isArray(node.capabilities)
+        ? node.capabilities as Record<string, unknown> : {};
+      const mappings = Array.isArray(capabilities['repositoryMappings']) ? capabilities['repositoryMappings'] : [];
+      return { mappings };
+    } catch (error) {
+      if (error instanceof WorkerNodeMismatchError) throw new ForbiddenException(error.message);
+      throw error;
+    }
+  }
 
   @Post('nodes/:nodeId/codex-registration')
   @RequirePermissions('agent:jobs')

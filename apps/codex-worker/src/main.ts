@@ -46,7 +46,7 @@ if (agentType === 'OpenCode') await api.registerOpenCode(nodeId, resolveOpenCode
 if (agentType === 'CodexCli') await api.registerCodex(nodeId, resolveCodexRegistration());
 const executor = agentType === 'OpenCode'
   ? new OpenCodeExecutor() : new CodexExecutor();
-const repositories = approvedRepositories();
+let repositories = approvedRepositories();
 const worker = new CodexWorker(api, executor, nodeId, repositories);
 const pollInterval = positiveInteger('GIGA_DESK_AGENT_POLL_INTERVAL_MS', 5_000);
 const heartbeatInterval = positiveInteger('GIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS', 30_000);
@@ -63,6 +63,9 @@ const heartbeat = setInterval(() => {
 try {
   while (!stop.signal.aborted) {
     try {
+      const configured = await api.repositories(nodeId);
+      repositories = new Map(configured.mappings.map(({ url, path }) => [url.trim(), path.trim()]));
+      worker.setApprovedRepositories(repositories);
       const jobId = repositories.size === 0 ? null : await worker.runNext();
       process.stdout.write(jobId ? `Completed execution ${jobId}\n` : repositories.size === 0
         ? 'No approved repositories configured; waiting for configuration\n' : 'No queued jobs\n');

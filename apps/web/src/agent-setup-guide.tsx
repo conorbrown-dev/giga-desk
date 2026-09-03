@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { fetchExecutionTargets, updateRepositoryMappings, type ExecutionTargets } from './execution-api.js';
 
 type Provider = 'codex' | 'opencode';
 
@@ -33,7 +34,7 @@ const steps: readonly SetupStep[] = [
   },
   {
     title: 'Start and verify the worker',
-    detail: 'Run the downloaded installer. It downloads a verified, versioned worker bundle from Giga Desk, installs the systemd user service, and registers the node. The worker can come Online before project checkouts exist; add GIGA_DESK_WORKER_REPOSITORIES after cloning an approved customer repository, then rerun the installer.',
+    detail: 'Run the downloaded installer. It downloads a verified, versioned worker bundle from Giga Desk, installs the systemd user service, and registers the node. The worker can come Online before project checkouts exist; save a repository mapping above after cloning an approved customer repository.',
   },
 ];
 
@@ -53,16 +54,11 @@ chmod 600 ~/.config/giga-desk/agent.env`,
   },
   {
     title: 'Configure the OpenCode worker',
-    detail: 'Choose the displayed agent name and default provider/model. After cloning a customer project on this node, map its repository URL to that local checkout; the worker will not claim work until a repository is mapped.',
-    command: `$EDITOR ~/.config/giga-desk/worker.env
-GIGA_DESK_WORKER_AGENT_TYPE=OpenCode
-GIGA_DESK_WORKER_AGENT_NAME=MIRIAM
-GIGA_DESK_WORKER_MODEL_IDENTIFIER=ollama/qwen3-coder-next:q4_K_M
-GIGA_DESK_WORKER_REPOSITORIES=[{"url":"https://github.com/example/project.git","path":"/home/user/repos/project"}]`,
+    detail: 'Choose the displayed agent name and default provider/model. After cloning a customer project on this node, save its repository URL and local checkout path in the Giga Desk mapping form above; the worker will not claim work until a repository is mapped.',
   },
   {
     title: 'Start and verify the worker',
-    detail: 'Run the downloaded installer. It downloads a verified, versioned worker bundle from Giga Desk, installs the user service, and registers the node. The worker can come Online before project checkouts exist; after mapping a customer repository, rerun the installer.',
+    detail: 'Run the downloaded installer. It downloads a verified, versioned worker bundle from Giga Desk, installs the user service, and registers the node. The worker can come Online before project checkouts exist; after mapping a customer repository in Giga Desk, it will pick up the mapping automatically.',
   },
 ];
 
@@ -78,12 +74,22 @@ const loadCompleted = (): readonly number[] => {
 function RepositoryMappingHelper() {
   const [url, setUrl] = useState('');
   const [path, setPath] = useState('');
-  const mapping = url.trim() && path.trim() ? JSON.stringify([{ url: url.trim(), path: path.trim() }]) : '[]';
+  const [targets, setTargets] = useState<ExecutionTargets['nodes']>([]);
+  const [nodeId, setNodeId] = useState('');
+  const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { const controller = new AbortController(); void fetchExecutionTargets(controller.signal).then((value) => { setTargets(value.nodes); setNodeId(value.nodes[0]?.id ?? ''); }).catch(() => { setMessage('Sign in to configure an execution node.'); }); return () => { controller.abort(); }; }, []);
+  const save = async (): Promise<void> => {
+    if (!nodeId || !url.trim() || !path.trim()) { setMessage('Choose a node and enter both the repository URL and local checkout path.'); return; }
+    setSaving(true); setMessage('');
+    try { await updateRepositoryMappings(nodeId, [{ url: url.trim(), path: path.trim() }]); setMessage('Repository mapping saved. The worker will pick it up automatically; no restart is required.'); }
+    catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to save repository mapping.'); }
+    finally { setSaving(false); }
+  };
   return <section className="card" aria-labelledby="repository-mapping-heading"><h3 id="repository-mapping-heading">Configure a customer repository</h3>
-    <p>Repository mappings stay on the worker host. Enter the project URL exactly as it appears in Giga Desk and the local checkout path, then copy the generated setting into that host's worker configuration.</p>
-    <div className="form-grid"><label>Repository URL<input value={url} onChange={(event) => { setUrl(event.target.value); }} placeholder="https://github.com/example/project.git" /></label><label>Local checkout path<input value={path} onChange={(event) => { setPath(event.target.value); }} placeholder="/home/user/repos/project" /></label></div>
-    <pre><code>{`GIGA_DESK_WORKER_REPOSITORIES='${mapping}'`}</code></pre>
-    <p className="form-help">After saving it in <code>~/.config/giga-desk/worker.env</code> (or the Windows worker configuration), restart or rerun the installer. The node will then be eligible for matching work.</p>
+    <p>Configure the node from Giga Desk. The worker securely retrieves this mapping automatically, so no worker.env edits or restarts are needed.</p>
+    <div className="form-grid"><label>Execution node<select value={nodeId} onChange={(event) => { setNodeId(event.target.value); }}><option value="">Select a node</option>{targets.map((target) => <option key={target.id} value={target.id}>{target.name} ({target.status})</option>)}</select></label><label>Repository URL<input value={url} onChange={(event) => { setUrl(event.target.value); }} placeholder="https://github.com/example/project.git" /></label><label>Local checkout path<input value={path} onChange={(event) => { setPath(event.target.value); }} placeholder="/home/user/repos/project" /></label></div>
+    <button className="button-link" type="button" onClick={() => { void save(); }} disabled={saving || !nodeId}>{saving ? 'Saving…' : 'Save repository mapping'}</button>{message && <p className="form-help" role="status">{message}</p>}
   </section>;
 }
 

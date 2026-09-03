@@ -93,11 +93,11 @@ test('shows only OpenCode setup when OpenCode is selected', async ({ page }) => 
   await expect(page.getByText(/Registration happens through the authenticated API/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.sh');
   await expect(page.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.ps1');
-  await expect(page.getByText(/GIGA_DESK_WORKER_AGENT_TYPE=OpenCode/)).toBeVisible();
-  await expect(page.getByText(/GIGA_DESK_WORKER_MODEL_IDENTIFIER=ollama\/qwen3-coder-next:q4_K_M/)).toBeVisible();
+  await expect(page.getByText(/save its repository URL and local checkout path/)).toBeVisible();
   await expect(page.getByText(/no Giga Desk source checkout is needed/i)).toBeVisible();
   await expect(page.getByText(/The worker can come Online before project checkouts exist/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Configure a customer repository' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save repository mapping' })).toBeVisible();
   await page.screenshot({ path: 'test-results/visual-review/opencode-connect-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/visual-review/opencode-connect-mobile.png', fullPage: true });
