@@ -9,8 +9,8 @@ export interface ExecutionHistory {
 }
 
 export interface ExecutionTargets {
-  nodes: readonly { id: string; name: string; status: string; maximumConcurrentJobs: number; currentJobCount: number }[];
-  agents: readonly { id: string; name: string; version: string; supportedModelProviders: readonly string[] }[];
+  nodes: readonly { id: string; name: string; status: string; maximumConcurrentJobs: number; currentJobCount: number; capabilities: { agentTypes?: readonly string[]; modelProviders?: readonly string[] } }[];
+  agents: readonly { id: string; name: string; agentType: string; version: string; supportedModelProviders: readonly string[] }[];
   models: readonly { id: string; displayName: string; provider: string; location: string }[];
 }
 

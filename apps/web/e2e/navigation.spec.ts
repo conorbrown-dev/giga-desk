@@ -97,8 +97,11 @@ test('shows only OpenCode setup when OpenCode is selected', async ({ page }) => 
 test('validates selections and handles Start Work success and conflict', async ({ page }) => {
   let submissions = 0;
   await page.route('**/api/execution/targets', async (route) => route.fulfill({ json: {
-    nodes: [{ id: 'node-1', name: 'Miriam', status: 'Online', maximumConcurrentJobs: 2, currentJobCount: 0 }],
-    agents: [{ id: 'agent-1', name: 'Codex', version: '1.0', supportedModelProviders: ['OpenAI'] }],
+    nodes: [{ id: 'node-1', name: 'Miriam', status: 'Online', maximumConcurrentJobs: 2, currentJobCount: 0, capabilities: { agentTypes: ['CodexCli'], modelProviders: ['OpenAI'] } }],
+    agents: [
+      { id: 'agent-1', name: 'Codex', agentType: 'CodexCli', version: '1.0', supportedModelProviders: ['OpenAI'] },
+      { id: 'agent-2', name: 'OpenCode', agentType: 'OpenCode', version: '1.0', supportedModelProviders: ['Ollama'] },
+    ],
     models: [{ id: 'model-1', displayName: 'GPT-5', provider: 'OpenAI', location: 'Remote' }],
   } }));
   await page.route('**/api/work-items/*/executions', async (route) => {
@@ -113,9 +116,14 @@ test('validates selections and handles Start Work success and conflict', async (
   await page.getByRole('button', { name: 'Start work' }).click();
   await expect(page.getByText('Choose an execution node.')).toBeVisible();
   await page.getByLabel(/Execution node/).selectOption('node-1');
+  await expect(page.getByRole('option', { name: /OpenCode/ })).not.toBeAttached();
   await page.getByLabel(/Agent/).selectOption('agent-1');
   await page.getByLabel(/Model/).selectOption('model-1');
   await page.getByLabel('Approve protected production actions').check();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: 'test-results/visual-review/start-work-selection-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/start-work-selection-mobile.png', fullPage: true });
   await page.getByRole('button', { name: 'Start work' }).click();
   await expect(page.getByRole('status')).toHaveText('Execution queued.');
   await page.getByRole('button', { name: 'Start work' }).click();

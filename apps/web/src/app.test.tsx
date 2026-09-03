@@ -153,8 +153,8 @@ describe('App', () => {
     localStorage.setItem('giga-desk-token', 'test-token');
     const fetchMock = vi.fn().mockImplementation((input: string, init?: RequestInit) => Promise.resolve({
       ok: true, status: 200, json: () => Promise.resolve(input === '/api/execution/targets' ? {
-        nodes: [{ id: 'node-1', name: 'Miriam', status: 'Online', maximumConcurrentJobs: 2, currentJobCount: 0 }],
-        agents: [{ id: 'agent-1', name: 'Codex', version: '1.0', supportedModelProviders: ['OpenAI'] }],
+        nodes: [{ id: 'node-1', name: 'Miriam', status: 'Online', maximumConcurrentJobs: 2, currentJobCount: 0, capabilities: { agentTypes: ['CodexCli'], modelProviders: ['OpenAI'] } }],
+        agents: [{ id: 'agent-1', name: 'Codex', agentType: 'CodexCli', version: '1.0', supportedModelProviders: ['OpenAI'] }],
         models: [
           { id: 'model-1', displayName: 'GPT-5', provider: 'OpenAI', location: 'Remote' },
           { id: 'model-2', displayName: 'Claude', provider: 'Anthropic', location: 'Remote' },
@@ -176,5 +176,19 @@ describe('App', () => {
       method: 'POST', body: JSON.stringify({ executionNodeId: 'node-1', agentId: 'agent-1', modelId: 'model-1',
         protectedActionsApproved: true }),
     }));
+  });
+
+  it('filters incompatible agents and explains unavailable model selections', async () => {
+    localStorage.setItem('giga-desk-token', 'test-token');
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => Promise.resolve({ ok: true, json: () => Promise.resolve(input === '/api/execution/targets' ? {
+      nodes: [{ id: 'node-1', name: 'Miriam', status: 'Online', maximumConcurrentJobs: 1, currentJobCount: 0, capabilities: { agentTypes: ['CodexCli'], modelProviders: ['OpenAI'] } }],
+      agents: [{ id: 'agent-1', name: 'OpenCode', agentType: 'OpenCode', version: '1.0', supportedModelProviders: ['Ollama'] }], models: [{ id: 'model-1', displayName: 'Qwen', provider: 'Ollama', location: 'Local' }],
+    } : []) })));
+    render(<MemoryRouter initialEntries={['/work-items/work-1']}><App /></MemoryRouter>);
+    const node = await screen.findByLabelText(/Execution node/);
+    fireEvent.change(node, { target: { value: 'node-1' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('This execution node has no compatible agents.');
+    expect(screen.getByLabelText(/Agent/)).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Start work' })).toBeDisabled();
   });
 });
