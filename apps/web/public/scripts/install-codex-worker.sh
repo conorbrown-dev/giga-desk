@@ -36,6 +36,10 @@ CLIENT_ID=${GIGA_DESK_AGENT_OIDC_CLIENT_ID:-}
 CLIENT_SECRET=${GIGA_DESK_AGENT_OIDC_CLIENT_SECRET:-}
 REPOSITORIES=${GIGA_DESK_WORKER_REPOSITORIES:-}
 REPOSITORIES=${REPOSITORIES:-[]}
+if ! node -e 'const value = JSON.parse(process.argv[1]); process.exit(Array.isArray(value) ? 0 : 1)' "$REPOSITORIES"; then
+  echo 'The existing GIGA_DESK_WORKER_REPOSITORIES value is invalid; resetting it to an empty repository map.' >&2
+  REPOSITORIES='[]'
+fi
 missing=()
 for setting in GIGA_DESK_AGENT_API_URL GIGA_DESK_AGENT_NODE_ID GIGA_DESK_AGENT_OIDC_TOKEN_URL GIGA_DESK_AGENT_OIDC_CLIENT_ID GIGA_DESK_AGENT_OIDC_CLIENT_SECRET; do
   [[ -n "${!setting:-}" ]] || missing+=("$setting")
@@ -69,7 +73,8 @@ codex_dir=$(dirname "$(command -v codex)")
 mkdir -p "$config_dir" "$service_dir"
 umask 077
 printf 'GIGA_DESK_AGENT_API_URL=%s\nGIGA_DESK_AGENT_NODE_ID=%s\nGIGA_DESK_AGENT_OIDC_TOKEN_URL=%s\nGIGA_DESK_AGENT_OIDC_CLIENT_ID=%s\nGIGA_DESK_AGENT_OIDC_CLIENT_SECRET=%s\n' "$API_URL" "$NODE_ID" "$TOKEN_URL" "$CLIENT_ID" "$CLIENT_SECRET" > "$config_dir/agent.env"
-printf 'GIGA_DESK_WORKER_AGENT_TYPE=CodexCli\nGIGA_DESK_WORKER_REPOSITORIES=%s\nGIGA_DESK_AGENT_POLL_INTERVAL_MS=5000\nGIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS=30000\n' "$REPOSITORIES" > "$config_dir/worker.env"
+escaped_repositories=$(printf '%s' "$REPOSITORIES" | sed 's/[\\$"`]/\\&/g')
+printf 'GIGA_DESK_WORKER_AGENT_TYPE=CodexCli\nGIGA_DESK_WORKER_REPOSITORIES="%s"\nGIGA_DESK_AGENT_POLL_INTERVAL_MS=5000\nGIGA_DESK_AGENT_HEARTBEAT_INTERVAL_MS=30000\n' "$escaped_repositories" > "$config_dir/worker.env"
 chmod 600 "$config_dir/agent.env" "$config_dir/worker.env"
 
 node_bin=$(command -v node)
