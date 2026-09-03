@@ -6,6 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/home/conor/repos/giga-desk
+Environment=PATH=/home/conor/.opencode/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
 EnvironmentFile=/home/conor/.config/giga-desk/agent.env
 EnvironmentFile=/home/conor/.config/giga-desk/worker.env
 ExecStart=/usr/bin/npm run start -w @giga-desk/codex-worker

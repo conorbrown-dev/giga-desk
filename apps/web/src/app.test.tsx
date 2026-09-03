@@ -62,13 +62,17 @@ describe('App', () => {
   it('shows only the selected provider setup', () => {
     render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: /OpenCode/ }));
-    expect(screen.getByRole('heading', { name: 'Register a named OpenCode agent' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Connect an OpenCode worker' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Machine setup' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Install Codex CLI/)).not.toBeInTheDocument();
-    expect(screen.getByText('Run this after installing OpenCode.')).toBeInTheDocument();
-    expect(screen.getByText(/Replace/)).toHaveTextContent('MIRIAM');
-    expect(screen.getByText('npm run target:opencode -w @giga-desk/api -- MIRIAM ollama/qwen3-coder-next:q4_K_M')).toBeInTheDocument();
-    expect(screen.getByText(/The script derives the host name/)).toBeInTheDocument();
+    expect(screen.getByText(/Download the scripts to automate the setup/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Download Bash registration' })).toHaveAttribute('href', '/scripts/register-opencode-target.sh');
+    expect(screen.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.sh');
+    expect(screen.getByRole('link', { name: 'Download PowerShell registration' })).toHaveAttribute('href', '/scripts/register-opencode-target.ps1');
+    expect(screen.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.ps1');
+    expect(screen.getByText('DATABASE_URL=<postgresql-url> npm run target:opencode -w @giga-desk/api -- MIRIAM ollama/qwen3-coder-next:q4_K_M')).toBeInTheDocument();
+    expect(screen.getByText(/GIGA_DESK_WORKER_AGENT_TYPE=OpenCode/)).toBeInTheDocument();
+    expect(screen.getByText(/systemctl --user restart giga-desk-codex-worker.service/)).toBeInTheDocument();
     expect(screen.queryByText(/openai\/gpt-5/)).not.toBeInTheDocument();
   });
 

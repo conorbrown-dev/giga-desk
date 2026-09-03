@@ -209,6 +209,23 @@
 
 ## Change log
 
+### Downloadable OpenCode setup scripts
+
+- Added downloadable registration and worker-install scripts to `/agents/connect`.
+- Added PowerShell equivalents; the Windows worker installer uses a per-user Scheduled Task with restart settings and a protected runner instead of systemd.
+- Registration prompts for the database URL, agent name, and provider/model, builds the API, provisions the named target, and prints the node ID.
+- Worker installation detects OpenCode/systemd availability, prompts for API/OIDC/repository values, writes mode-0600 env files, builds the worker, installs a PATH-aware user service, and starts it.
+- Added component and authenticated browser assertions for both downloads. Scripts never contain embedded credentials; database access, OIDC secrets, and project mappings remain explicit prompts.
+- Verification passed: `bash -n` on both scripts, web typecheck, lint, 10 component tests, production build, and the focused authenticated OpenCode Playwright flow. No deployment or live worker execution was claimed.
+
+### Complete OpenCode onboarding guide
+
+- Expanded `/agents/connect` OpenCode setup from target registration into five explicit steps: install/version check, API-side target registration, private machine identity, JSON repository allowlist plus `OpenCode` worker mode, and systemd start/restart/status/log verification.
+- Added the OpenCode binary directory to the supplied user-service PATH and wrapped long setup commands for usable mobile rendering.
+- Added component and authenticated browser assertions plus desktop/mobile screenshot evidence under `apps/web/test-results/visual-review/`.
+- Verification passed: `npm run typecheck -w @giga-desk/web`, `npm run lint -w @giga-desk/web`, `npm test -w @giga-desk/web` (10 tests), `npm run build -w @giga-desk/web`, and the focused OpenCode Playwright flow (1 test) with local listener access. Desktop and 390x844 mobile screenshots were rendered and inspected. No production deployment was performed.
+- Host credentials and user-service installation remain intentionally user/admin actions because the browser cannot safely create secrets or mutate the host machine.
+
 ### Clear Codex worker startup instructions
 
 - Updated `/agents/connect` Step 5 to install and start `giga-desk-codex-worker.service` with `systemctl --user`, inspect status/logs, and verify the node heartbeat changes to Online.

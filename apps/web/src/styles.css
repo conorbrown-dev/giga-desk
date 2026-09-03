@@ -406,8 +406,10 @@ small {
   border: 1px solid #2d3748;
   border-radius: 0.5rem;
   overflow-x: auto;
+  overflow-wrap: anywhere;
   padding: 1rem;
   font-size: 0.85rem;
+  white-space: pre-wrap;
 }
 
 .setup-steps code {

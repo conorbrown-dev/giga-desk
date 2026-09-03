@@ -40,6 +40,46 @@ const steps: readonly SetupStep[] = [
   },
 ];
 
+const openCodeSteps: readonly SetupStep[] = [
+  {
+    title: 'Install and verify OpenCode',
+    detail: 'Install OpenCode on the machine that will run work, then make sure the command is available to both your shell and the systemd user service.',
+    command: `opencode --version
+export PATH="$HOME/.opencode/bin:$PATH"`,
+  },
+  {
+    title: 'Register the OpenCode target',
+    detail: 'Run this on a host with the Giga Desk API database connection. It creates the execution node, named agent, and provider/model registry entry, then prints the IDs needed by the worker.',
+    command: 'DATABASE_URL=<postgresql-url> npm run target:opencode -w @giga-desk/api -- MIRIAM ollama/qwen3-coder-next:q4_K_M',
+  },
+  {
+    title: 'Create the machine identity',
+    detail: 'Ask an administrator for a node-scoped OIDC client with only agent:jobs permission. Put the API URL, node ID, token URL, client ID, and client secret in the private agent.env file; never commit or paste the secret into Giga Desk.',
+    command: `install -d -m 700 ~/.config/giga-desk
+$EDITOR ~/.config/giga-desk/agent.env
+chmod 600 ~/.config/giga-desk/agent.env`,
+  },
+  {
+    title: 'Configure the OpenCode worker',
+    detail: 'Map every project repository to its local checkout. The worker rejects unmapped repositories and uses the selected provider/model from the Work Package.',
+    command: `$EDITOR ~/.config/giga-desk/worker.env
+GIGA_DESK_WORKER_AGENT_TYPE=OpenCode
+GIGA_DESK_WORKER_REPOSITORIES=[{"url":"https://github.com/example/project.git","path":"/home/user/repos/project"}]`,
+  },
+  {
+    title: 'Start and verify the worker',
+    detail: 'Install the user service from the Giga Desk checkout, reload it after changing either env file, and confirm that the registered node becomes Online. The journal should show polling without authentication or fetch errors.',
+    command: `mkdir -p ~/.config/systemd/user
+cp ops/giga-desk-codex-worker.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now giga-desk-codex-worker.service
+systemctl --user restart giga-desk-codex-worker.service
+systemctl --user status giga-desk-codex-worker.service
+journalctl --user -u giga-desk-codex-worker.service -f`,
+    pending: true,
+  },
+];
+
 const loadCompleted = (): readonly number[] => {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '[]');
@@ -66,7 +106,17 @@ export function AgentSetupGuide() {
       <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Claude</h2><p>Provider adapter planned</p></article>
       <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></article>
     </section>
-    {provider === 'opencode' ? <section className="card setup-guide" aria-labelledby="opencode-setup"><p className="eyebrow">OpenCode</p><h2 id="opencode-setup">Register a named OpenCode agent</h2><p>Run this after installing OpenCode.</p><p>Replace <code>MIRIAM</code> with any agent name you want users to see when assigning work, and use a provider/model identifier configured in OpenCode.</p><pre><code>npm run target:opencode -w @giga-desk/api -- MIRIAM ollama/qwen3-coder-next:q4_K_M</code></pre><p>The script derives the host name, operating system, architecture, and installed OpenCode version from the machine where you run it.</p><p>Set <code>GIGA_DESK_WORKER_AGENT_TYPE=OpenCode</code> on that worker.</p><p>Its project checkout map remains separate from the Giga Desk product repository.</p></section> : <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
+    {provider === 'opencode' ? <section aria-labelledby="opencode-setup"><div className="row"><div><p className="eyebrow">OpenCode</p><h2 id="opencode-setup">Connect an OpenCode worker</h2></div><span>{completed.length} of {openCodeSteps.length} complete</span></div>
+      <p>Download the scripts to automate the setup. They detect host details and prompt only for database access, OIDC credentials, and repository choices that Giga Desk cannot safely obtain from the browser.</p>
+      <p><a className="button-link" href="/scripts/register-opencode-target.sh" download>Download Bash registration</a>{' '}<a className="button-link button-secondary" href="/scripts/install-opencode-worker.sh" download>Download Bash installer</a></p>
+      <p><a className="button-link" href="/scripts/register-opencode-target.ps1" download>Download PowerShell registration</a>{' '}<a className="button-link button-secondary" href="/scripts/install-opencode-worker.ps1" download>Download PowerShell installer</a></p>
+      <p>Run registration from the Giga Desk checkout on an API/database host, then run the worker installer from the worker checkout. Keep the downloaded scripts private until you have reviewed them.</p>
+      <ol className="setup-steps">{openCodeSteps.map((step, index) => <li className="card" key={step.title}>
+        <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
+        <p>{step.detail}</p>{step.command && <pre><code>{step.command}</code></pre>}
+        <label className="step-check"><input type="checkbox" checked={completed.includes(index)} disabled={step.pending}
+          onChange={(event) => { setStep(index, event.target.checked); }} /> Step completed</label>
+      </li>)}</ol></section> : <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
       <p>Complete these steps on the machine that will run Codex. The final step stays locked until the real worker is installed.</p>
       <ol className="setup-steps">{steps.map((step, index) => <li className="card" key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>

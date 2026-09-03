@@ -54,12 +54,20 @@ test('walks through Codex agent setup in the authenticated app', async ({ page }
 test('shows only OpenCode setup when OpenCode is selected', async ({ page }) => {
   await signIn(page, '/agents/connect');
   await page.getByRole('button', { name: /OpenCode/ }).click();
-  await expect(page.getByRole('heading', { name: 'Register a named OpenCode agent' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Connect an OpenCode worker' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Machine setup' })).not.toBeVisible();
   await expect(page.getByText(/Install Codex CLI/)).not.toBeVisible();
-  await expect(page.getByText('Run this after installing OpenCode.')).toBeVisible();
-  await expect(page.getByText('npm run target:opencode -w @giga-desk/api -- MIRIAM ollama/qwen3-coder-next:q4_K_M')).toBeVisible();
-  await expect(page.getByText(/The script derives the host name/)).toBeVisible();
+  await expect(page.getByText(/Download the scripts to automate the setup/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Download Bash registration' })).toHaveAttribute('href', '/scripts/register-opencode-target.sh');
+  await expect(page.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.sh');
+  await expect(page.getByRole('link', { name: 'Download PowerShell registration' })).toHaveAttribute('href', '/scripts/register-opencode-target.ps1');
+  await expect(page.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.ps1');
+  await expect(page.getByText('DATABASE_URL=<postgresql-url> npm run target:opencode -w @giga-desk/api -- MIRIAM ollama/qwen3-coder-next:q4_K_M')).toBeVisible();
+  await expect(page.getByText(/GIGA_DESK_WORKER_AGENT_TYPE=OpenCode/)).toBeVisible();
+  await expect(page.getByText(/systemctl --user restart giga-desk-codex-worker.service/)).toBeVisible();
+  await page.screenshot({ path: 'test-results/visual-review/opencode-connect-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/opencode-connect-mobile.png', fullPage: true });
   await expect(page.getByText(/openai\/gpt-5/)).not.toBeVisible();
 });
 
