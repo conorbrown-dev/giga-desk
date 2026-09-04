@@ -31,6 +31,10 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   await expect(page.getByText('Production workspace')).toBeVisible();
   await expect(page.getByLabel('Projects').getByText('Active', { exact: true })).toBeVisible();
   await page.screenshot({ path: 'test-results/visual-review/admin-dashboard-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.screenshot({ path: 'test-results/visual-review/admin-dashboard-wide.png', fullPage: true });
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.screenshot({ path: 'test-results/visual-review/admin-dashboard-tablet.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/visual-review/admin-dashboard-mobile.png', fullPage: true });
   await page.getByRole('link', { name: 'GD · Giga Desk' }).click();

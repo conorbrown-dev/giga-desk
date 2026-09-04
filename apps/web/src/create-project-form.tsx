@@ -13,7 +13,7 @@ const schema = Yup.object({
 });
 
 export function CreateProjectForm({ onCreated }: { onCreated: () => void }) {
-  return <details className="card action-panel"><summary>Add project</summary><h2 id="create-project-heading">Project details</h2><Formik<CreateProjectInput> initialValues={initialValues} validationSchema={schema} onSubmit={async (values, { resetForm, setStatus }) => {
+  return <details className="action-panel create-project-panel"><summary>Add project</summary><h2 id="create-project-heading">Project details</h2><Formik<CreateProjectInput> initialValues={initialValues} validationSchema={schema} onSubmit={async (values, { resetForm, setStatus }) => {
     setStatus(undefined);
     try { await createProject(values); resetForm(); setStatus({ success: 'Project created.' }); onCreated(); }
     catch (reason: unknown) { setStatus({ error: reason instanceof Error ? reason.message : 'Unable to create the project.' }); }

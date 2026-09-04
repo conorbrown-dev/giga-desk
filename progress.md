@@ -64,6 +64,12 @@
 - Keycloak now ships a responsive `giga-desk` login theme that carries the same charcoal surfaces, supplied banner logo, neon-orange primary action and focus treatment, and accessible mobile layout into the identity flow.
 - Production Keycloak now applies `giga-desk` only as the `giga-desk` realm login theme; the `master` realm uses the built-in Keycloak 26 login, account, admin, and email themes so its Admin Console remains operable.
 
+## Handoff — 2026-09-04
+
+- Redesigned the authenticated Project Portfolio control center as a compact operational interface. The sidebar is now 232 px; the content begins 32 px from its divider and uses a consistent 12-column grid. The page header now contains its environment context and Add project action, metrics are equal-height, and projects render as wide structured operational rows rather than narrow cards. The execution view uses the same wide-row treatment and omits empty Evidence and Deployments sections. Existing routes, data calls, form behavior, and execution actions are unchanged.
+- Visual verification: ran the current local demo and captured the pre-change authenticated dashboard at 1440×900. After the redesign, rendered and inspected `apps/web/test-results/visual-review/admin-dashboard-desktop.png` (1440×900), `admin-dashboard-wide.png` (1920×1080), `admin-dashboard-tablet.png` (1024×768), and `execution-actions-desktop.png` (1440×900). The real-Keycloak E2E flow confirms navigation and project creation still work; screenshots show aligned grid columns, no large sidebar gutter, non-wrapping header controls, compact empty states, and the active execution as the dominant full-width row.
+- Verification passed: web `typecheck`, `lint`, component tests (15), production build, and all eight real-Keycloak Playwright flows. The in-app browser bridge could not initialize in this environment, so visual inspection used the repository Playwright browser workflow. No production deployment was made.
+
 ## Handoff — 2026-09-03
 
 - Added an in-app repository-mapping helper to the authenticated Connect Agent page for Codex and OpenCode. It accepts the exact Giga Desk repository URL and local worker checkout path, generates `GIGA_DESK_WORKER_REPOSITORIES`, and explains where to save it and restart the worker; local paths remain on the worker host. Web typecheck, lint, component tests (11), production build, seven real-Keycloak browser flows, and desktop/mobile screenshot inspection passed.

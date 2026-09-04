@@ -170,6 +170,14 @@ describe('App', () => {
     expect(fetch).toHaveBeenCalledWith('/api/work-items/00000000-0000-4000-8000-000000000001/executions', expect.objectContaining({ headers: { Authorization: 'Bearer test-token' } }));
   });
 
+  it('keeps empty execution evidence and deployments out of the operational row', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => Promise.resolve({ ok: true, json: () => Promise.resolve(input === '/api/execution/targets' ? { nodes: [], agents: [], models: [] } : [{ id: 'job-1', status: 'Running', requestedAt: '2026-09-04T12:00:00.000Z', startedAt: '2026-09-04T12:01:00.000Z', completedAt: null, failureReason: null, branchName: null, commitHash: null, pullRequestUrl: null, node: { id: 'node-1', name: 'Miriam' }, agent: { id: 'agent-1', name: 'OpenCode', version: '1.0' }, model: { id: 'model-1', displayName: 'Qwen', provider: 'Ollama' }, progress: [], tests: [], deployments: [] }]) })));
+    render(<MemoryRouter initialEntries={['/work-items/work-1']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading', { name: 'OpenCode · Miriam' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Evidence' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Deployments' })).not.toBeInTheDocument();
+  });
+
   it('validates and queues a selected execution', async () => {
     localStorage.setItem('giga-desk-token', 'test-token');
     const fetchMock = vi.fn().mockImplementation((input: string, init?: RequestInit) => Promise.resolve({
