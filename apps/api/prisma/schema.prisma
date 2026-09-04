@@ -274,6 +274,10 @@ model ExecutionJob {
   branchName      String?             @db.VarChar(255)
   pullRequestUrl  String?
   commitHash      String?             @db.VarChar(128)
+  processId       Int?
+  processStartedAt DateTime?
+  terminationRequestedAt DateTime?
+  terminationRequestedBy String?      @db.VarChar(255)
   workItem        WorkItem            @relation(fields: [workItemId], references: [id], onDelete: Restrict)
   executionNode   ExecutionNode       @relation(fields: [executionNodeId], references: [id], onDelete: Restrict)
   agent           Agent               @relation(fields: [agentId], references: [id], onDelete: Restrict)

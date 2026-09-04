@@ -18,14 +18,15 @@ export interface CodexExecutionResult {
   branchName: string | null; commitHash: string | null; pullRequestUrl: string | null;
 }
 
-interface RunOptions { cwd: string; timeout: number; onStdoutLine?: (line: string) => void }
+interface RunOptions { cwd: string; timeout: number; signal?: AbortSignal; onStarted?: (processId: number) => void; onStdoutLine?: (line: string) => void }
 export type CommandRunner = (file: string, args: readonly string[], options: RunOptions) => Promise<void>;
 
 const runCommand: CommandRunner = (file, args, options) => new Promise((resolve, reject) => {
-  const { onStdoutLine, ...spawnOptions } = options;
+  const { onStarted, onStdoutLine, ...spawnOptions } = options;
   let bufferedOutput = '';
   const child = spawn(file, args, { ...spawnOptions, stdio: ['ignore', 'pipe', 'ignore'] });
-  child.once('error', reject);
+  if (child.pid) onStarted?.(child.pid);
+  child.once('error', (error) => { reject(error.name === 'AbortError' ? new Error('Execution terminated by an authorized user') : error); });
   child.once('close', (code) => {
     if (bufferedOutput.trim()) onStdoutLine?.(bufferedOutput);
     if (code !== 0) reject(new Error(`Codex process failed with code ${String(code ?? 'unknown')}`));
@@ -72,6 +73,7 @@ const imageExtension = (mediaType: string): string => ({
 })[mediaType] ?? '.img';
 
 export interface CodexProgressUpdate { phase: string; message: string }
+export interface ExecutionProcessControl { signal: AbortSignal; onStarted: (processId: number) => void }
 
 export const codexProgressFromLine = (line: string): CodexProgressUpdate | null => {
   let event: unknown;
@@ -170,7 +172,8 @@ Return only the required structured result. Include a test entry only after that
 export class CodexExecutor {
   constructor(private readonly run: CommandRunner = runCommand, private readonly timeoutMs = 7_200_000) {}
 
-  async execute(work: WorkPackage, repositoryPath: string, onProgress?: (update: CodexProgressUpdate) => void): Promise<CodexExecutionResult> {
+  async execute(work: WorkPackage, repositoryPath: string, onProgress?: (update: CodexProgressUpdate) => void,
+    control?: ExecutionProcessControl): Promise<CodexExecutionResult> {
     const temporaryDirectory = await mkdtemp(join(tmpdir(), 'giga-desk-codex-'));
     const schemaPath = join(temporaryDirectory, 'result-schema.json');
     const resultPath = join(temporaryDirectory, 'result.json');
@@ -187,6 +190,7 @@ export class CodexExecutor {
       await this.run('codex', ['exec', '--ephemeral', '--approve-for-me', '--json',
         '--output-schema', schemaPath, '--output-last-message', resultPath, ...imageArguments, ...modelArguments,
         '--cd', repositoryPath, promptFor(work)], { cwd: repositoryPath, timeout: this.timeoutMs,
+        ...(control ? { signal: control.signal, onStarted: control.onStarted } : {}),
         onStdoutLine: (line) => { const update = codexProgressFromLine(line); if (update) onProgress?.(update); } });
       const parsed: unknown = JSON.parse(await readFile(resultPath, 'utf8'));
       const result = parseExecutionResult(parsed);

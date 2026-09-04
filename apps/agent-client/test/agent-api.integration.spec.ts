@@ -27,6 +27,9 @@ describe('agent API HTTP boundary', () => {
       } else if (request.url?.endsWith('/jobs')) {
         response.writeHead(200, { 'Content-Type': 'application/json' });
         response.end('[]');
+      } else if (request.url?.endsWith('/control')) {
+        response.writeHead(200, { 'Content-Type': 'application/json' });
+        response.end('{"terminationRequested":true}');
       } else {
         response.writeHead(409); response.end('already claimed');
       }
@@ -43,10 +46,11 @@ describe('agent API HTTP boundary', () => {
       .resolves.toEqual({ agentId: 'agent-1' });
     await expect(api.heartbeat('node-1')).resolves.toEqual({ status: 'Online' });
     await expect(api.discover('node-1')).resolves.toEqual([]);
+    await expect(api.control('job-1')).resolves.toEqual({ terminationRequested: true });
     await expect(api.post('job-1', 'claim')).rejects.toEqual(
       expect.objectContaining<Partial<AgentApiError>>({ status: 409, message: 'already claimed' }),
     );
     expect(tokenRequests).toBe(1);
-    expect(received).toEqual(['Bearer worker-token', 'Bearer worker-token', 'Bearer worker-token', 'Bearer worker-token']);
+    expect(received).toEqual(['Bearer worker-token', 'Bearer worker-token', 'Bearer worker-token', 'Bearer worker-token', 'Bearer worker-token']);
   });
 });

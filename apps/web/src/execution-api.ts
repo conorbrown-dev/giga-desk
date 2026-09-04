@@ -3,6 +3,7 @@ export interface ExecutionHistory {
   failureReason: string | null; branchName: string | null; commitHash: string | null; pullRequestUrl: string | null;
   node: { id: string; name: string }; agent: { id: string; name: string; version: string };
   model: { id: string; displayName: string; provider: string };
+  process: { id: number; startedAt: string; terminationRequestedAt: string | null } | null;
   progress: readonly { phase: string; message: string; createdAt: string }[];
   tests: readonly { type: string; result: string; testCount: number | null; createdAt: string }[];
   deployments: readonly { environment: string; status: string; version: string | null; url: string | null; startedAt: string; completedAt: string | null }[];
@@ -77,6 +78,14 @@ export async function retryExecution(workItemId: string, jobId: string): Promise
   const token = await getAuthToken();
   const response = await fetch(`/api/work-items/${workItemId}/executions/${jobId}/retry`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
   if (!response.ok) throw new Error(response.status === 409 ? 'This execution cannot be retried on its previous target.' : 'Unable to retry the execution.');
+}
+
+export async function terminateExecution(workItemId: string, jobId: string): Promise<void> {
+  const token = await getAuthToken();
+  const response = await fetch(`/api/work-items/${workItemId}/executions/${jobId}/terminate`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(response.status === 409 ? 'This execution process is no longer running.' : 'Unable to terminate the execution process.');
 }
 
 export async function updateRepositoryMappings(nodeId: string, mappings: readonly RepositoryMapping[]): Promise<void> {

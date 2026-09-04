@@ -46,6 +46,7 @@ describe('CodexExecutor', () => {
       expect(args).not.toContain('--sandbox');
       expect(args).not.toContain('--model');
       expect(args).toContain('--json');
+      options.onStarted?.(7_654);
       options.onStdoutLine?.('{"type":"turn.started"}');
       const imagePath = args[args.indexOf('--image') + 1];
       if (!imagePath) throw new Error('Missing visual reference path');
@@ -60,11 +61,14 @@ describe('CodexExecutor', () => {
 
     try {
       const progress = vi.fn();
-      const result = await new CodexExecutor(run).execute(workPackage, repositoryPath, progress);
+      const started = vi.fn();
+      const result = await new CodexExecutor(run).execute(workPackage, repositoryPath, progress,
+        { signal: new AbortController().signal, onStarted: started });
       expect(result.summary).toBe('Implemented and verified.');
       expect(result.visualEvidence.map(({ viewport }) => viewport)).toEqual(['Desktop', 'Mobile']);
       expect(run).toHaveBeenCalledOnce();
       expect(progress).toHaveBeenCalledWith({ phase: 'Codex', message: 'Analyzing the work item' });
+      expect(started).toHaveBeenCalledWith(7_654);
     } finally { await rm(repositoryPath, { recursive: true, force: true }); }
   });
 

@@ -14,9 +14,16 @@ const result = { summary: 'Done', tests: [{ type: 'Unit', result: 'Passed', test
 
 describe('OpenCodeExecutor', () => {
   it('runs the assigned model and parses the final JSON event', async () => {
-    const run = vi.fn<OpenCodeCommandRunner>().mockResolvedValue(JSON.stringify({ type: 'step_start' }) + '\n' + JSON.stringify({ type: 'text', part: { type: 'text', text: JSON.stringify(result) } }));
+    const started = vi.fn();
+    const run = vi.fn<OpenCodeCommandRunner>((_args, options) => {
+      options.onStarted?.(5_432);
+      expect(options.signal).toBeInstanceOf(AbortSignal);
+      return Promise.resolve(JSON.stringify({ type: 'step_start' }) + '\n' + JSON.stringify({ type: 'text', part: { type: 'text', text: JSON.stringify(result) } }));
+    });
     const repositoryPath = process.cwd();
-    await expect(new OpenCodeExecutor(run).execute(work, repositoryPath)).resolves.toEqual(result);
+    await expect(new OpenCodeExecutor(run).execute(work, repositoryPath, undefined,
+      { signal: new AbortController().signal, onStarted: started })).resolves.toEqual(result);
     expect(run).toHaveBeenCalledWith(expect.arrayContaining(['run', '--format', 'json', '--auto', '--dir', repositoryPath, '--model', 'ollama/qwen3-coder-next:q4_K_M']), expect.anything());
+    expect(started).toHaveBeenCalledWith(5_432);
   });
 });

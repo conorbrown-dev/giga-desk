@@ -34,6 +34,7 @@ import { RegisterCodexTargetCommand } from '../application/register-codex-target
 import type { ProvisionedCodexTarget } from '../application/codex-target-provisioner.js';
 import { RegisterCodexTargetDto } from './register-codex-target.dto.js';
 import { PrismaService } from '../../shared/infrastructure/prisma.service.js';
+import { ReportProcessDto } from './report-process.dto.js';
 
 @Controller('agent')
 export class AgentJobsController {
@@ -173,6 +174,39 @@ export class AgentJobsController {
       if (error instanceof InvalidAgentExecutionStateError) throw new ConflictException(error.message);
       throw error;
     }
+  }
+
+  @Post('jobs/:jobId/process')
+  @RequirePermissions('agent:jobs')
+  async reportProcess(
+    @Param('jobId', ParseUUIDPipe) jobId: string, @Body() input: ReportProcessDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const nodeId = request.user?.executionNodeId;
+    if (!nodeId) throw new ForbiddenException('Worker identity requires an execution node');
+    const startedAt = new Date();
+    const registered = await this.database.executionJob.updateMany({ where: {
+      id: jobId, executionNodeId: nodeId, status: 'Running', processId: null,
+    }, data: { processId: input.processId, processStartedAt: startedAt } });
+    if (registered.count === 1) return { processId: input.processId, startedAt: startedAt.toISOString() };
+    const existing = await this.database.executionJob.findFirst({ where: { id: jobId, executionNodeId: nodeId },
+      select: { processId: true, processStartedAt: true } });
+    if (!existing) throw new NotFoundException('Execution job not found for this node');
+    if (existing.processId === input.processId && existing.processStartedAt) return {
+      processId: existing.processId, startedAt: existing.processStartedAt.toISOString(),
+    };
+    throw new ConflictException('Execution cannot register this process');
+  }
+
+  @Get('jobs/:jobId/control')
+  @RequirePermissions('agent:jobs')
+  async control(@Param('jobId', ParseUUIDPipe) jobId: string, @Req() request: AuthenticatedRequest) {
+    const nodeId = request.user?.executionNodeId;
+    if (!nodeId) throw new ForbiddenException('Worker identity requires an execution node');
+    const job = await this.database.executionJob.findFirst({ where: { id: jobId, executionNodeId: nodeId },
+      select: { terminationRequestedAt: true } });
+    if (!job) throw new NotFoundException('Execution job not found for this node');
+    return { terminationRequested: job.terminationRequestedAt !== null };
   }
 
   @Post('jobs/:jobId/tests')

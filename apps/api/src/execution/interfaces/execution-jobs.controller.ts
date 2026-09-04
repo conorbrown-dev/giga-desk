@@ -38,11 +38,12 @@ export class ExecutionJobsController {
     @Body() input: CreateExecutionJobDto,
     @Req() request: AuthenticatedRequest,
   ): Promise<QueuedExecutionJob> {
-    if (!request.user) throw new Error('Authenticated principal was not attached');
+    const principal = request.user;
+    if (!principal) throw new Error('Authenticated principal was not attached');
     try {
       return await this.commands.execute(new CreateExecutionJobCommand(
         workItemId, input.executionNodeId, input.agentId, input.modelId,
-        input.protectedActionsApproved, request.user.subject,
+        input.protectedActionsApproved, principal.subject,
       ));
     } catch (error) {
       if (error instanceof ExecutionSelectionNotFoundError) throw new NotFoundException(error.message);
@@ -51,6 +52,34 @@ export class ExecutionJobsController {
       }
       throw error;
     }
+  }
+
+  @Post(':workItemId/executions/:jobId/terminate')
+  @RequirePermissions('executions:create')
+  async terminate(
+    @Param('workItemId', ParseUUIDPipe) workItemId: string, @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const principal = request.user;
+    if (!principal) throw new Error('Authenticated principal was not attached');
+    return this.database.$transaction(async (transaction) => {
+      const job = await transaction.executionJob.findFirst({ where: { id: jobId, workItemId },
+        select: { status: true, processId: true, terminationRequestedAt: true, workItem: { select: { projectId: true } } } });
+      if (!job || job.status !== 'Running' || job.processId === null) {
+        throw new ConflictException('Only a registered running execution process can be terminated.');
+      }
+      if (job.terminationRequestedAt) return { terminationRequestedAt: job.terminationRequestedAt.toISOString() };
+      const terminationRequestedAt = new Date();
+      const updated = await transaction.executionJob.updateMany({ where: {
+        id: jobId, workItemId, status: 'Running', processId: { not: null }, terminationRequestedAt: null,
+      }, data: {
+        terminationRequestedAt, terminationRequestedBy: principal.subject,
+      } });
+      if (updated.count !== 1) throw new ConflictException('Execution process changed concurrently.');
+      await transaction.activity.create({ data: { projectId: job.workItem.projectId, workItemId,
+        actorId: principal.subject, eventType: 'ExecutionTerminationRequested', metadata: { executionJobId: jobId } } });
+      return { terminationRequestedAt: terminationRequestedAt.toISOString() };
+    });
   }
 
   @Post(':workItemId/executions/:jobId/clear')

@@ -210,6 +210,20 @@ describe('execution target registry API', () => {
       .set('Authorization', `Bearer worker-${nodeId}`).expect(201);
     await request(server).post(`/api/agent/jobs/${jobBody['id']}/start`)
       .set('Authorization', `Bearer worker-${nodeId}`).expect(409);
+    await request(server).post(`/api/agent/jobs/${jobBody['id']}/process`)
+      .set('Authorization', `Bearer worker-${nodeId}`).send({ processId: 0 }).expect(400);
+    await request(server).post(`/api/agent/jobs/${jobBody['id']}/process`)
+      .set('Authorization', `Bearer worker-${registeredNodeId}`).send({ processId: 4_321 }).expect(404);
+    const registeredProcess = await request(server).post(`/api/agent/jobs/${jobBody['id']}/process`)
+      .set('Authorization', `Bearer worker-${nodeId}`).send({ processId: 4_321 }).expect(201);
+    await request(server).post(`/api/agent/jobs/${jobBody['id']}/process`)
+      .set('Authorization', `Bearer worker-${nodeId}`).send({ processId: 4_321 }).expect(201);
+    const registeredProcessBody: unknown = registeredProcess.body;
+    if (!isRecord(registeredProcessBody)) throw new Error('Expected a registered process');
+    expect(registeredProcessBody['processId']).toBe(4_321);
+    expect(typeof registeredProcessBody['startedAt']).toBe('string');
+    await request(server).get(`/api/agent/jobs/${jobBody['id']}/control`)
+      .set('Authorization', `Bearer worker-${nodeId}`).expect(200, { terminationRequested: false });
     const firstProgress = await request(server).post(`/api/agent/jobs/${jobBody['id']}/progress`)
       .set('Authorization', `Bearer worker-${nodeId}`).send(progressInput).expect(201);
     const retriedProgress = await request(server).post(`/api/agent/jobs/${jobBody['id']}/progress`)
@@ -303,6 +317,10 @@ describe('execution target registry API', () => {
     const completedHistory = historyRecords.find((entry) => entry['id'] === jobBody['id']);
     if (!completedHistory) throw new Error('Expected completed execution history');
     expect(completedHistory['status']).toBe('Completed');
+    const completedProcess = completedHistory['process'];
+    if (!isRecord(completedProcess)) throw new Error('Expected process history');
+    expect(completedProcess).toMatchObject({ id: 4_321, terminationRequestedAt: null });
+    expect(typeof completedProcess['startedAt']).toBe('string');
     expect(records(completedHistory['tests']).some((test) => test['type'] === 'EndToEnd' && test['result'] === 'Passed')).toBe(true);
     expect(records(completedHistory['deployments']).some((deployment) => deployment['status'] === 'Succeeded')).toBe(true);
 
@@ -314,6 +332,22 @@ describe('execution target registry API', () => {
     const failureJobId = failureJobBody['id'];
     await request(server).post(`/api/agent/jobs/${failureJobId}/claim`).set('Authorization', `Bearer worker-${nodeId}`).expect(201);
     await request(server).post(`/api/agent/jobs/${failureJobId}/start`).set('Authorization', `Bearer worker-${nodeId}`).expect(201);
+    await request(server).post(`/api/agent/jobs/${failureJobId}/process`)
+      .set('Authorization', `Bearer worker-${nodeId}`).send({ processId: 9_876 }).expect(201);
+    await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${failureJobId}/terminate`)
+      .set('Authorization', 'Bearer read-only-token').expect(403);
+    const termination = await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${failureJobId}/terminate`)
+      .set('Authorization', 'Bearer valid-token').expect(201);
+    const terminationBody: unknown = termination.body;
+    if (!isRecord(terminationBody)) throw new Error('Expected a termination request');
+    expect(typeof terminationBody['terminationRequestedAt']).toBe('string');
+    await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${failureJobId}/terminate`)
+      .set('Authorization', 'Bearer valid-token').expect(201);
+    await request(server).get(`/api/agent/jobs/${failureJobId}/control`)
+      .set('Authorization', `Bearer worker-${nodeId}`).expect(200, { terminationRequested: true });
+    expect(await database.activity.count({ where: {
+      workItemId: failureWorkItemId, eventType: 'ExecutionTerminationRequested', actorId: 'user-123',
+    } })).toBe(1);
     const failureInput = { failureReason: 'Agent lost its workspace', idempotencyKey: 'failure-1' };
     const failure = await request(server).post(`/api/agent/jobs/${failureJobId}/fail`)
       .set('Authorization', `Bearer worker-${nodeId}`).send(failureInput).expect(201);
@@ -358,6 +392,8 @@ describe('execution target registry API', () => {
     ]);
     expect([clearedRetry, clearedFailure, readyItem.status, clearedActivities.length, remainingEvidence]).toEqual([null, null, 'Ready', 1, [0, 0, 0]]);
     await request(server).post(`/api/work-items/${workItemId}/executions/${jobBody['id']}/clear`)
+      .set('Authorization', 'Bearer valid-token').expect(409);
+    await request(server).post(`/api/work-items/${workItemId}/executions/${jobBody['id']}/terminate`)
       .set('Authorization', 'Bearer valid-token').expect(409);
   });
 });

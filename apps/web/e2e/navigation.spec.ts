@@ -167,29 +167,38 @@ test('presents clear and retry as execution action buttons', async ({ page }) =>
   await expect(page.getByText('No execution attempts yet.')).toBeVisible();
 });
 
-test('streams a readable execution activity timeline', async ({ page }) => {
+test('streams activity and controls the registered worker process', async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
-  const execution = { id: '426bb60b-8487-48a6-b3a8-048fdcec618a', status: 'Running',
+  let execution = { id: '426bb60b-8487-48a6-b3a8-048fdcec618a', status: 'Running',
     requestedAt: '2026-09-04T14:01:59.619Z', startedAt: '2026-09-04T14:02:05.872Z', completedAt: null,
     failureReason: null, branchName: null, commitHash: null, pullRequestUrl: null,
     node: { id: 'node-1', name: 'Miriam' }, agent: { id: 'agent-1', name: 'Codex CLI', version: '0.153.2' },
     model: { id: 'model-1', displayName: 'GPT-5', provider: 'OpenAI' }, tests: [], deployments: [],
+    process: { id: 3019293, startedAt: '2026-09-04T14:02:06.000Z', terminationRequestedAt: null as string | null },
     progress: [{ phase: 'Codex', message: 'Analyzing the work item', createdAt: '2026-09-04T14:02:07.000Z' },
       { phase: 'Repository', message: 'Running a repository command', createdAt: '2026-09-04T14:02:09.000Z' }] };
   await page.route('**/api/execution/targets', async (route) => route.fulfill({ json: { nodes: [], agents: [], models: [] } }));
   await page.route('**/api/work-items/*/executions/stream', async (route) => route.fulfill({
     status: 200, contentType: 'text/event-stream', body: `data: ${JSON.stringify([execution])}\n\n`,
   }));
+  await page.route('**/api/work-items/*/executions/*/terminate', async (route) => {
+    execution = { ...execution, process: { ...execution.process, terminationRequestedAt: '2026-09-04T14:03:00.000Z' } };
+    await route.fulfill({ status: 201, json: { terminationRequestedAt: execution.process.terminationRequestedAt } });
+  });
   await page.route('**/api/work-items/*/executions', async (route) => route.fulfill({ json: [execution] }));
   await signIn(page, '/work-items/work-1');
   await expect(page.getByRole('region', { name: 'Execution activity' })).toContainText('Running a repository command');
   await expect(page.getByText('Live')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Worker process' })).toContainText('PID 3019293');
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.screenshot({ path: 'test-results/visual-review/426bb60b-execution-stream-desktop.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/visual-review/426bb60b-process-control-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: 'test-results/visual-review/426bb60b-execution-stream-mobile.png', fullPage: true });
+  await page.getByRole('button', { name: 'Stop process' }).click();
+  await page.screenshot({ path: 'test-results/visual-review/426bb60b-process-control-mobile.png', fullPage: true });
   await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 390);
+  await page.getByRole('group', { name: 'Confirm process termination' }).getByRole('button', { name: 'Stop' }).click();
+  await expect(page.getByRole('region', { name: 'Worker process' })).toContainText('Stopping');
   expect(consoleErrors).toEqual([]);
 });
 
