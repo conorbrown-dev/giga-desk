@@ -149,7 +149,7 @@ export class CodexExecutor {
       }
       const modelArguments = work.execution.model.identifier === 'codex-cli-default'
         ? [] : ['--model', work.execution.model.identifier];
-      await this.run('codex', ['exec', '--ephemeral', '--approve-for-me', '--sandbox', 'workspace-write',
+      await this.run('codex', ['exec', '--ephemeral', '--approve-for-me',
         '--output-schema', schemaPath, '--output-last-message', resultPath, ...imageArguments, ...modelArguments,
         '--cd', repositoryPath, promptFor(work)], { cwd: repositoryPath, timeout: this.timeoutMs, maxBuffer: 1_000_000 });
       const parsed: unknown = JSON.parse(await readFile(resultPath, 'utf8'));

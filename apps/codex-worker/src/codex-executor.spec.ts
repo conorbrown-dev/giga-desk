@@ -42,7 +42,8 @@ describe('CodexExecutor', () => {
       Buffer.from([0x89, 0x50, 0x4e, 0x47]))));
     const run = vi.fn<CommandRunner>(async (file, args) => {
       expect(file).toBe('codex');
-      expect(args).toContain('workspace-write');
+      expect(args).toContain('--approve-for-me');
+      expect(args).not.toContain('--sandbox');
       expect(args).not.toContain('--model');
       const imagePath = args[args.indexOf('--image') + 1];
       if (!imagePath) throw new Error('Missing visual reference path');
