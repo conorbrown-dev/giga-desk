@@ -27,6 +27,11 @@ Product code means runtime application code, including backend and frontend sour
 
 Do not claim tests, builds, migrations, integrations, or user flows are verified unless the corresponding command or flow was actually run successfully. Record environmental or external blockers explicitly.
 
+> IMPORTANT: For substantial rendered frontend work, use the Build Web Apps
+> plugin when available. Functional correctness alone does not satisfy frontend
+> acceptance criteria. UI changes must be rendered, visually inspected, and
+> iterated before they are considered complete.
+
 ## Repository, deployment, and infrastructure tooling
 
 - Use the GitHub CLI to manage the GitHub repository. If the GitHub CLI is not available on the machine, download and install it from an official source, then use it for repository operations.
@@ -78,6 +83,237 @@ Every backend product-code change requires:
 - integration tests that exercise the affected adapters, persistence boundary, or HTTP/API boundary.
 
 Prefer real PostgreSQL-compatible integration behavior where persistence semantics matter. Mock ports at the application boundary in unit tests; do not unit-test Prisma implementation details.
+
+## Frontend UI/UX Development
+
+Frontend visual quality is a first-class acceptance criterion for this project. A frontend task is not complete merely because the feature works.
+
+### Build Web Apps Plugin
+
+When the **Build Web Apps** Codex plugin is available, use it for work involving rendered frontend surfaces.
+
+This includes:
+
+* Creating new pages or application screens
+* Creating new significant UI components
+* Redesigning existing screens
+* Translating screenshots, mockups, or visual references into application UI
+* Improving visual polish
+* Responsive layout work
+* UX improvements
+* Significant CSS or styling changes
+* Debugging rendered frontend behavior
+* Verifying that an implementation visually matches an intended design
+
+Do not treat use of the Build Web Apps plugin as optional for substantial frontend UI/UX work when the plugin is available.
+
+### Design and Redesign Work
+
+For new visual design, significant redesigns, or work that must match a visual reference, use the Build Web Apps `frontend-app-builder` skill.
+
+Do **not** immediately begin implementing components from a vague interpretation of the requirements.
+
+Follow this workflow:
+
+1. Inspect the existing application.
+2. Inspect relevant screenshots, mockups, examples, style references, and existing design conventions.
+3. Understand the purpose of the screen and the user's primary workflow.
+4. Establish the intended visual direction before implementation.
+5. Identify or derive the design system:
+
+   * typography
+   * type scale
+   * spacing
+   * layout/grid
+   * border radius
+   * elevation/shadows
+   * colors
+   * component hierarchy
+   * interaction states
+   * responsive behavior
+6. Implement the design using the project's existing architecture and component system.
+7. Run the actual application.
+8. Inspect the rendered result in a browser.
+9. Compare the rendered result against the intended design and supplied references.
+10. Correct visual discrepancies.
+11. Repeat browser inspection and refinement until the implementation is polished.
+
+Do not stop after the first technically correct implementation.
+
+### Visual References
+
+When visual references are supplied, treat them as design requirements rather than loose inspiration unless the task explicitly states otherwise.
+
+Analyze references for:
+
+* overall composition
+* information hierarchy
+* density
+* whitespace
+* typography
+* component proportions
+* alignment
+* visual rhythm
+* navigation patterns
+* card/table/form treatment
+* icon usage
+* color usage
+* responsive behavior
+* interaction patterns
+
+Reproduce the **design language and UX qualities** of the reference without blindly copying irrelevant content or structure.
+
+Avoid producing a generic approximation simply because it contains the same types of controls.
+
+### Avoid Generic AI UI
+
+Do not default to stereotypical AI-generated SaaS/dashboard design patterns unless they genuinely fit the product.
+
+Examples of patterns that should not be introduced without a reason include:
+
+* excessive rounded cards
+* cards nested inside cards
+* excessive gradients
+* unnecessary pill-shaped controls
+* oversized hero copy in application screens
+* arbitrary colored icon containers
+* excessive use of muted gray text
+* huge amounts of unused whitespace
+* every section appearing as an independent floating panel
+* decorative charts or metrics that do not help the user's workflow
+* identical visual hierarchy for unrelated pieces of information
+
+Prefer a deliberate product-specific design derived from the application's purpose and supplied references.
+
+### Preserve Existing Design Systems
+
+Before creating new styles or components, inspect the repository for:
+
+* shared components
+* theme definitions
+* design tokens
+* CSS variables
+* typography rules
+* spacing conventions
+* existing layouts
+* existing responsive breakpoints
+* existing component-library abstractions
+
+Reuse these where appropriate.
+
+Do not create a parallel design system inside an individual feature.
+
+If the existing design system is itself the subject of the redesign, improve it deliberately rather than working around it locally.
+
+### React Implementation
+
+After meaningful React or Next.js component changes, use the Build Web Apps `react-best-practices` guidance when available.
+
+Maintain existing repository conventions for:
+
+* component organization
+* state management
+* data fetching
+* routing
+* accessibility
+* error handling
+* loading states
+* testing
+* TypeScript usage
+
+Visual improvements must not degrade architecture or maintainability.
+
+### Frontend Validation
+
+For any meaningful change to a rendered frontend surface, use the Build Web Apps `frontend-testing-debugging` workflow when available.
+
+Validation must cover both **behavior and appearance**.
+
+At minimum, inspect:
+
+* the primary user flow
+* layout
+* alignment
+* typography
+* spacing
+* overflow
+* responsive behavior
+* loading states
+* empty states
+* error states where relevant
+* hover/focus/active states where relevant
+* console errors
+* obvious accessibility problems
+
+If the Browser plugin is available, prefer the browser-based validation workflow provided by the skill.
+
+If it is unavailable and the Build Web Apps workflow permits it, use the repository's existing browser/E2E tooling such as Playwright.
+
+### Responsive Design
+
+Do not assume that a desktop implementation that compiles is responsive.
+
+For meaningful UI work, verify representative viewport sizes for:
+
+* desktop
+* tablet where applicable
+* mobile
+
+Look specifically for:
+
+* horizontal overflow
+* truncated content
+* collapsed navigation problems
+* unusable tap targets
+* inappropriate fixed widths
+* poorly wrapping text
+* broken grids
+* controls that become inaccessible
+
+### Definition of Done for Frontend Work
+
+Frontend work is complete only when all applicable criteria are satisfied:
+
+* functionality works
+* tests/checks pass
+* the rendered application has been inspected
+* the implementation matches the intended visual direction
+* supplied style references have been meaningfully honored
+* visual hierarchy is clear
+* typography and spacing are deliberate
+* responsive behavior has been verified
+* interactive states are usable
+* no obvious browser-console errors remain
+* accessibility has not obviously regressed
+* the implementation fits the application's existing architecture
+* no obvious visual-polish issues remain
+
+When there is a conflict between "technically functional" and "visually finished," the task is **not done**.
+
+### Existing Poor UI
+
+When asked to improve an existing screen, do not preserve poor visual decisions simply because they already exist.
+
+Preserve:
+
+* required behavior
+* domain semantics
+* user data
+* business rules
+* appropriate architectural boundaries
+
+Visual structure, styling, hierarchy, layout, and interaction design may be substantially changed when doing so produces a better user experience.
+
+### Reporting Completion
+
+When completing substantial frontend work, summarize:
+
+* what was visually changed
+* what UX behavior changed
+* which Build Web Apps skills were used
+* what browser/rendered validation was performed
+* which viewport sizes or important states were checked
+* any remaining visual limitations or follow-up work
 
 ## Frontend
 
