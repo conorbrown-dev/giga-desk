@@ -41,10 +41,10 @@ export async function createExecution(workItemId: string, selection: ExecutionSe
   if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'Sign in to start work.' : response.status === 409 ? 'Work is already active or the selected targets are incompatible.' : 'Unable to start work.');
 }
 
-export async function clearQueuedExecution(workItemId: string, jobId: string): Promise<void> {
+export async function clearExecution(workItemId: string, jobId: string): Promise<void> {
   const token = await getAuthToken();
   const response = await fetch(`/api/work-items/${workItemId}/executions/${jobId}/clear`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
-  if (!response.ok) throw new Error(response.status === 409 ? 'This execution was already claimed or changed.' : 'Unable to clear the queued execution.');
+  if (!response.ok) throw new Error(response.status === 409 ? 'This execution is active or no longer available to clear.' : 'Unable to clear the execution.');
 }
 
 export async function retryExecution(workItemId: string, jobId: string): Promise<void> {

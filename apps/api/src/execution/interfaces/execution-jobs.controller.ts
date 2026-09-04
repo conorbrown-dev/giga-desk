@@ -44,22 +44,33 @@ export class ExecutionJobsController {
 
   @Post(':workItemId/executions/:jobId/clear')
   @RequirePermissions('executions:create')
-  async clearQueued(
+  async clear(
     @Param('workItemId', ParseUUIDPipe) workItemId: string, @Param('jobId', ParseUUIDPipe) jobId: string,
     @Req() request: AuthenticatedRequest,
   ): Promise<void> {
     if (!request.user) throw new Error('Authenticated principal was not attached');
     const actorId = request.user.subject;
     const cleared = await this.database.$transaction(async (transaction) => {
-      const job = await transaction.executionJob.findFirst({ where: { id: jobId, workItemId, status: 'Queued' }, select: { executionNodeId: true, workItem: { select: { projectId: true } } } });
+      const job = await transaction.executionJob.findFirst({ where: { id: jobId, workItemId, status: { in: ['Queued', 'Failed', 'Cancelled'] } }, select: { executionNodeId: true, status: true, workItem: { select: { projectId: true, status: true } } } });
       if (!job) return false;
-      const execution = await transaction.executionJob.updateMany({ where: { id: jobId, status: 'Queued' }, data: { status: 'Cancelled', completedAt: new Date(), failureReason: 'Cleared by an authorized user before the worker claimed it.' } });
+      if (job.status !== 'Queued') {
+        await transaction.deployment.deleteMany({ where: { executionJobId: jobId } });
+        const execution = await transaction.executionJob.deleteMany({ where: { id: jobId, workItemId, status: { in: ['Failed', 'Cancelled'] } } });
+        if (execution.count !== 1) return false;
+        if (job.workItem.status === 'Blocked') {
+          await transaction.workItem.update({ where: { id: workItemId }, data: { status: 'Ready' } });
+          await transaction.activity.create({ data: { projectId: job.workItem.projectId, workItemId, actorId, eventType: 'WorkItemStatusChanged', metadata: { from: 'Blocked', to: 'Ready', reason: 'Execution history cleared' } } });
+        }
+        await transaction.activity.create({ data: { projectId: job.workItem.projectId, workItemId, actorId, eventType: 'ExecutionHistoryCleared', metadata: { executionJobId: jobId, previousStatus: job.status } } });
+        return true;
+      }
+      const execution = await transaction.executionJob.deleteMany({ where: { id: jobId, status: 'Queued' } });
       const node = await transaction.executionNode.updateMany({ where: { id: job.executionNodeId, currentJobCount: { gt: 0 } }, data: { currentJobCount: { decrement: 1 } } });
       if (execution.count !== 1 || node.count !== 1) return false;
-      await transaction.activity.create({ data: { projectId: job.workItem.projectId, workItemId, actorId, eventType: 'ExecutionCleared', metadata: { executionJobId: jobId } } });
+      await transaction.activity.create({ data: { projectId: job.workItem.projectId, workItemId, actorId, eventType: 'ExecutionCleared', metadata: { executionJobId: jobId, previousStatus: 'Queued' } } });
       return true;
     });
-    if (!cleared) throw new ConflictException('Only an unclaimed queued execution can be cleared.');
+    if (!cleared) throw new ConflictException('Only queued, failed, or cancelled executions can be cleared.');
   }
 
   @Post(':workItemId/executions/:jobId/retry')

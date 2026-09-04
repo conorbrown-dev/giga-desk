@@ -300,5 +300,32 @@ describe('execution target registry API', () => {
       database.executionNode.findUniqueOrThrow({ where: { id: nodeId } }),
     ]);
     expect([failedJob.status, blockedItem.status, releasedNode.currentJobCount]).toEqual(['Failed', 'Blocked', 0]);
+    await database.executionProgress.create({ data: { executionJobId: failureJobId, phase: 'Failure', message: 'Partial evidence', idempotencyKey: 'clear-progress' } });
+    await database.testResult.create({ data: { executionJobId: failureJobId, type: 'Unit', result: 'Failed', idempotencyKey: 'clear-test' } });
+    await database.deployment.create({ data: { projectId: blockedItem.projectId, workItemId: failureWorkItemId, executionJobId: failureJobId, environment: 'Development', status: 'Failed', idempotencyKey: 'clear-deployment' } });
+
+    await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${failureJobId}/retry`)
+      .set('Authorization', 'Bearer read-only-token').expect(403);
+    const retry = await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${failureJobId}/retry`)
+      .set('Authorization', 'Bearer valid-token').expect(201);
+    const retryBody: unknown = retry.body;
+    if (!isRecord(retryBody) || typeof retryBody['id'] !== 'string') throw new Error('Expected a retried job');
+    const retryJobId = retryBody['id'];
+    expect(retryBody).toMatchObject({ workItemId: failureWorkItemId, status: 'Queued', protectedActionsApproved: false });
+    await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${retryJobId}/clear`)
+      .set('Authorization', 'Bearer valid-token').expect(201);
+    expect(await database.executionJob.findUnique({ where: { id: retryJobId } })).toBeNull();
+    await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${failureJobId}/clear`)
+      .set('Authorization', 'Bearer valid-token').expect(201);
+    const [clearedRetry, clearedFailure, readyItem, clearedActivities, remainingEvidence] = await Promise.all([
+      database.executionJob.findUnique({ where: { id: retryJobId } }),
+      database.executionJob.findUnique({ where: { id: failureJobId } }),
+      database.workItem.findUniqueOrThrow({ where: { id: failureWorkItemId } }),
+      database.activity.findMany({ where: { workItemId: failureWorkItemId, eventType: 'ExecutionHistoryCleared' } }),
+      Promise.all([database.executionProgress.count({ where: { executionJobId: failureJobId } }), database.testResult.count({ where: { executionJobId: failureJobId } }), database.deployment.count({ where: { executionJobId: failureJobId } })]),
+    ]);
+    expect([clearedRetry, clearedFailure, readyItem.status, clearedActivities.length, remainingEvidence]).toEqual([null, null, 'Ready', 1, [0, 0, 0]]);
+    await request(server).post(`/api/work-items/${workItemId}/executions/${jobBody['id']}/clear`)
+      .set('Authorization', 'Bearer valid-token').expect(409);
   });
 });

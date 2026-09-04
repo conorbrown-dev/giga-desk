@@ -140,6 +140,33 @@ test('validates selections and handles Start Work success and conflict', async (
   await expect(page.getByRole('alert')).toHaveText('Work is already active or the selected targets are incompatible.');
 });
 
+test('presents clear and retry as execution action buttons', async ({ page }) => {
+  let executions: readonly object[] = [{
+    id: 'job-1', status: 'Failed', requestedAt: '2026-09-04T12:00:00.000Z', startedAt: '2026-09-04T12:01:00.000Z',
+    completedAt: '2026-09-04T12:02:00.000Z', failureReason: 'Agent lost its workspace', branchName: null,
+    commitHash: null, pullRequestUrl: null, node: { id: 'node-1', name: 'Miriam' },
+    agent: { id: 'agent-1', name: 'OpenCode', version: '1.18.26' },
+    model: { id: 'model-1', displayName: 'Qwen 3 Coder Next', provider: 'Ollama' }, progress: [], tests: [], deployments: [],
+  }];
+  await page.route('**/api/execution/targets', async (route) => route.fulfill({ json: { nodes: [], agents: [], models: [] } }));
+  await page.route('**/api/work-items/*/executions/*/clear', async (route) => {
+    executions = [];
+    await route.fulfill({ status: 201, json: {} });
+  });
+  await page.route('**/api/work-items/*/executions/*/retry', async (route) => route.fulfill({ status: 201, json: {} }));
+  await page.route('**/api/work-items/*/executions', async (route) => route.fulfill({ json: executions }));
+  await signIn(page, '/work-items/work-1');
+  const actions = page.getByRole('group', { name: 'Execution actions' });
+  await expect(actions.getByRole('button', { name: 'Clear execution' })).toBeVisible();
+  await expect(actions.getByRole('button', { name: 'Retry execution' })).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: 'test-results/visual-review/execution-actions-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/execution-actions-mobile.png', fullPage: true });
+  await actions.getByRole('button', { name: 'Clear execution' }).click();
+  await expect(page.getByText('No execution attempts yet.')).toBeVisible();
+});
+
 test('creates a project and adds a feature in the browser', async ({ page }) => {
   const projectId = '00000000-0000-4000-8000-000000000010';
   let projects: readonly object[] = [];
