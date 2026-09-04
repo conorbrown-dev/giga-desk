@@ -121,6 +121,21 @@ describe('App', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/projects', expect.objectContaining({ method: 'POST', body: JSON.stringify({ key: 'RY', name: 'Ryan Demo', description: '', businessGoal: 'Show the workflow', repositoryUrl: 'https://github.com/example/ryan-demo.git', defaultBranch: 'main' }) }));
   });
 
+  it('rejects unsafe repository URLs and invalid default branches', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) }));
+    render(<MemoryRouter initialEntries={['/projects']}><App /></MemoryRouter>);
+    fireEvent.click(screen.getByText('Add project', { selector: 'summary' }));
+    fireEvent.change(screen.getByLabelText(/Project key/), { target: { value: 'GD' } });
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Giga Desk' } });
+    fireEvent.change(screen.getByLabelText(/Business goal/), { target: { value: 'Ship reliably' } });
+    fireEvent.change(screen.getByLabelText(/Repository URL/), { target: { value: 'https://user:secret@github.com/example/repo.git' } });
+    fireEvent.change(screen.getByLabelText(/Default branch/), { target: { value: 'feature..invalid' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    expect(await screen.findByText(/without credentials/)).toBeInTheDocument();
+    expect(screen.getByText('Enter a valid Git branch name.')).toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalledWith('/api/projects', expect.objectContaining({ method: 'POST' }));
+  });
+
   it('creates a feature with structured criteria and refreshes the project', async () => {
     localStorage.setItem('giga-desk-token', 'test-token');
     let workItems: readonly object[] = [];

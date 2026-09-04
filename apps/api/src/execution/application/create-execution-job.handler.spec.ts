@@ -6,8 +6,10 @@ import { ExecutionJobRepository } from './execution-job-repository.js';
 
 const selection: ExecutionSelection = {
   projectId: 'project-1', workItemStatus: 'Backlog', prerequisiteStatuses: [], hasActiveJob: false,
+  repositoryUrl: 'https://github.com/example/project.git', defaultBranch: 'main',
   node: { enabled: true, status: 'Online', currentJobCount: 0, maximumConcurrentJobs: 1,
-    supportedAgentTypes: ['Simulator'], supportedModelProviders: ['Local'] },
+    supportedAgentTypes: ['Simulator'], supportedModelProviders: ['Local'],
+    approvedRepositoryUrls: ['https://github.com/example/project.git'] },
   agent: { enabled: true, agentType: 'Simulator', supportedModelProviders: ['Local'] },
   model: { enabled: true, provider: 'Local' },
 };
@@ -36,5 +38,14 @@ describe('CreateExecutionJobHandler', () => {
       'work-item-1', 'node-1', 'agent-1', 'model-1', false, 'user-123',
     ))).rejects.toThrow('incompatible');
     selection.node.supportedModelProviders = ['Local'];
+  });
+
+  it('rejects projects without an approved repository and valid default branch', async () => {
+    const repository = new RecordingExecutionJobRepository();
+    selection.defaultBranch = 'bad branch';
+    await expect(new CreateExecutionJobHandler(repository).execute(new CreateExecutionJobCommand(
+      'work-item-1', 'node-1', 'agent-1', 'model-1', false, 'user-123',
+    ))).rejects.toThrow('repository is not configured');
+    selection.defaultBranch = 'main';
   });
 });

@@ -28,6 +28,7 @@ describe('work-management persistence', () => {
   it('persists hierarchy, criteria, dependencies, and immutable activity', async () => {
     const project = await database.project.create({ data: {
       key: projectKey, name: 'Giga Desk', description: 'Orchestrator', businessGoal: 'Ship work',
+      repositoryUrl: 'https://github.com/example/work-management.git', defaultBranch: 'main',
       workItems: { create: [{ type: 'Feature', title: 'Foundation', description: 'Build domain', criteria: {
         create: [{ text: 'Project persists' }],
       } }] },

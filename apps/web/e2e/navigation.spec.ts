@@ -197,7 +197,17 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
   await page.getByLabel(/Name/).fill('Ryan Demo');
   await page.getByLabel(/Description/).fill('A browser showcase');
   await page.getByLabel(/Business goal/).fill('Share working project planning');
+  await page.getByLabel(/Repository URL/).fill('https://user:secret@github.com/example/ryan-demo.git');
+  await page.getByLabel(/Default branch/).fill('feature..invalid');
+  await page.getByRole('button', { name: 'Add project' }).click();
+  await expect(page.getByText(/without credentials/)).toBeVisible();
+  await expect(page.getByText('Enter a valid Git branch name.')).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: 'test-results/visual-review/project-repository-validation-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/project-repository-validation-mobile.png', fullPage: true });
   await page.getByLabel(/Repository URL/).fill('https://github.com/example/ryan-demo.git');
+  await page.getByLabel(/Default branch/).fill('main');
   await page.getByRole('button', { name: 'Add project' }).click();
   await page.getByRole('link', { name: 'RY · Ryan Demo' }).click();
   await page.locator('summary').filter({ hasText: 'Add feature' }).click();

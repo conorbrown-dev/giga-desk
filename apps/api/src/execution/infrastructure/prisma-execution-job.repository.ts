@@ -11,6 +11,17 @@ const stringArray = (value: unknown, key: string): readonly string[] => {
   return Array.isArray(candidate) ? candidate.filter((item): item is string => typeof item === 'string') : [];
 };
 
+export const repositoryUrls = (value: unknown): readonly string[] => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value) || !('repositoryMappings' in value)) return [];
+  const mappings: unknown = (value as Record<string, unknown>)['repositoryMappings'];
+  return Array.isArray(mappings) ? mappings.flatMap((mapping) =>
+    typeof mapping === 'object' && mapping !== null && !Array.isArray(mapping)
+      && typeof (mapping as Record<string, unknown>)['url'] === 'string'
+      && typeof (mapping as Record<string, unknown>)['path'] === 'string'
+      && String((mapping as Record<string, unknown>)['path']).trim()
+      ? [String((mapping as Record<string, unknown>)['url']).trim()] : []) : [];
+};
+
 @Injectable()
 export class PrismaExecutionJobRepository extends ExecutionJobRepository {
   constructor(private readonly database: PrismaService) { super(); }
@@ -18,7 +29,8 @@ export class PrismaExecutionJobRepository extends ExecutionJobRepository {
   async loadSelection(workItemId: string, nodeId: string, agentId: string, modelId: string): Promise<ExecutionSelection | null> {
     const [workItem, node, agent, model, activeJob] = await Promise.all([
       this.database.workItem.findUnique({ where: { id: workItemId }, select: {
-        projectId: true, status: true, dependencies: { select: { prerequisite: { select: { status: true } } } },
+        projectId: true, status: true, project: { select: { repositoryUrl: true, defaultBranch: true } },
+        dependencies: { select: { prerequisite: { select: { status: true } } } },
       } }),
       this.database.executionNode.findUnique({ where: { id: nodeId } }),
       this.database.agent.findUnique({ where: { id: agentId } }),
@@ -31,6 +43,8 @@ export class PrismaExecutionJobRepository extends ExecutionJobRepository {
     return {
       projectId: workItem.projectId,
       workItemStatus: workItem.status,
+      repositoryUrl: workItem.project.repositoryUrl,
+      defaultBranch: workItem.project.defaultBranch,
       prerequisiteStatuses: workItem.dependencies.map((dependency) => dependency.prerequisite.status),
       hasActiveJob: activeJob !== null,
       node: {
@@ -38,6 +52,7 @@ export class PrismaExecutionJobRepository extends ExecutionJobRepository {
         maximumConcurrentJobs: node.maximumConcurrentJobs,
         supportedAgentTypes: stringArray(node.capabilities, 'agentTypes'),
         supportedModelProviders: stringArray(node.capabilities, 'modelProviders'),
+        approvedRepositoryUrls: repositoryUrls(node.capabilities),
       },
       agent: { enabled: agent.enabled, agentType: agent.agentType,
         supportedModelProviders: agent.supportedModelProviders },

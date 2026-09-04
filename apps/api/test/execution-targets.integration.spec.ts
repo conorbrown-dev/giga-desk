@@ -16,6 +16,8 @@ const registeredCodexNodeId = randomUUID();
 const registeredCodexVersion = `1.2.3-test-${suffix}`;
 const registeredAgentName = `OpenCode ${suffix}`;
 const registeredModel = `ollama/qwen-${suffix}`;
+const approvedNodeCapabilities = { agentTypes: ['Simulator'], modelProviders: ['Local'],
+  repositoryMappings: [{ url: 'https://github.com/example/start-work.git', path: '/srv/start-work' }] };
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 const records = (value: unknown): readonly Record<string, unknown>[] => {
   if (!Array.isArray(value) || !value.every(isRecord)) throw new Error('Expected an array of registry records');
@@ -40,7 +42,7 @@ describe('execution target registry API', () => {
     database = app.get(PrismaService);
     const node = await database.executionNode.create({ data: {
       name: `Registry Node ${suffix}`, hostname: 'registry.local', operatingSystem: 'Linux', architecture: 'x64',
-      status: 'Online', capabilities: { agentTypes: ['Simulator'], modelProviders: ['Local'] }, tags: ['local'],
+      status: 'Online', capabilities: approvedNodeCapabilities, tags: ['local'],
     } });
     const agent = await database.agent.create({ data: {
       name: `Registry Agent ${suffix}`, agentType: 'Simulator', version: '1.0.0',
@@ -52,6 +54,7 @@ describe('execution target registry API', () => {
     } });
     const project = await database.project.create({ data: {
       key: `ST${suffix.toUpperCase()}`, name: 'Start Work Fixture', description: 'Fixture', businessGoal: 'Queue work',
+      repositoryUrl: 'https://github.com/example/start-work.git', defaultBranch: 'main',
       workItems: { create: { type: 'Feature', title: 'Queue execution', description: 'Start work', visualReviewRequired: true,
         criteria: { create: { text: 'Execution is queued' } }, visualReferences: { create: {
           name: 'expo.png', mediaType: 'image/png', content: Buffer.from('iVBORw0KGgo=', 'base64'),
@@ -62,6 +65,7 @@ describe('execution target registry API', () => {
     nodeId = node.id; agentId = agent.id; modelId = model.id; workItemId = workItem.id;
     const failureProject = await database.project.create({ data: {
       key: `FL${suffix.toUpperCase()}`, name: 'Failure Fixture', description: 'Fixture', businessGoal: 'Fail work',
+      repositoryUrl: 'https://github.com/example/start-work.git', defaultBranch: 'main',
       workItems: { create: { type: 'Feature', title: 'Fail execution', description: 'Failure', criteria: { create: { text: 'Failure is recorded' } } } },
     }, include: { workItems: true } });
     const failureItem = failureProject.workItems[0];
@@ -142,6 +146,12 @@ describe('execution target registry API', () => {
       .set('Authorization', 'Bearer valid-token').send({ executionNodeId: nodeId, agentId, modelId }).expect(400);
     await request(server).post(`/api/work-items/${workItemId}/executions`)
       .set('Authorization', 'Bearer read-only-token').send(executionInput).expect(403);
+    await database.executionNode.update({ where: { id: nodeId }, data: {
+      capabilities: { agentTypes: ['Simulator'], modelProviders: ['Local'], repositoryMappings: [] },
+    } });
+    await request(server).post(`/api/work-items/${workItemId}/executions`)
+      .set('Authorization', 'Bearer valid-token').send(executionInput).expect(409);
+    await database.executionNode.update({ where: { id: nodeId }, data: { capabilities: approvedNodeCapabilities } });
     const jobResponse = await request(server).post(`/api/work-items/${workItemId}/executions`)
       .set('Authorization', 'Bearer valid-token').send(executionInput).expect(201);
     const jobBody: unknown = jobResponse.body;
@@ -306,6 +316,12 @@ describe('execution target registry API', () => {
 
     await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${failureJobId}/retry`)
       .set('Authorization', 'Bearer read-only-token').expect(403);
+    await database.executionNode.update({ where: { id: nodeId }, data: {
+      capabilities: { agentTypes: ['Simulator'], modelProviders: ['Local'], repositoryMappings: [] },
+    } });
+    await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${failureJobId}/retry`)
+      .set('Authorization', 'Bearer valid-token').expect(409);
+    await database.executionNode.update({ where: { id: nodeId }, data: { capabilities: approvedNodeCapabilities } });
     const retry = await request(server).post(`/api/work-items/${failureWorkItemId}/executions/${failureJobId}/retry`)
       .set('Authorization', 'Bearer valid-token').expect(201);
     const retryBody: unknown = retry.body;

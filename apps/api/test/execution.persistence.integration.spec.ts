@@ -25,6 +25,7 @@ describe('execution persistence', () => {
   it('persists separate node, agent, model, and execution-job relationships', async () => {
     const project = await database.project.create({ data: {
       key: `EX${suffix.toUpperCase()}`, name: 'Execution Fixture', description: 'Fixture', businessGoal: 'Verify execution',
+      repositoryUrl: 'https://github.com/example/execution-fixture.git', defaultBranch: 'main',
       workItems: { create: { type: 'Feature', title: 'Execute work', description: 'Run agent' } },
     }, include: { workItems: true } });
     const workItem = project.workItems[0];

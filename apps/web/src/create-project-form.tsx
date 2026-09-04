@@ -8,8 +8,8 @@ const schema = Yup.object({
   name: Yup.string().trim().max(120).required('Enter a project name.'),
   description: Yup.string().max(10_000),
   businessGoal: Yup.string().trim().max(10_000).required('Describe the business goal.'),
-  repositoryUrl: Yup.string().url('Enter a complete repository URL.').required('Enter the project repository URL.'),
-  defaultBranch: Yup.string().trim().max(255).required('Enter the default branch.'),
+  repositoryUrl: Yup.string().trim().url('Enter a complete repository URL.').matches(/^https?:\/\/(?![^/]*@)[^\s/?#]+\/[^\s/?#][^\s?#]*$/, 'Use an HTTP(S) repository URL without credentials, query parameters, or fragments.').required('Enter the project repository URL.'),
+  defaultBranch: Yup.string().trim().max(255).matches(/^(?!@$|[.-])(?![^/]*\.lock(?:\/|$))(?!.*(?:\/\/|\.\.|@\{|\/\.|\/[^/]*\.lock(?:\/|$)))(?!.*(?:\/|\.)$)[^\p{Cc}\s~^:?*[\]\\]+$/u, 'Enter a valid Git branch name.').required('Enter the default branch.'),
 });
 
 export function CreateProjectForm({ onCreated }: { onCreated: () => void }) {

@@ -49,6 +49,10 @@ describe('projects API', () => {
     await request(server).post('/api/projects').set('Authorization', 'Bearer read-only-token').send(projectInput).expect(403);
     await request(server).post('/api/projects').set('Authorization', 'Bearer valid-token')
       .send({ ...projectInput, unexpected: true }).expect(400);
+    await request(server).post('/api/projects').set('Authorization', 'Bearer valid-token')
+      .send({ ...projectInput, key: 'BADURL', repositoryUrl: 'ssh://github.com/example/project.git' }).expect(400);
+    await request(server).post('/api/projects').set('Authorization', 'Bearer valid-token')
+      .send({ ...projectInput, key: 'BADBRANCH', defaultBranch: 'feature..invalid' }).expect(400);
 
     const response = await request(server).post('/api/projects').set('Authorization', 'Bearer valid-token')
       .send(projectInput).expect(201);
