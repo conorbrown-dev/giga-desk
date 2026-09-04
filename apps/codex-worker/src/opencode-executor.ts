@@ -1,15 +1,18 @@
 import type { WorkPackage } from '@giga-desk/agent-client/agent-api';
 import { execFile } from 'node:child_process';
-import { parseExecutionResult, promptFor, validateVisualEvidence, type CodexExecutionResult } from './codex-executor.js';
+import { parseExecutionResult, promptFor, validateVisualEvidence, type CodexExecutionResult, type CodexProgressUpdate, type ExecutionProcessControl } from './codex-executor.js';
 
-interface RunOptions { cwd: string; timeout: number; maxBuffer: number }
+interface RunOptions { cwd: string; timeout: number; maxBuffer: number; signal?: AbortSignal; onStarted?: (processId: number) => void }
 export type OpenCodeCommandRunner = (args: readonly string[], options: RunOptions) => Promise<string>;
 
 const runCommand: OpenCodeCommandRunner = (args, options) => new Promise((resolve, reject) => {
-  execFile('opencode', args, options, (error, stdout) => {
-    if (error) reject(new Error(`OpenCode process failed with code ${String(error.code ?? 'unknown')}`, { cause: error }));
+  const { onStarted, ...execOptions } = options;
+  const child = execFile('opencode', args, execOptions, (error, stdout) => {
+    if (error) reject(error.name === 'AbortError' ? new Error('Execution terminated by an authorized user')
+      : new Error(`OpenCode process failed with code ${String(error.code ?? 'unknown')}`, { cause: error }));
     else resolve(stdout);
   });
+  if (child.pid) onStarted?.(child.pid);
 });
 
 const textEvents = (output: string): string[] => output.split('\n').flatMap((line) => {
@@ -37,9 +40,11 @@ export class OpenCodeExecutor {
   constructor(private readonly run: OpenCodeCommandRunner = runCommand,
     private readonly timeoutMs = 7_200_000) {}
 
-  async execute(work: WorkPackage, repositoryPath: string): Promise<CodexExecutionResult> {
+  async execute(work: WorkPackage, repositoryPath: string, _onProgress?: (update: CodexProgressUpdate) => void,
+    control?: ExecutionProcessControl): Promise<CodexExecutionResult> {
     const output = await this.run(['run', '--format', 'json', '--auto', '--dir', repositoryPath, '--model', work.execution.model.identifier, promptFor(work)],
-      { cwd: repositoryPath, timeout: this.timeoutMs, maxBuffer: 1_000_000 });
+      { cwd: repositoryPath, timeout: this.timeoutMs, maxBuffer: 1_000_000,
+        ...(control ? { signal: control.signal, onStarted: control.onStarted } : {}) });
     const result = parseOpenCodeResult(output);
     await validateVisualEvidence(work, result, repositoryPath);
     return result;

@@ -178,6 +178,28 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: 'Deployments' })).not.toBeInTheDocument();
   });
 
+  it('renders live Codex progress for an active execution', async () => {
+    localStorage.setItem('giga-desk-token', 'test-token');
+    const execution = { id: 'job-1', status: 'Running', requestedAt: '2026-09-04T14:00:00.000Z',
+      startedAt: '2026-09-04T14:00:05.000Z', completedAt: null, failureReason: null, branchName: null,
+      commitHash: null, pullRequestUrl: null, node: { id: 'node-1', name: 'Miriam' },
+      agent: { id: 'agent-1', name: 'Codex', version: '0.153.2' },
+      model: { id: 'model-1', displayName: 'GPT-5', provider: 'OpenAI' }, progress: [], tests: [], deployments: [] };
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
+      if (input.endsWith('/stream')) return Promise.resolve(new Response(`data: ${JSON.stringify([{ ...execution,
+        progress: [{ phase: 'Repository', message: 'Running a repository command', createdAt: '2026-09-04T14:00:08.000Z' }] }])}\n\n`,
+      { headers: { 'Content-Type': 'text/event-stream' } }));
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(input === '/api/execution/targets'
+        ? { nodes: [], agents: [], models: [] } : [execution]) });
+    }));
+    render(<MemoryRouter initialEntries={['/work-items/work-1']}><App /></MemoryRouter>);
+    expect(await screen.findByText('Running a repository command')).toBeInTheDocument();
+    expect(screen.getByText('Live')).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith('/api/work-items/work-1/executions/stream', expect.objectContaining({
+      headers: { Accept: 'text/event-stream', Authorization: 'Bearer test-token' },
+    }));
+  });
+
   it('validates and queues a selected execution', async () => {
     localStorage.setItem('giga-desk-token', 'test-token');
     const fetchMock = vi.fn().mockImplementation((input: string, init?: RequestInit) => Promise.resolve({

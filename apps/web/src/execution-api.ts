@@ -3,6 +3,7 @@ export interface ExecutionHistory {
   failureReason: string | null; branchName: string | null; commitHash: string | null; pullRequestUrl: string | null;
   node: { id: string; name: string }; agent: { id: string; name: string; version: string };
   model: { id: string; displayName: string; provider: string };
+  process: { id: number; startedAt: string; terminationRequestedAt: string | null } | null;
   progress: readonly { phase: string; message: string; createdAt: string }[];
   tests: readonly { type: string; result: string; testCount: number | null; createdAt: string }[];
   deployments: readonly { environment: string; status: string; version: string | null; url: string | null; startedAt: string; completedAt: string | null }[];
@@ -24,6 +25,32 @@ export async function fetchExecutionHistory(workItemId: string, signal: AbortSig
   const response = await fetch(`/api/work-items/${workItemId}/executions`, { headers: { Authorization: `Bearer ${token}` }, signal });
   if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'Sign in to view execution history.' : 'Execution history is unavailable.');
   return response.json() as Promise<readonly ExecutionHistory[]>;
+}
+
+export async function streamExecutionHistory(
+  workItemId: string, signal: AbortSignal, onHistory: (history: readonly ExecutionHistory[]) => void,
+): Promise<void> {
+  const token = await getAuthToken();
+  const response = await fetch(`/api/work-items/${workItemId}/executions/stream`, {
+    headers: { Accept: 'text/event-stream', Authorization: `Bearer ${token}` }, signal,
+  });
+  if (!response.ok || !response.body) throw new Error('Live execution updates are unavailable.');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (!signal.aborted) {
+    const { done, value } = await reader.read();
+    if (done) return;
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split('\n\n');
+    buffer = events.pop() ?? '';
+    for (const event of events) {
+      const data = event.split('\n').filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('\n');
+      if (!data) continue;
+      const history: unknown = JSON.parse(data);
+      if (Array.isArray(history)) onHistory(history as readonly ExecutionHistory[]);
+    }
+  }
 }
 
 export async function fetchExecutionTargets(signal: AbortSignal): Promise<ExecutionTargets> {
@@ -51,6 +78,14 @@ export async function retryExecution(workItemId: string, jobId: string): Promise
   const token = await getAuthToken();
   const response = await fetch(`/api/work-items/${workItemId}/executions/${jobId}/retry`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
   if (!response.ok) throw new Error(response.status === 409 ? 'This execution cannot be retried on its previous target.' : 'Unable to retry the execution.');
+}
+
+export async function terminateExecution(workItemId: string, jobId: string): Promise<void> {
+  const token = await getAuthToken();
+  const response = await fetch(`/api/work-items/${workItemId}/executions/${jobId}/terminate`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(response.status === 409 ? 'This execution process is no longer running.' : 'Unable to terminate the execution process.');
 }
 
 export async function updateRepositoryMappings(nodeId: string, mappings: readonly RepositoryMapping[]): Promise<void> {

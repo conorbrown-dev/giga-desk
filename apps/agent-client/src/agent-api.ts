@@ -83,6 +83,10 @@ export class AgentApi {
     return this.send(`/api/agent/jobs/${jobId}/work-package`, 'GET');
   }
 
+  control(jobId: string): Promise<{ terminationRequested: boolean }> {
+    return this.send(`/api/agent/jobs/${jobId}/control`, 'GET');
+  }
+
   post(jobId: string, action: string, body?: object): Promise<unknown> {
     return this.send(`/api/agent/jobs/${jobId}/${action}`, 'POST', body);
   }

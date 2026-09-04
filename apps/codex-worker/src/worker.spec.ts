@@ -33,14 +33,15 @@ const fakeApi = (jobs: readonly DiscoverableJob[]) => {
   const heartbeat = vi.fn<WorkerApi['heartbeat']>().mockResolvedValue({});
   const discover = vi.fn<WorkerApi['discover']>().mockResolvedValue(jobs);
   const workPackage = vi.fn<WorkerApi['workPackage']>().mockResolvedValue(work);
+  const control = vi.fn<WorkerApi['control']>().mockResolvedValue({ terminationRequested: false });
   const post = vi.fn<WorkerApi['post']>((_jobId, action) => {
     actions.push(action);
     return Promise.resolve({});
   });
   const api: WorkerApi = {
-    heartbeat, discover, workPackage, post,
+    heartbeat, discover, workPackage, control, post,
   };
-  return { api, actions, heartbeat };
+  return { api, actions, heartbeat, control, post };
 };
 
 describe('CodexWorker', () => {
@@ -54,15 +55,21 @@ describe('CodexWorker', () => {
 
   it('reports real evidence in the API-required lifecycle order', async () => {
     const { api, actions } = fakeApi([{ id: 'job-1', status: 'Queued' }]);
-    const execute = vi.fn<WorkExecutor['execute']>().mockResolvedValue(result);
+    const execute = vi.fn<WorkExecutor['execute']>((_work, _path, onProgress, processControl) => {
+      processControl?.onStarted(4_321);
+      onProgress?.({ phase: 'Codex', message: 'Analyzing the work item' });
+      onProgress?.({ phase: 'Repository', message: 'Running a repository command' });
+      return Promise.resolve(result);
+    });
     const executor: WorkExecutor = { execute };
     const worker = new CodexWorker(api, executor, 'node-1', new Map([
       ['https://github.com/example/other.git', '/other'], [work.project.repositoryUrl ?? '', '/project'],
     ]));
 
     await expect(worker.runNext()).resolves.toBe('job-1');
-    expect(actions).toEqual(['claim', 'start', 'progress', 'tests', 'tests', 'deployment', 'tests', 'complete']);
-    expect(execute).toHaveBeenCalledWith(work, '/project');
+    expect(actions).toEqual(['claim', 'start', 'progress', 'process', 'progress', 'progress', 'tests', 'tests', 'deployment', 'tests', 'complete']);
+    expect(execute).toHaveBeenCalledWith(work, '/project', expect.any(Function), expect.anything());
+    expect(execute.mock.calls[0]?.[3]?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it('fails a claimed job before execution when its repository is not approved', async () => {
@@ -101,6 +108,20 @@ describe('CodexWorker', () => {
 
     await expect(worker.runNext()).resolves.toBe('job-1');
     expect(actions.at(-1)).toBe('complete');
-    expect(execute).toHaveBeenCalledWith(sensitiveWork, '/repo');
+    expect(execute).toHaveBeenCalledWith(sensitiveWork, '/repo', expect.any(Function), expect.anything());
+  });
+
+  it('aborts only its registered child when termination is requested', async () => {
+    const { api, actions, control, post } = fakeApi([{ id: 'job-1', status: 'Queued' }]);
+    control.mockResolvedValue({ terminationRequested: true });
+    const execute = vi.fn<WorkExecutor['execute']>((_work, _path, _progress, processControl) => new Promise((_resolve, reject) => {
+      processControl?.signal.addEventListener('abort', () => { reject(new Error('aborted')); });
+      processControl?.onStarted(9_876);
+    }));
+    const worker = new CodexWorker(api, { execute }, 'node-1', new Map([[work.project.repositoryUrl ?? '', '/repo']]));
+
+    await expect(worker.runNext()).rejects.toThrow('terminated by an authorized user');
+    expect(actions).toEqual(['claim', 'start', 'progress', 'process', 'fail']);
+    expect(post).toHaveBeenCalledWith('job-1', 'process', { processId: 9_876 });
   });
 });

@@ -1,14 +1,15 @@
 import type { DiscoverableJob, WorkPackage } from '@giga-desk/agent-client/agent-api';
-import type { CodexExecutionResult } from './codex-executor.js';
+import type { CodexExecutionResult, CodexProgressUpdate, ExecutionProcessControl } from './codex-executor.js';
 
 export interface WorkerApi {
   heartbeat(nodeId: string): Promise<unknown>;
   discover(nodeId: string): Promise<readonly DiscoverableJob[]>;
   workPackage(jobId: string): Promise<WorkPackage>;
+  control(jobId: string): Promise<{ terminationRequested: boolean }>;
   post(jobId: string, action: string, body?: object): Promise<unknown>;
 }
 
-export interface WorkExecutor { execute(work: WorkPackage, repositoryPath: string): Promise<CodexExecutionResult> }
+export interface WorkExecutor { execute(work: WorkPackage, repositoryPath: string, onProgress?: (update: CodexProgressUpdate) => void, control?: ExecutionProcessControl): Promise<CodexExecutionResult> }
 export type ApprovedRepositories = ReadonlyMap<string, string>;
 
 const evidenceKey = (jobId: string, stage: string): string => `codex-worker:${jobId}:${stage}`;
@@ -60,6 +61,8 @@ export class CodexWorker {
     const [job] = await this.api.discover(this.nodeId);
     if (!job) return null;
     await this.api.post(job.id, 'claim');
+    let progressWrites = Promise.resolve();
+    const controlState: { terminationRequested: boolean; processRegistrationError?: unknown } = { terminationRequested: false };
     try {
       const work = await this.api.workPackage(job.id);
       const repositoryPath = work.project.repositoryUrl === null ? undefined : this.approvedRepositories.get(work.project.repositoryUrl);
@@ -73,7 +76,43 @@ export class CodexWorker {
       await this.api.post(job.id, 'progress', {
         phase: work.execution.agent.type, message: `Executing ${work.workItem.title}`, idempotencyKey: evidenceKey(job.id, 'progress'),
       });
-      const result = await this.executor.execute(work, repositoryPath);
+      let progressCount = 0;
+      let previousProgress = '';
+      const reportProgress = (update: CodexProgressUpdate): void => {
+        const signature = `${update.phase}:${update.message}`;
+        if (progressCount >= 100 || signature === previousProgress) return;
+        previousProgress = signature;
+        progressCount += 1;
+        const sequence = progressCount;
+        progressWrites = progressWrites.then(() => this.api.post(job.id, 'progress', {
+          ...update, idempotencyKey: evidenceKey(job.id, `event:${String(sequence)}`),
+        })).then(() => undefined).catch(() => undefined);
+      };
+      const abort = new AbortController();
+      let processRegistration = Promise.resolve();
+      const checkControl = async (): Promise<void> => {
+        try {
+          if ((await this.api.control(job.id)).terminationRequested) {
+            controlState.terminationRequested = true;
+            abort.abort();
+          }
+        } catch { /* A transient control poll failure must not fail valid work. */ }
+      };
+      const execution = this.executor.execute(work, repositoryPath, reportProgress, { signal: abort.signal,
+        onStarted: (processId) => {
+          processRegistration = this.api.post(job.id, 'process', { processId }).then(() => undefined);
+          void processRegistration.then(checkControl).catch((error: unknown) => {
+            controlState.processRegistrationError = error;
+            abort.abort();
+          });
+        } });
+      const controlTimer = setInterval(() => { void checkControl(); }, 1_000);
+      let result: CodexExecutionResult;
+      try { result = await execution; } finally { clearInterval(controlTimer); }
+      await processRegistration;
+      await checkControl();
+      if (controlState.terminationRequested) throw new Error('Execution terminated by an authorized user');
+      await progressWrites;
       validateEvidence(work, result);
       for (const type of ['Unit', 'Integration'] as const) {
         const test = result.tests.find((candidate) => candidate.type === type);
@@ -93,12 +132,15 @@ export class CodexWorker {
       });
       return job.id;
     } catch (error) {
+      await progressWrites;
+      const executionError = controlState.terminationRequested ? new Error('Execution terminated by an authorized user')
+        : controlState.processRegistrationError ?? error;
       try {
         await this.api.post(job.id, 'fail', {
-          failureReason: failureReason(error), idempotencyKey: evidenceKey(job.id, 'failure'),
+          failureReason: failureReason(executionError), idempotencyKey: evidenceKey(job.id, 'failure'),
         });
       } catch { /* Preserve the original execution error for the service log. */ }
-      throw error;
+      throw executionError;
     }
   }
 }

@@ -41,6 +41,7 @@ describe('Codex worker HTTP lifecycle', () => {
       if (path.endsWith('/heartbeat')) { response.writeHead(201, { 'Content-Type': 'application/json' }); response.end('{}'); return; }
       if (path.endsWith('/jobs')) { response.writeHead(200, { 'Content-Type': 'application/json' }); response.end('[{"id":"job-1","status":"Queued"}]'); return; }
       if (path.endsWith('/work-package')) { response.writeHead(200, { 'Content-Type': 'application/json' }); response.end(JSON.stringify(work)); return; }
+      if (path.endsWith('/control')) { response.writeHead(200, { 'Content-Type': 'application/json' }); response.end('{"terminationRequested":false}'); return; }
       received.push(path.split('/').at(-1) ?? '');
       response.writeHead(201, { 'Content-Type': 'application/json' }); response.end('{}');
     });
@@ -48,11 +49,15 @@ describe('Codex worker HTTP lifecycle', () => {
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('Expected a TCP test server');
     const api = new AgentApi(`http://127.0.0.1:${String(address.port)}`, 'machine-token');
-    const execute = vi.fn<WorkExecutor['execute']>().mockResolvedValue(result);
+    const execute = vi.fn<WorkExecutor['execute']>((_work, _path, onProgress, processControl) => {
+      processControl?.onStarted(4_321);
+      onProgress?.({ phase: 'Codex', message: 'Analyzing the work item' });
+      return Promise.resolve(result);
+    });
     const worker = new CodexWorker(api, { execute }, 'node-1', new Map([[work.project.repositoryUrl ?? '', '/repo']]));
 
     await expect(worker.runNext()).resolves.toBe('job-1');
-    expect(received).toEqual(['claim', 'start', 'progress', 'tests', 'tests', 'deployment', 'tests', 'complete']);
+    expect(received).toEqual(['claim', 'start', 'progress', 'process', 'progress', 'tests', 'tests', 'deployment', 'tests', 'complete']);
     expect(authorizations.every((header) => header === 'Bearer machine-token')).toBe(true);
   });
 });
