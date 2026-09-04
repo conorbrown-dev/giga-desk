@@ -54,15 +54,19 @@ describe('CodexWorker', () => {
 
   it('reports real evidence in the API-required lifecycle order', async () => {
     const { api, actions } = fakeApi([{ id: 'job-1', status: 'Queued' }]);
-    const execute = vi.fn<WorkExecutor['execute']>().mockResolvedValue(result);
+    const execute = vi.fn<WorkExecutor['execute']>((_work, _path, onProgress) => {
+      onProgress?.({ phase: 'Codex', message: 'Analyzing the work item' });
+      onProgress?.({ phase: 'Repository', message: 'Running a repository command' });
+      return Promise.resolve(result);
+    });
     const executor: WorkExecutor = { execute };
     const worker = new CodexWorker(api, executor, 'node-1', new Map([
       ['https://github.com/example/other.git', '/other'], [work.project.repositoryUrl ?? '', '/project'],
     ]));
 
     await expect(worker.runNext()).resolves.toBe('job-1');
-    expect(actions).toEqual(['claim', 'start', 'progress', 'tests', 'tests', 'deployment', 'tests', 'complete']);
-    expect(execute).toHaveBeenCalledWith(work, '/project');
+    expect(actions).toEqual(['claim', 'start', 'progress', 'progress', 'progress', 'tests', 'tests', 'deployment', 'tests', 'complete']);
+    expect(execute).toHaveBeenCalledWith(work, '/project', expect.any(Function));
   });
 
   it('fails a claimed job before execution when its repository is not approved', async () => {
@@ -101,6 +105,6 @@ describe('CodexWorker', () => {
 
     await expect(worker.runNext()).resolves.toBe('job-1');
     expect(actions.at(-1)).toBe('complete');
-    expect(execute).toHaveBeenCalledWith(sensitiveWork, '/repo');
+    expect(execute).toHaveBeenCalledWith(sensitiveWork, '/repo', expect.any(Function));
   });
 });

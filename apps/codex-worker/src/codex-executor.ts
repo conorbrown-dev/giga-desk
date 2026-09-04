@@ -1,5 +1,5 @@
 import type { WorkPackage } from '@giga-desk/agent-client/agent-api';
-import { execFile } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -18,13 +18,24 @@ export interface CodexExecutionResult {
   branchName: string | null; commitHash: string | null; pullRequestUrl: string | null;
 }
 
-interface RunOptions { cwd: string; timeout: number; maxBuffer: number }
+interface RunOptions { cwd: string; timeout: number; onStdoutLine?: (line: string) => void }
 export type CommandRunner = (file: string, args: readonly string[], options: RunOptions) => Promise<void>;
 
 const runCommand: CommandRunner = (file, args, options) => new Promise((resolve, reject) => {
-  execFile(file, args, options, (error) => {
-    if (error) reject(new Error(`Codex process failed with code ${String(error.code ?? 'unknown')}`, { cause: error }));
+  const { onStdoutLine, ...spawnOptions } = options;
+  let bufferedOutput = '';
+  const child = spawn(file, args, { ...spawnOptions, stdio: ['ignore', 'pipe', 'ignore'] });
+  child.once('error', reject);
+  child.once('close', (code) => {
+    if (bufferedOutput.trim()) onStdoutLine?.(bufferedOutput);
+    if (code !== 0) reject(new Error(`Codex process failed with code ${String(code ?? 'unknown')}`));
     else resolve();
+  });
+  child.stdout.on('data', (chunk: Buffer | string) => {
+    bufferedOutput += chunk.toString();
+    const lines = bufferedOutput.split('\n');
+    bufferedOutput = lines.pop() ?? '';
+    lines.forEach((line) => { if (line.trim()) onStdoutLine?.(line); });
   });
 });
 
@@ -59,6 +70,30 @@ const stringOrNull = (value: unknown): value is string | null => typeof value ==
 const imageExtension = (mediaType: string): string => ({
   'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp',
 })[mediaType] ?? '.img';
+
+export interface CodexProgressUpdate { phase: string; message: string }
+
+export const codexProgressFromLine = (line: string): CodexProgressUpdate | null => {
+  let event: unknown;
+  try { event = JSON.parse(line); } catch { return null; }
+  if (!isRecord(event) || typeof event['type'] !== 'string') return null;
+  if (event['type'] === 'thread.started') return { phase: 'Codex', message: 'Codex session started' };
+  if (event['type'] === 'turn.started') return { phase: 'Codex', message: 'Analyzing the work item' };
+  if (event['type'] === 'turn.completed') return { phase: 'Codex', message: 'Codex finished the implementation turn' };
+  const item = event['item'];
+  if (!isRecord(item) || typeof item['type'] !== 'string') return null;
+  const message = typeof item['text'] === 'string' ? item['text'].trim() : '';
+  if (item['type'] === 'agent_message' && message && !message.startsWith('{')) {
+    return { phase: 'Codex', message: message.slice(0, 500) };
+  }
+  if (item['type'] === 'command_execution') return { phase: 'Repository', message: event['type'] === 'item.started'
+    ? 'Running a repository command' : typeof item['exit_code'] === 'number' && item['exit_code'] !== 0
+      ? 'A repository command failed' : 'Repository command completed' };
+  if (item['type'] === 'file_change') return { phase: 'Implementation', message: 'Applying repository changes' };
+  if (item['type'] === 'web_search') return { phase: 'Research', message: 'Searching supporting documentation' };
+  if (item['type'] === 'mcp_tool_call') return { phase: 'Tool', message: 'Using a connected tool' };
+  return null;
+};
 
 export const parseExecutionResult = (value: unknown): CodexExecutionResult => {
   if (!isRecord(value) || typeof value['summary'] !== 'string' || !value['summary'].trim()
@@ -135,7 +170,7 @@ Return only the required structured result. Include a test entry only after that
 export class CodexExecutor {
   constructor(private readonly run: CommandRunner = runCommand, private readonly timeoutMs = 7_200_000) {}
 
-  async execute(work: WorkPackage, repositoryPath: string): Promise<CodexExecutionResult> {
+  async execute(work: WorkPackage, repositoryPath: string, onProgress?: (update: CodexProgressUpdate) => void): Promise<CodexExecutionResult> {
     const temporaryDirectory = await mkdtemp(join(tmpdir(), 'giga-desk-codex-'));
     const schemaPath = join(temporaryDirectory, 'result-schema.json');
     const resultPath = join(temporaryDirectory, 'result.json');
@@ -149,9 +184,10 @@ export class CodexExecutor {
       }
       const modelArguments = work.execution.model.identifier === 'codex-cli-default'
         ? [] : ['--model', work.execution.model.identifier];
-      await this.run('codex', ['exec', '--ephemeral', '--approve-for-me',
+      await this.run('codex', ['exec', '--ephemeral', '--approve-for-me', '--json',
         '--output-schema', schemaPath, '--output-last-message', resultPath, ...imageArguments, ...modelArguments,
-        '--cd', repositoryPath, promptFor(work)], { cwd: repositoryPath, timeout: this.timeoutMs, maxBuffer: 1_000_000 });
+        '--cd', repositoryPath, promptFor(work)], { cwd: repositoryPath, timeout: this.timeoutMs,
+        onStdoutLine: (line) => { const update = codexProgressFromLine(line); if (update) onProgress?.(update); } });
       const parsed: unknown = JSON.parse(await readFile(resultPath, 'utf8'));
       const result = parseExecutionResult(parsed);
       await validateVisualEvidence(work, result, repositoryPath);

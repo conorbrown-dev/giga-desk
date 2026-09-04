@@ -1,5 +1,6 @@
-import { Body, ConflictException, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Post, Req } from '@nestjs/common';
+import { Body, ConflictException, Controller, Get, type MessageEvent, NotFoundException, Param, ParseUUIDPipe, Post, Req, Sse } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { distinctUntilChanged, from, map, type Observable, switchMap, timer } from 'rxjs';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authentication.guard.js';
 import { RequirePermissions } from '../../auth/interfaces/permissions.decorator.js';
 import { CreateExecutionJobCommand, type QueuedExecutionJob } from '../application/create-execution-job.command.js';
@@ -19,6 +20,15 @@ export class ExecutionJobsController {
   @RequirePermissions('work-items:read')
   list(@Param('workItemId', ParseUUIDPipe) workItemId: string): Promise<readonly ExecutionHistoryView[]> {
     return this.queries.execute(new ListWorkItemExecutionsQuery(workItemId));
+  }
+
+  @Sse(':workItemId/executions/stream')
+  @RequirePermissions('work-items:read')
+  stream(@Param('workItemId', ParseUUIDPipe) workItemId: string): Observable<MessageEvent> {
+    return timer(0, 1_000).pipe(
+      switchMap(() => from(this.queries.execute<ListWorkItemExecutionsQuery, readonly ExecutionHistoryView[]>(new ListWorkItemExecutionsQuery(workItemId)))),
+      map((history) => JSON.stringify(history)), distinctUntilChanged(), map((data) => ({ data })),
+    );
   }
 
   @Post(':workItemId/executions')

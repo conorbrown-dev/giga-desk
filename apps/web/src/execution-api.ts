@@ -26,6 +26,32 @@ export async function fetchExecutionHistory(workItemId: string, signal: AbortSig
   return response.json() as Promise<readonly ExecutionHistory[]>;
 }
 
+export async function streamExecutionHistory(
+  workItemId: string, signal: AbortSignal, onHistory: (history: readonly ExecutionHistory[]) => void,
+): Promise<void> {
+  const token = await getAuthToken();
+  const response = await fetch(`/api/work-items/${workItemId}/executions/stream`, {
+    headers: { Accept: 'text/event-stream', Authorization: `Bearer ${token}` }, signal,
+  });
+  if (!response.ok || !response.body) throw new Error('Live execution updates are unavailable.');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (!signal.aborted) {
+    const { done, value } = await reader.read();
+    if (done) return;
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split('\n\n');
+    buffer = events.pop() ?? '';
+    for (const event of events) {
+      const data = event.split('\n').filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('\n');
+      if (!data) continue;
+      const history: unknown = JSON.parse(data);
+      if (Array.isArray(history)) onHistory(history as readonly ExecutionHistory[]);
+    }
+  }
+}
+
 export async function fetchExecutionTargets(signal: AbortSignal): Promise<ExecutionTargets> {
   const token = await getAuthToken();
   const response = await fetch('/api/execution/targets', { headers: { Authorization: `Bearer ${token}` }, signal });

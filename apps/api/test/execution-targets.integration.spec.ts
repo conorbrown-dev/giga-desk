@@ -38,7 +38,7 @@ describe('execution target registry API', () => {
       .overrideProvider(AuthTokenVerifier).useClass(FakeAuthTokenVerifier).compile();
     app = moduleRef.createNestApplication();
     configureApplication(app);
-    await app.init();
+    await app.listen(0, '127.0.0.1');
     database = app.get(PrismaService);
     const node = await database.executionNode.create({ data: {
       name: `Registry Node ${suffix}`, hostname: 'registry.local', operatingSystem: 'Linux', architecture: 'x64',
@@ -216,6 +216,22 @@ describe('execution target registry API', () => {
       .set('Authorization', `Bearer worker-${nodeId}`).send({ ...progressInput, message: 'Retry' }).expect(201);
     expect(retriedProgress.body).toEqual(firstProgress.body);
     expect(await database.executionProgress.count({ where: { executionJobId: jobBody['id'] } })).toBe(1);
+    await request(app.getHttpServer() as Parameters<typeof request>[0])
+      .get(`/api/work-items/${workItemId}/executions/stream`).expect(401);
+    const stream = await fetch(`${await app.getUrl()}/api/work-items/${workItemId}/executions/stream`, {
+      headers: { Authorization: 'Bearer valid-token' }, signal: AbortSignal.timeout(5_000),
+    });
+    expect(stream.headers.get('content-type')).toContain('text/event-stream');
+    if (!stream.body) throw new Error('Expected an execution event stream');
+    const reader = stream.body.getReader();
+    let event = '';
+    while (!event.includes('Repository inspected')) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      event += new TextDecoder().decode(chunk.value);
+    }
+    await reader.cancel();
+    expect(event).toContain('Repository inspected');
     const runningJob = await database.executionJob.findUniqueOrThrow({ where: { id: jobBody['id'] } });
     const runningItem = await database.workItem.findUniqueOrThrow({ where: { id: workItemId } });
     expect([runningJob.status, runningItem.status]).toEqual(['Running', 'InProgress']);

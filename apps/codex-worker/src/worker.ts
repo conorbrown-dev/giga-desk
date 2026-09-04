@@ -1,5 +1,5 @@
 import type { DiscoverableJob, WorkPackage } from '@giga-desk/agent-client/agent-api';
-import type { CodexExecutionResult } from './codex-executor.js';
+import type { CodexExecutionResult, CodexProgressUpdate } from './codex-executor.js';
 
 export interface WorkerApi {
   heartbeat(nodeId: string): Promise<unknown>;
@@ -8,7 +8,7 @@ export interface WorkerApi {
   post(jobId: string, action: string, body?: object): Promise<unknown>;
 }
 
-export interface WorkExecutor { execute(work: WorkPackage, repositoryPath: string): Promise<CodexExecutionResult> }
+export interface WorkExecutor { execute(work: WorkPackage, repositoryPath: string, onProgress?: (update: CodexProgressUpdate) => void): Promise<CodexExecutionResult> }
 export type ApprovedRepositories = ReadonlyMap<string, string>;
 
 const evidenceKey = (jobId: string, stage: string): string => `codex-worker:${jobId}:${stage}`;
@@ -60,6 +60,7 @@ export class CodexWorker {
     const [job] = await this.api.discover(this.nodeId);
     if (!job) return null;
     await this.api.post(job.id, 'claim');
+    let progressWrites = Promise.resolve();
     try {
       const work = await this.api.workPackage(job.id);
       const repositoryPath = work.project.repositoryUrl === null ? undefined : this.approvedRepositories.get(work.project.repositoryUrl);
@@ -73,7 +74,20 @@ export class CodexWorker {
       await this.api.post(job.id, 'progress', {
         phase: work.execution.agent.type, message: `Executing ${work.workItem.title}`, idempotencyKey: evidenceKey(job.id, 'progress'),
       });
-      const result = await this.executor.execute(work, repositoryPath);
+      let progressCount = 0;
+      let previousProgress = '';
+      const reportProgress = (update: CodexProgressUpdate): void => {
+        const signature = `${update.phase}:${update.message}`;
+        if (progressCount >= 100 || signature === previousProgress) return;
+        previousProgress = signature;
+        progressCount += 1;
+        const sequence = progressCount;
+        progressWrites = progressWrites.then(() => this.api.post(job.id, 'progress', {
+          ...update, idempotencyKey: evidenceKey(job.id, `event:${String(sequence)}`),
+        })).then(() => undefined).catch(() => undefined);
+      };
+      const result = await this.executor.execute(work, repositoryPath, reportProgress);
+      await progressWrites;
       validateEvidence(work, result);
       for (const type of ['Unit', 'Integration'] as const) {
         const test = result.tests.find((candidate) => candidate.type === type);
@@ -93,6 +107,7 @@ export class CodexWorker {
       });
       return job.id;
     } catch (error) {
+      await progressWrites;
       try {
         await this.api.post(job.id, 'fail', {
           failureReason: failureReason(error), idempotencyKey: evidenceKey(job.id, 'failure'),
