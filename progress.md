@@ -660,3 +660,4 @@
 - Updated AGENTS.md and durable memory to prefer Giga Desk app/API configuration wherever securely possible.
 - Verification: `npm run typecheck -ws`, `npm run lint -ws`, and `npm run test -ws` passed. API integration suite and browser E2E were not run in this slice.
 - Follow-up fixed worker self-registration overwriting saved repository mappings; registration now preserves app-managed mappings while refreshing runtime capabilities. API typecheck and unit tests passed.
+- Added an authorized in-app recovery action for unclaimed queued executions. Clearing a stale queued job marks it Cancelled, releases node capacity, records an audit activity, reloads execution state, and leaves the work item ready to retry. Typecheck, lint, API and web unit tests passed; browser E2E remains blocked by the local configured web server startup.

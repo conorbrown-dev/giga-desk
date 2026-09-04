@@ -177,7 +177,7 @@ describe('App', () => {
     fireEvent.change(screen.getByLabelText(/Model/), { target: { value: 'model-1' } });
     fireEvent.click(screen.getByLabelText('Approve protected production actions'));
     fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Execution queued.');
+    await screen.findByText('No execution attempts yet.');
     expect(fetchMock).toHaveBeenCalledWith('/api/work-items/work-1/executions', expect.objectContaining({
       method: 'POST', body: JSON.stringify({ executionNodeId: 'node-1', agentId: 'agent-1', modelId: 'model-1',
         protectedActionsApproved: true }),
