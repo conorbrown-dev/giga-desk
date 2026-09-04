@@ -47,6 +47,12 @@ export async function clearQueuedExecution(workItemId: string, jobId: string): P
   if (!response.ok) throw new Error(response.status === 409 ? 'This execution was already claimed or changed.' : 'Unable to clear the queued execution.');
 }
 
+export async function retryExecution(workItemId: string, jobId: string): Promise<void> {
+  const token = await getAuthToken();
+  const response = await fetch(`/api/work-items/${workItemId}/executions/${jobId}/retry`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) throw new Error(response.status === 409 ? 'This execution cannot be retried on its previous target.' : 'Unable to retry the execution.');
+}
+
 export async function updateRepositoryMappings(nodeId: string, mappings: readonly RepositoryMapping[]): Promise<void> {
   const token = await getAuthToken();
   const response = await fetch(`/api/execution/targets/${nodeId}/repositories`, {

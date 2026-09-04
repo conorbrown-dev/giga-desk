@@ -8,6 +8,7 @@ import { InvalidExecutionSelectionError } from '../domain/execution-selection.js
 import { CreateExecutionJobDto } from './create-execution-job.dto.js';
 import { ListWorkItemExecutionsQuery, type ExecutionHistoryView } from '../application/list-work-item-executions.query.js';
 import { PrismaService } from '../../shared/infrastructure/prisma.service.js';
+import { randomUUID } from 'node:crypto';
 
 @Controller('work-items')
 export class ExecutionJobsController {
@@ -59,5 +60,30 @@ export class ExecutionJobsController {
       return true;
     });
     if (!cleared) throw new ConflictException('Only an unclaimed queued execution can be cleared.');
+  }
+
+  @Post(':workItemId/executions/:jobId/retry')
+  @RequirePermissions('executions:create')
+  async retry(
+    @Param('workItemId', ParseUUIDPipe) workItemId: string, @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<QueuedExecutionJob> {
+    if (!request.user) throw new Error('Authenticated principal was not attached');
+    const actorId = request.user.subject;
+    const retried = await this.database.$transaction(async (transaction) => {
+      const source = await transaction.executionJob.findFirst({ where: { id: jobId, workItemId, status: { in: ['Failed', 'Cancelled'] } }, select: { executionNodeId: true, agentId: true, modelId: true, protectedActionsApproved: true, executionNode: { select: { maximumConcurrentJobs: true } }, workItem: { select: { projectId: true, status: true } } } });
+      if (!source || !['Blocked', 'Ready', 'Backlog'].includes(source.workItem.status)) return null;
+      const active = await transaction.executionJob.count({ where: { workItemId, status: { notIn: ['Completed', 'Failed', 'Cancelled'] } } });
+      if (active !== 0) return null;
+      const node = await transaction.executionNode.updateMany({ where: { id: source.executionNodeId, enabled: true, status: { in: ['Online', 'Busy'] }, currentJobCount: { lt: source.executionNode.maximumConcurrentJobs } }, data: { currentJobCount: { increment: 1 } } });
+      if (node.count !== 1) return null;
+      await transaction.workItem.update({ where: { id: workItemId }, data: { status: 'Ready' } });
+      const job: QueuedExecutionJob = { id: randomUUID(), workItemId, executionNodeId: source.executionNodeId, agentId: source.agentId, modelId: source.modelId, status: 'Queued', protectedActionsApproved: source.protectedActionsApproved };
+      await transaction.executionJob.create({ data: { ...job, requestedBy: actorId } });
+      await transaction.activity.create({ data: { projectId: source.workItem.projectId, workItemId, actorId, eventType: 'ExecutionRetried', metadata: { executionJobId: job.id, retriedExecutionJobId: jobId } } });
+      return job;
+    });
+    if (!retried) throw new ConflictException('This execution cannot be retried on its previous target.');
+    return retried;
   }
 }
