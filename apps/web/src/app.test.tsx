@@ -93,7 +93,7 @@ describe('App', () => {
     }]) }));
     render(<MemoryRouter initialEntries={['/projects/project-1']}><App /></MemoryRouter>);
     expect(await screen.findByRole('link', { name: 'Navigate projects' })).toHaveAttribute('href', '/work-items/work-1');
-    expect(screen.getByText(/0 of 1 criteria complete/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Work item summary')).toHaveTextContent('Criteria complete0/1');
   });
 
   it('creates a project and refreshes the portfolio', async () => {
