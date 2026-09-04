@@ -11,6 +11,7 @@ class RecordingProjectRepository extends ProjectRepository {
     this.saved = { project, actorId };
     return Promise.resolve();
   }
+  archive(): Promise<void> { return Promise.resolve(); }
 }
 
 describe('CreateProjectHandler', () => {

@@ -2,6 +2,7 @@ import { Body, ConflictException, Controller, Get, NotFoundException, Param, Par
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authentication.guard.js';
 import { RequirePermissions } from '../../auth/interfaces/permissions.decorator.js';
+import { ArchiveProjectCommand } from '../application/archive-project.command.js';
 import { CreateProjectCommand, type CreatedProject } from '../application/create-project.command.js';
 import { CreateFeatureCommand, type CreatedFeature, type CreateFeatureInput } from '../application/create-feature.command.js';
 import { ListProjectsQuery, type ProjectListItem } from '../application/list-projects.query.js';
@@ -53,6 +54,13 @@ export class ProjectsController {
       if (error instanceof ProjectNotFoundError) throw new NotFoundException(error.message);
       throw error;
     }
+  }
+
+  @Post(':projectId/archive')
+  @RequirePermissions('projects:create')
+  async archive(@Param('projectId', ParseUUIDPipe) projectId: string, @Body('projectName') projectName: string, @Req() request: AuthenticatedRequest): Promise<void> {
+    if (!request.user) throw new Error('Authenticated principal was not attached');
+    await this.commands.execute(new ArchiveProjectCommand(projectId, projectName, request.user.subject));
   }
 
   @Post()

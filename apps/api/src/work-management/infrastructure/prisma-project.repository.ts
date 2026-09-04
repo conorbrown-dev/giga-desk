@@ -27,4 +27,11 @@ export class PrismaProjectRepository extends ProjectRepository {
       throw error;
     }
   }
+
+  async archive(projectId: string, projectName: string, actorId: string): Promise<void> {
+    const result = await this.database.project.updateMany({ where: { id: projectId, archived: false, name: projectName }, data: {
+      archived: true, status: 'Archived',
+    } });
+    if (result.count !== 1) throw new Error('Project was not found or the confirmation name does not match.');
+  }
 }

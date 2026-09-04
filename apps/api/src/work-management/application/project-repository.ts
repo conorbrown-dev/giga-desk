@@ -8,4 +8,5 @@ export class ProjectKeyConflictError extends Error {
 
 export abstract class ProjectRepository {
   abstract create(project: Project, actorId: string): Promise<void>;
+  abstract archive(projectId: string, projectName: string, actorId: string): Promise<void>;
 }

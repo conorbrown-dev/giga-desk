@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../shared/infrastructure/database.module.js';
 import { CreateProjectHandler } from './application/create-project.handler.js';
+import { ArchiveProjectHandler } from './application/archive-project.handler.js';
 import { CreateFeatureHandler } from './application/create-feature.handler.js';
 import { ListProjectsHandler } from './application/list-projects.handler.js';
 import { ListProjectWorkItemsHandler } from './application/list-project-work-items.handler.js';
@@ -23,6 +24,7 @@ import { WorkItemsController } from './interfaces/work-items.controller.js';
   controllers: [ProjectsController, WorkItemsController],
   providers: [
     CreateProjectHandler,
+    ArchiveProjectHandler,
     CreateFeatureHandler,
     ListProjectsHandler,
     ListProjectWorkItemsHandler,
