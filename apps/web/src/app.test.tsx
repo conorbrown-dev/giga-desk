@@ -48,23 +48,23 @@ describe('App', () => {
 
   it('guides Codex setup and remembers completed steps', () => {
     const view = render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
-    expect(screen.getByRole('heading', { name: 'Connect a work agent' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Connect an agent' })).toBeInTheDocument();
     expect(screen.getByText('Claude').closest('article')).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByRole('button', { name: /OpenCode/ })).not.toHaveAttribute('aria-disabled', 'true');
     expect(screen.queryByText('Requires worker support')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.sh');
-    expect(screen.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.ps1');
-    expect(screen.getByText(/downloads a verified worker bundle/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'PowerShell installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.ps1');
+    expect(screen.getByText(/installs a verified, versioned Giga Desk bundle/)).toBeInTheDocument();
     expect(screen.getByText(/registers only its node-scoped target through the API/)).toBeInTheDocument();
     expect(screen.getByText(/The worker can come Online before project checkouts exist/)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Configure a customer repository' })).toBeInTheDocument();
-    expect(screen.getByText(/worker securely retrieves this mapping automatically/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Configure an approved checkout' })).toBeInTheDocument();
+    expect(screen.getByText(/worker retrieves the mapping automatically/)).toBeInTheDocument();
     expect(screen.getAllByRole('checkbox')[3]).toBeEnabled();
     expect(screen.getAllByRole('checkbox')[4]).toBeEnabled();
     const firstStep = screen.getAllByRole('checkbox')[0];
     if (!firstStep) throw new Error('Expected a setup checkbox');
     fireEvent.click(firstStep);
-    expect(screen.getByText('1 of 5 complete')).toBeInTheDocument();
+    expect(screen.getByLabelText('1 of 5 setup steps complete')).toBeInTheDocument();
     view.unmount();
     render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
     expect(screen.getAllByRole('checkbox')[0]).toBeChecked();
@@ -76,13 +76,13 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Connect an OpenCode worker' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Machine setup' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Install Codex CLI/)).not.toBeInTheDocument();
-    expect(screen.getByText(/Registration happens through the authenticated API/)).toBeInTheDocument();
+    expect(screen.getByText(/registers through the authenticated API/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.sh');
-    expect(screen.getByRole('link', { name: 'Download PowerShell installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.ps1');
+    expect(screen.getByRole('link', { name: 'PowerShell installer' })).toHaveAttribute('href', '/scripts/install-opencode-worker.ps1');
     expect(screen.getByText(/no Giga Desk source checkout is needed/)).toBeInTheDocument();
     expect(screen.getByText(/save its repository URL and local checkout path/)).toBeInTheDocument();
     expect(screen.getByText(/The worker can come Online before project checkouts exist/)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Configure a customer repository' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Configure an approved checkout' })).toBeInTheDocument();
     expect(screen.queryByText(/openai\/gpt-5/)).not.toBeInTheDocument();
   });
 

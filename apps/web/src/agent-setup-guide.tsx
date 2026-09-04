@@ -86,8 +86,8 @@ function RepositoryMappingHelper() {
     catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to save repository mapping.'); }
     finally { setSaving(false); }
   };
-  return <section className="card" aria-labelledby="repository-mapping-heading"><h3 id="repository-mapping-heading">Configure a customer repository</h3>
-    <p>Configure the node from Giga Desk. The worker securely retrieves this mapping automatically, so no worker.env edits or restarts are needed.</p>
+  return <section className="repository-mapping" aria-labelledby="repository-mapping-heading"><div className="workflow-section-heading"><div><p className="section-kicker">Repository access</p><h3 id="repository-mapping-heading">Configure an approved checkout</h3></div></div>
+    <p>Tell Giga Desk where this machine may work. The worker retrieves the mapping automatically—no worker.env edits or restart required.</p>
     <div className="form-grid"><label>Execution node<select value={nodeId} onChange={(event) => { setNodeId(event.target.value); }}><option value="">Select a node</option>{targets.map((target) => <option key={target.id} value={target.id}>{target.name} ({target.status})</option>)}</select></label><label>Repository URL<input value={url} onChange={(event) => { setUrl(event.target.value); }} placeholder="https://github.com/example/project.git" /></label><label>Local checkout path<input value={path} onChange={(event) => { setPath(event.target.value); }} placeholder="/home/user/repos/project" /></label></div>
     <button className="button-link" type="button" onClick={() => { void save(); }} disabled={saving || !nodeId}>{saving ? 'Saving…' : 'Save repository mapping'}</button>{message && <p className="form-help" role="status">{message}</p>}
   </section>;
@@ -102,35 +102,35 @@ export function AgentSetupGuide() {
     localStorage.setItem(storageKey, JSON.stringify(next));
   };
 
-  return <main><p className="eyebrow">Agent integrations</p><h1>Connect a work agent</h1>
-    <p>Prepare a development machine to claim work, edit a repository, run verification, and report evidence to Giga Desk.</p>
-    <section className="provider-grid" aria-label="Agent providers">
-      <button className={`card provider-card ${provider === 'codex' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'codex'} onClick={() => { setProvider('codex'); }}><span className="badge">Setup available</span><h2>Codex</h2><p>OpenAI Codex CLI</p></button>
-      <button className={`card provider-card ${provider === 'opencode' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'opencode'} onClick={() => { setProvider('opencode'); }}><span className="badge">Setup available</span><h2>OpenCode</h2><p>Choose a custom agent name, such as MIRIAM</p></button>
-      <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Claude</h2><p>Provider adapter planned</p></article>
-      <article className="card provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></article>
+  const activeProvider = provider === 'opencode' ? {
+    label: 'OpenCode', heading: 'Connect an OpenCode worker', steps: openCodeSteps,
+    description: 'Install the verified Giga Desk worker bundle—no Giga Desk source checkout is needed. It registers through the authenticated API and safely waits for approved repository mappings before claiming work.',
+    bashInstaller: '/scripts/install-opencode-worker.sh', powerShellInstaller: '/scripts/install-opencode-worker.ps1',
+  } : {
+    label: 'Codex', heading: 'Machine setup', steps,
+    description: 'Install the verified Giga Desk worker bundle for this host. It registers through the authenticated API and safely waits for approved repository mappings before claiming work.',
+    bashInstaller: '/scripts/install-codex-worker.sh', powerShellInstaller: '/scripts/install-codex-worker.ps1',
+  };
+
+  return <section className="agent-connect">
+    <header className="page-header agent-connect-header"><div><p className="eyebrow">Agent integrations</p><h1>Connect an agent</h1><p>Prepare a machine to accept Giga Desk work and use only approved repository checkouts.</p></div></header>
+    <section className="agent-provider-grid" aria-label="Agent providers">
+      <button className={`provider-card ${provider === 'codex' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'codex'} onClick={() => { setProvider('codex'); }}><h2>Codex CLI</h2><p>OpenAI work agent</p><span className="provider-state">Available</span></button>
+      <button className={`provider-card ${provider === 'opencode' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'opencode'} onClick={() => { setProvider('opencode'); }}><h2>OpenCode</h2><p>Custom worker runtime</p><span className="provider-state">Available</span></button>
+      <article className="provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Claude</h2><p>Provider adapter planned</p></article>
+      <article className="provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></article>
     </section>
-    {provider === 'opencode' ? <section aria-labelledby="opencode-setup"><div className="row"><div><p className="eyebrow">OpenCode</p><h2 id="opencode-setup">Connect an OpenCode worker</h2></div><span>{completed.length} of {openCodeSteps.length} complete</span></div>
-      <p>Download the installer for the worker host. It installs a verified worker bundle from Giga Desk; no Giga Desk source checkout is needed. It reuses the protected machine configuration when present and uses MIRIAM with ollama/qwen3-coder-next:q4_K_M unless configured otherwise. The worker can register before project checkouts exist and waits safely until customer repositories are mapped. Registration happens through the authenticated API when the worker starts.</p>
-      <p><a className="button-link" href="/scripts/install-opencode-worker.sh" download>Download Bash installer</a>{' '}<a className="button-link button-secondary" href="/scripts/install-opencode-worker.ps1" download>Download PowerShell installer</a></p>
-      <RepositoryMappingHelper />
-      <ol className="setup-steps">{openCodeSteps.map((step, index) => <li className="card" key={step.title}>
+    <section className="agent-setup-workflow" aria-labelledby="agent-setup-heading">
+      <div className="agent-setup-overview"><div><p className="section-kicker">Selected integration</p><h2 id="agent-setup-heading">{activeProvider.heading}</h2><p>{activeProvider.description}</p></div><span className="setup-progress" aria-label={`${String(completed.length)} of ${String(activeProvider.steps.length)} setup steps complete`}>{completed.length} / {activeProvider.steps.length} complete</span></div>
+      <section className="agent-install" aria-labelledby="install-worker-heading"><div><p className="section-kicker">Install worker</p><h3 id="install-worker-heading">Download the worker for this machine</h3><p>It installs a verified, versioned Giga Desk bundle and reuses protected machine configuration automatically.</p></div><div className="agent-downloads"><a className="button-link" href={activeProvider.bashInstaller} download>Download Bash installer</a><a className="button-link button-secondary" href={activeProvider.powerShellInstaller} download>PowerShell installer</a></div></section>
+      <div className="agent-workspace-body"><RepositoryMappingHelper />
+      <section className="agent-readiness" aria-labelledby="agent-readiness-heading"><div className="workflow-section-heading"><div><p className="section-kicker">Readiness</p><h3 id="agent-readiness-heading">Finish the setup</h3></div><span className="setup-progress">{completed.length} of {activeProvider.steps.length}</span></div>
+      <ol className="setup-steps agent-steps">{activeProvider.steps.map((step, index) => <li key={step.title}>
         <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
         <p>{step.detail}</p>{step.command && <pre><code>{step.command}</code></pre>}
-        <label className="step-check"><input type="checkbox" checked={completed.includes(index)} disabled={step.pending}
-          onChange={(event) => { setStep(index, event.target.checked); }} /> Step completed</label>
-      </li>)}</ol></section> : <section aria-labelledby="codex-setup"><div className="row"><div><p className="eyebrow">Codex</p><h2 id="codex-setup">Machine setup</h2></div><span>{completed.length} of {steps.length} complete</span></div>
-      <p>Download the installer for the worker host. It detects Codex, downloads a verified worker bundle from Giga Desk, and reuses the protected machine configuration when present. It never prompts for credentials; an administrator must supply the node-scoped OIDC configuration through the protected machine environment. The worker can register before project checkouts exist and waits safely until customer repositories are mapped. Registration happens through the authenticated API when the worker starts.</p>
-      <p><a className="button-link" href="/scripts/install-codex-worker.sh" download>Download Bash installer</a>{' '}<a className="button-link button-secondary" href="/scripts/install-codex-worker.ps1" download>Download PowerShell installer</a></p>
-      <RepositoryMappingHelper />
-      <ol className="setup-steps">{steps.map((step, index) => <li className="card" key={step.title}>
-        <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
-        <p>{step.detail}</p>{step.command && <pre><code>{step.command}</code></pre>}
-        <label className="step-check"><input type="checkbox" checked={completed.includes(index)} disabled={step.pending}
-          onChange={(event) => { setStep(index, event.target.checked); }} /> Step completed</label>
-      </li>)}</ol>
-      <p className="security-note"><strong>Keep credentials private.</strong> Never paste a Codex token or Giga Desk machine secret into a Project, Work Item, command output, or source-controlled file.</p>
-      <p>Authentication details follow the <a href="https://learn.chatgpt.com/docs/enterprise/service-accounts" target="_blank" rel="noreferrer">official OpenAI service-account guidance</a>.</p>
-    </section>}
-  </main>;
+        <label className="step-check"><input type="checkbox" checked={completed.includes(index)} disabled={step.pending} onChange={(event) => { setStep(index, event.target.checked); }} /> Step completed</label>
+      </li>)}</ol></section></div>
+      {provider === 'codex' && <aside className="security-note"><strong>Keep credentials private.</strong> Never paste a Codex token or Giga Desk machine secret into a Project, Work Item, command output, or source-controlled file. Authentication details follow the <a href="https://learn.chatgpt.com/docs/enterprise/service-accounts" target="_blank" rel="noreferrer">official OpenAI service-account guidance</a>.</aside>}
+    </section>
+  </section>;
 }
