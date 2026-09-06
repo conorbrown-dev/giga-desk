@@ -26,7 +26,14 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
   await expect(navigation.getByRole('link', { name: 'Giga Desk' })).toBeVisible();
   await expect(navigation.locator('img')).toHaveAttribute('src', '/images/giga-desk-icon.png');
-  await expect(page.getByRole('navigation', { name: 'Account controls' }).getByRole('button', { name: 'Sign out' })).toBeVisible();
+  const accountControls = page.getByRole('navigation', { name: 'Account controls' });
+  await accountControls.getByRole('button', { name: 'Open account menu for demo' }).click();
+  await expect(accountControls.getByRole('button', { name: /Account Settings/ })).toBeDisabled();
+  await expect(accountControls.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  await page.screenshot({ path: 'test-results/visual-review/account-menu-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/account-menu-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.getByRole('link', { name: 'View projects' }).click();
   await expect(page.getByText('Production workspace')).toBeVisible();
   await expect(page.getByLabel('Projects').getByText('Active', { exact: true })).toBeVisible();

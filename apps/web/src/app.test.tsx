@@ -31,7 +31,7 @@ describe('App', () => {
     expect(fetch).toHaveBeenCalledWith('/api/projects', expect.objectContaining({ headers: { Authorization: 'Bearer test-token' } }));
   });
 
-  it('provides primary navigation and signs out from the account action', () => {
+  it('provides primary navigation and an account dropdown with an unavailable settings action', () => {
     const logout = vi.fn().mockResolvedValue(undefined);
     const authentication: AuthenticationState = { configured: true, authenticated: true, username: 'conor', error: null, login: vi.fn(), logout };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) }));
@@ -39,10 +39,13 @@ describe('App', () => {
     const navigation = screen.getByRole('navigation', { name: 'Primary navigation' });
     expect(navigation.querySelector('img')).toHaveAttribute('src', '/images/giga-desk-icon.png');
     expect(navigation).not.toHaveTextContent('conor');
-    expect(screen.getByRole('navigation', { name: 'Account controls' })).toHaveTextContent('conor');
+    const accountControls = screen.getByRole('navigation', { name: 'Account controls' });
+    expect(accountControls).toHaveTextContent('conor');
     expect(screen.getByRole('link', { name: 'Giga Desk' })).toHaveAttribute('href', '/projects');
     expect(screen.getByRole('link', { name: 'Connect agent' })).toHaveAttribute('href', '/agents/connect');
     expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute('aria-current', 'page');
+    fireEvent.click(screen.getByRole('button', { name: 'Open account menu for conor' }));
+    expect(screen.getByRole('button', { name: /Account Settings/ })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(logout).toHaveBeenCalledOnce();
   });
