@@ -38,12 +38,28 @@ describe('App', () => {
     render(<MemoryRouter initialEntries={['/projects']}><App authentication={authentication} /></MemoryRouter>);
     const navigation = screen.getByRole('navigation', { name: 'Primary navigation' });
     expect(navigation.querySelector('img')).toHaveAttribute('src', '/images/giga-desk-icon.png');
-    expect(navigation).toHaveTextContent('conor');
+    expect(navigation).not.toHaveTextContent('conor');
+    expect(screen.getByRole('navigation', { name: 'Account controls' })).toHaveTextContent('conor');
     expect(screen.getByRole('link', { name: 'Giga Desk' })).toHaveAttribute('href', '/projects');
     expect(screen.getByRole('link', { name: 'Connect agent' })).toHaveAttribute('href', '/agents/connect');
     expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute('aria-current', 'page');
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(logout).toHaveBeenCalledOnce();
+  });
+
+  it('requires the exact project name before enabling archive confirmation', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([{
+      id: 'project-1', key: 'GD', name: 'Giga Desk', businessGoal: 'Ship work reliably',
+      status: 'Active', priority: 'High', updatedAt: '2026-09-01T00:00:00.000Z',
+    }]) }));
+    render(<MemoryRouter initialEntries={['/projects/project-1/settings']}><App /></MemoryRouter>);
+    const confirmation = await screen.findByLabelText(/Type Giga Desk to confirm archive/);
+    const archive = screen.getByRole('button', { name: 'Confirm archive' });
+    expect(archive).toBeDisabled();
+    fireEvent.change(confirmation, { target: { value: 'Giga desk' } });
+    expect(archive).toBeDisabled();
+    fireEvent.change(confirmation, { target: { value: 'Giga Desk' } });
+    expect(archive).toBeEnabled();
   });
 
   it('guides Codex setup and remembers completed steps', () => {

@@ -16,7 +16,7 @@ const api = spawn(process.execPath, ['apps/api/dist/main.js'], {
     AUTH_ISSUER: issuer, AUTH_AUDIENCE: 'giga-desk-api', AUTH_JWKS_URL: `${issuer}/protocol/openid-connect/certs`,
   },
 });
-const web = spawn('npm', ['exec', 'vite', '--', '--host', '127.0.0.1', '--port', '5173'], {
+const web = spawn('npm', ['exec', 'vite', '--', '--host', '127.0.0.1', '--port', '5173', '--strictPort'], {
   cwd: 'apps/web', stdio: 'inherit', env: {
     ...process.env, VITE_KEYCLOAK_URL: 'http://127.0.0.1:8080',
     VITE_KEYCLOAK_REALM: 'giga-desk', VITE_KEYCLOAK_CLIENT_ID: 'giga-desk-web',

@@ -26,7 +26,7 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
   await expect(navigation.getByRole('link', { name: 'Giga Desk' })).toBeVisible();
   await expect(navigation.locator('img')).toHaveAttribute('src', '/images/giga-desk-icon.png');
-  await expect(navigation.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Account controls' }).getByRole('button', { name: 'Sign out' })).toBeVisible();
   await page.getByRole('link', { name: 'View projects' }).click();
   await expect(page.getByText('Production workspace')).toBeVisible();
   await expect(page.getByLabel('Projects').getByText('Active', { exact: true })).toBeVisible();
@@ -51,6 +51,30 @@ test('requires Keycloak authentication for project access', async ({ page }) => 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/visual-review/auth-brand-mobile.png', fullPage: true });
   await expect(page.getByRole('heading', { name: 'Projects' })).not.toBeVisible();
+});
+
+test('archives a project only after its exact name is confirmed', async ({ page }) => {
+  const projectId = '00000000-0000-4000-8000-000000000003';
+  await page.route('**/api/projects', async (route) => route.fulfill({ json: [{
+    id: projectId, key: 'GD', name: 'Giga Desk', businessGoal: 'Ship work reliably',
+    status: 'Active', priority: 'High', updatedAt: '2026-09-01T00:00:00.000Z',
+  }] }));
+  await page.route(`**/api/projects/${projectId}/archive`, async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ projectName: 'Giga Desk' });
+    await route.fulfill({ status: 201, json: {} });
+  });
+  await signIn(page, `/projects/${projectId}/settings`);
+  const confirmation = page.getByLabel(/Type Giga Desk to confirm archive/);
+  await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeDisabled();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: 'test-results/visual-review/project-archive-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/project-archive-mobile.png', fullPage: true });
+  await confirmation.fill('Giga desk');
+  await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeDisabled();
+  await confirmation.fill('Giga Desk');
+  await page.getByRole('button', { name: 'Confirm archive' }).click();
+  await expect(page).toHaveURL(/\/projects$/);
 });
 
 test('uses the responsive Giga Desk theme for Keycloak sign in', async ({ page }) => {

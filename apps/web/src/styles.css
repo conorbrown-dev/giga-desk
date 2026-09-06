@@ -1006,35 +1006,61 @@ body { background: #0e0e10; font-size: 0.875rem; }
 }
 .nav-link.active::before { width: 0.3125rem; height: 0.3125rem; margin-right: 0.5rem; box-shadow: none; }
 
-.account-menu {
+.top-nav {
   align-items: center;
-  background: #19191e;
-  border: 1px solid #303038;
-  border-radius: 0.625rem;
-  display: grid;
+  border-bottom: 1px solid var(--border);
+  display: flex;
   gap: 0.55rem;
-  grid-template-columns: 1.9rem minmax(0, 1fr);
-  padding: 0.65rem;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+  min-height: 2.5rem;
+  padding-bottom: 0.75rem;
 }
 .account-name {
   color: #dedee4;
+  font-size: 0.8125rem;
   min-width: 0;
+  max-width: min(16rem, 28vw);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.account-menu .button {
+.top-nav .account-avatar { display: grid; flex: 0 0 auto; }
+.top-nav .account-name { display: block; }
+.top-nav .button {
   background: #282830;
   border-color: #3b3b45;
   color: #f0f0f3;
-  grid-column: 1 / -1;
+  margin-left: 0.2rem;
+  padding: 0.5rem 0.7rem;
   transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
-.account-menu .button:hover {
+.top-nav .button:hover {
   background: var(--orange);
   border-color: var(--orange);
   color: #1b1110;
 }
+
+.danger-panel {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.85fr) minmax(18rem, 1fr);
+  gap: 2rem;
+  max-width: 52rem;
+  padding: 1.25rem 0;
+  border-block: 1px solid rgb(214 106 120 / 0.45);
+}
+.danger-panel h2 { margin: 0; font-size: 1rem; }
+.danger-panel > div > p:last-child { margin: 0.45rem 0 0; color: var(--muted); font-size: 0.8125rem; line-height: 1.5; }
+.archive-form { display: grid; align-content: start; gap: 0.55rem; }
+.archive-form label { display: grid; gap: 0.45rem; color: #d4d4d8; font-size: 0.8125rem; }
+.archive-form input { box-sizing: border-box; width: 100%; max-width: 20rem; padding: 0.625rem 0.7rem; color: #f4f4f5; background: #0d0d10; border: 1px solid #34343d; border-radius: 0.5rem; }
+.archive-form input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgb(249 115 61 / 0.18); outline: 0; }
+.archive-form > span { color: #fda4af; font-size: 0.75rem; }
+.archive-form > div { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.35rem; }
+.archive-form [role='alert'] { margin: 0; color: #fecdd3; font-size: 0.75rem; }
+.button-danger { padding: 0.5rem 0.7rem; color: #fecdd3; background: rgb(214 106 120 / 0.09); border: 1px solid rgb(214 106 120 / 0.6); border-radius: 0.5rem; cursor: pointer; font: inherit; font-size: 0.75rem; font-weight: 700; }
+.button-danger:hover:not(:disabled) { color: #fff1f2; background: rgb(214 106 120 / 0.18); border-color: var(--red); }
+.button-danger:disabled { cursor: wait; opacity: 0.6; }
 
 .workspace { max-width: none; margin: 0; padding: 1.5rem 2rem 3rem; }
 .workspace > * { max-width: 100%; }
@@ -1121,11 +1147,12 @@ body { background: #0e0e10; font-size: 0.875rem; }
   .site-header { min-height: auto; border-right: 0; border-bottom: 1px solid var(--border); }
   .site-nav { position: static; min-height: auto; padding: 0.8rem 1rem; flex-direction: row; align-items: center; }
   .brand-link { padding: 0; border: 0; }
-  .brand-link small, .account-name, .account-avatar { display: none; }
+  .brand-link small { display: none; }
   .nav-links { order: 0; flex: 0 1 auto; grid-auto-flow: column; padding: 0; margin-left: auto; }
   .nav-link { padding: 0.55rem 0.65rem; }
-  .account-menu { padding: 0; border: 0; }
-  .account-menu .button { width: auto; }
+  .top-nav { margin-bottom: 1.25rem; }
+  .danger-panel { grid-template-columns: 1fr; gap: 1rem; }
+  .archive-form input { max-width: none; }
   .workspace { padding: 1.25rem 1rem 2rem; }
   .control-center-header { align-items: flex-start; }
   .page-header-actions { width: 100%; justify-content: space-between; }
@@ -1141,6 +1168,10 @@ body { background: #0e0e10; font-size: 0.875rem; }
 }
 
 @media (max-width: 31rem) {
+  .top-nav { gap: 0.45rem; justify-content: space-between; }
+  .top-nav .account-name { max-width: 10rem; }
+  .top-nav .account-avatar { display: none; }
+  .top-nav .button { margin-left: auto; }
   .summary-stat { grid-column: span 6; }
   .summary-stat:first-child { grid-column: span 12; }
   .execution-card .status-row { grid-template-columns: 1fr; }
