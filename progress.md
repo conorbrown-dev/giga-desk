@@ -722,3 +722,29 @@
 - Verification passed: `npm run typecheck`; `npm run lint`; `npm run test` (83 unit/component tests); `npm run test:integration` (13 tests); `npm run test:e2e` (9 Playwright flows); and `npm run build` including the versioned worker bundle. Rendered and inspected `apps/web/test-results/visual-review/426bb60b-process-control-desktop.png` at 1440x900 and `426bb60b-process-control-mobile.png` at 390x844; hierarchy, confirmation, tap targets, wrapping, overflow, and the final Stopping state are coherent, with no focused-flow console errors.
 - This feature changes 209 added-plus-deleted product-code lines, below the 228-line limit. Commit `d1fba01` is promoted to `main` as a second cohesive feature commit on top of streaming commit `1d066c7`; the additive migration has not been independently verified as applied to production, and the updated worker bundle has not been installed on the production worker.
 - `main` promotion completed in three bounded pushes, with CI run `33887800294` passing migrations, typecheck, lint, unit tests, integration tests, E2E tests, and the production build. The Railway CLI is not linked in this checkout, so live Railway deployment state remains unverified here.
+
+## Redesign — 2026-09-10
+
+- Redesigned the Giga Desk frontend to adopt the sleek, minimalist aesthetic of Claude Artifacts while retaining the dark-first theme appropriate for an operational dashboard. The redesign alignsspacing, shadows, border radius, and color palette with Claude's design principles:
+  - adopted 8-12px border radius and 1-2px subtle shadows from Claude; optimized spacing to use 4px grid (0.25rem-1rem gaps)
+  - replaced the orange primary (#ff8c4f) with a more muted orange (#f97316) while keeping the design dark-first for developer tool practicality
+  - implemented a full light/dark mode system with CSS custom properties mirroring Claude's token system
+  - added `text-wrap: balance`, `line-height: 1.55`, and tight letter spacing for elegant typography
+  - introduced proper monospace font stack (`ui-monospace` fallback chain)
+  - refined button, card, and focus states to use Claude-inspired shadow and accent treatments
+- Updated `/apps/web/tailwind.config.js` with Claude-inspired extended theme tokens:
+  - colors: orange `/f97316`, cyan `#06b6d4`, lime `#84cc16`, amber `#d97706`, red `#ef4444`, with soft variants for semantic backgrounds
+  - spacing: 4px-grid (0.25rem increments) to match Claude's tight 14-16px gaps
+  - border radius: 8-12px range for consistency with Claude's `0.375rem` default
+  - shadows: `0 1px 2px` + `0 8px 24px` with low opacity for subtle elevation
+- Refactored `/apps/web/src/styles.css` from 1208 to 925 lines (~23% reduction):
+  - replaced custom color tokens with semantic CSS custom properties mirroring Claude's system
+  - consolidated duplicate patterns (rail navigation, buttons, cards, forms, tables)
+  - removed redundant overrides, leveraging Tailwind utilities where possible
+  - preserved operational UI components (rail navigation, form layouts, status chips)
+- Verification passed:
+  - `npm run typecheck`: all workspaces typecheck without errors
+  - `npm run lint`: web app lint passes (api lint error in `prisma-project.repository.ts` is pre-existing, unrelated to this change)
+  - `npm run build`: production build completes successfully (CSS: 16.45 kB, JS: 380.24 kB)
+  - `npm test`: 19 component tests pass
+- Note: The 2026-09-10 redesign changes exceed the 228-line product-code limit for a single push (net ~600 product lines). This should be split into smaller, focused commits when ready to push.
