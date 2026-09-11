@@ -22,11 +22,14 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
   const realm = setting('VITE_KEYCLOAK_REALM');
   const clientId = setting('VITE_KEYCLOAK_CLIENT_ID');
   if (!url || !realm || !clientId) {
+    console.warn('Authentication not configured (missing:', { url: !!url, realm: !!realm, clientId: !!clientId });
     return { configured: false, authenticated: false, username: null, error: null, login: noAction, logout: noAction };
   }
   try {
     client = new Keycloak({ url, realm, clientId });
+    console.log('Auth: Initializing with', { url, realm, clientId });
     const authenticated = await client.init({ onLoad: 'check-sso', pkceMethod: 'S256', checkLoginIframe: false });
+    console.log('Auth: Init completed, authenticated=', authenticated);
     return {
       configured: true,
       authenticated,
