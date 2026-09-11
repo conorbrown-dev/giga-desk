@@ -3,6 +3,13 @@ FROM quay.io/keycloak/keycloak:26.3 AS builder
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
 ENV KC_DB=postgres
+ENV KC_DB_URL="${RAILWAY_SERVICE_GIGA_DESK_DATABASE_URL}"
+ENV KC_HTTP_RELAXED_AUTH=always
+ENV KC_HTTP_PROXY_HEADERS=xforwarded
+ENV KC_PROXY=edge
+ENV KC_HTTP_ENABLED=true
+ENV KC_SPI_TRUSTED_PROXIES="all"
+ENV KC_SPI_OPENID_ENFORCEHTTPS=enabled
 RUN /opt/keycloak/bin/kc.sh build
 
 FROM quay.io/keycloak/keycloak:26.3
@@ -11,5 +18,18 @@ COPY keycloak/themes/giga-desk /opt/keycloak/themes/giga-desk
 
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
+ENV KC_HTTP_RELAXED_AUTH=always
+ENV KC_HTTP_PROXY_HEADERS=xforwarded
+ENV KC_PROXY=edge
+ENV KC_HTTP_ENABLED=true
+ENV KC_HOSTNAME="giga-desk-keycloak-production.up.railway.app"
+ENV KC_SPI_CLUSTER_LOADBALANCING_STRATEGY=NONE
+ENV KC_SPI_TRUSTED_PROXIES="all"
+ENV KC_SPI_OPENID_ENFORCEHTTPS=enabled
+ENV KC_DB=postgres
+ENV KC_DB_URL="${RAILWAY_SERVICE_GIGA_DESK_DATABASE_URL}"
+ENV KC_ADMIN_USER=admin
+ENV KC_ADMIN_PASSWORD=admin123
+ENV KC_CACHE=local
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
-CMD ["start", "--optimized", "--http-enabled=true", "--proxy-headers=xforwarded"]
+CMD ["start"]

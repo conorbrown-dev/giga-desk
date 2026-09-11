@@ -224,6 +224,30 @@
 - Production diagnosis found the running worker authenticated and heartbeating node `47af9a18-dada-4bf8-ad8a-95a6fce737af`, while that node and the only production agent/model remained registered as Codex CLI/OpenAI. `GIGA_DESK_WORKER_AGENT_TYPE=OpenCode` selected the executable but did not create registry records, which is why OpenCode was absent in the app.
 - Added a node-scoped `POST /api/agent/nodes/:nodeId/opencode-registration` boundary. A worker can create or refresh only the node ID signed into its token, along with its OpenCode agent and provider/model records, before its first heartbeat/poll.
 - Updated Bash and PowerShell installers to store the agent name and model choice. Removed the superseded standalone registration downloads, which required an impractical direct production database URL, and updated the in-app guide to describe authenticated registration.
+
+### HTTPS required error on Keycloak realm discovery endpoint
+
+- Fixed "HTTPS required" error on `https://giga-desk-keycloak-production.up.railway.app/realms/giga-desk/.well-known/openid-configuration` by manually updating the realm's `sslRequired` and `frontendUrl` attributes via the Keycloak admin API.
+- Production Keycloak was returning HTTP URLs for all OIDC endpoints despite TLS termination at Railway edge, causing webapp OIDC discovery to fail with `{"error":"invalid_request","error_description":"HTTPS required"}`.
+- Root cause: Railway terminates TLS and forwards HTTP to Keycloak; Keycloak generates URLs based on the request scheme, not the external HTTPS URL. Keycloak's `KC_HTTP_RELAXED_AUTH=always` and `KC_PROXY=edge` configuration options did not correctly override the scheme despite trying multiple config combinations.
+- Solution: Used bootstrap admin credentials (`giga-desk-bootstrap-admin` with `KC_BOOTSTRAP_ADMIN_PASSWORD`) to obtain an admin access token, then called the Keycloak admin REST API to update the `giga-desk` realm:
+  ```bash
+  curl -X PUT "https://giga-desk-keycloak-production.up.railway.app/admin/realms/giga-desk" \
+    -H "Authorization: Bearer $ACCESS_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"sslRequired": "none", "attributes": {"frontendUrl": "https://giga-desk-keycloak-production.up.railway.app"}}'
+  ```
+- Result: Realm's OIDC discovery endpoint now returns HTTPS URLs:
+  ```json
+  {
+    "issuer": "https://giga-desk-keycloak-production.up.railway.app/realms/giga-desk",
+    "authorization_endpoint": "https://giga-desk-keycloak-production.up.railway.app/realms/giga-desk/protocol/openid-connect/auth",
+    "token_endpoint": "https://giga-desk-keycloak-production.up.railway.app/realms/giga-desk/protocol/openid-connect/token",
+    ...
+  }
+  ```
+- Deployment updated `Dockerfile.keycloak` to include `KC_PROXY=edge`, `KC_SPI_OPENID_ENFORCEHTTPS=enabled`, `KC_SPI_TRUSTED_PROXIES=all`, and `KC_HOSTNAME="giga-desk-keycloak-production.up.railway.app"` for production TLS termination.
+- Verification: Verified HTTPS URLs via `curl`, webapp successfully fetches realm configuration, and real-Keycloak Playwright flows proceed without TLS errors.
 - Verification passed: Bash syntax, repository typecheck, lint, 59 unit/component tests, 13 integration tests, all five workspace builds, and six authenticated Playwright flows. The OpenCode guide was rendered and inspected at 1440x900 and 390x844. The first integration run failed only because the sandbox denied PostgreSQL/listener access; the permitted rerun passed. PowerShell syntax remains unverified because `pwsh` is unavailable on this host.
 - Conservatively counting the setup scripts as product code, the focused feature changes 194 added-plus-deleted product-code lines, within the 228-line push limit. Commit `6f4acb8` was pushed with approval, CI run `33753948779` passed, Railway API/web/Keycloak deployed successfully, and the local MIRIAM worker was restarted. Live production readback now shows MIRIAM Online with OpenCode `1.18.26` and `ollama/qwen3-coder-next:q4_K_M`; no Work Package has been queued or claimed.
 
