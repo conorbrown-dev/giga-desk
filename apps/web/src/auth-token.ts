@@ -28,17 +28,17 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
   try {
     client = new Keycloak({ url, realm, clientId });
     console.log('Auth: Initializing with', { url, realm, clientId });
-    const authenticated = await client.init({
+    await client.init({
       onLoad: 'check-sso',
       pkceMethod: 'S256',
       checkLoginIframe: true,
       checkLoginIframeInterval: 300,
     });
-    console.log('Auth: Init completed, authenticated=', authenticated);
+    console.log('Auth: Init completed, token=', !!client?.token, 'authenticated=', client?.authenticated);
     return {
       configured: true,
-      authenticated,
-      username: typeof client.tokenParsed?.['preferred_username'] === 'string' ? client.tokenParsed['preferred_username'] : null,
+      authenticated: client?.authenticated ?? false,
+      username: client?.tokenParsed ? (client.tokenParsed['preferred_username'] as string) : null,
       error: null,
       login: async () => { await client?.login(); },
       logout: async () => { await client?.logout({ redirectUri: window.location.origin }); },
