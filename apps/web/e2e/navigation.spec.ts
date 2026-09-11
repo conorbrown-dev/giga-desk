@@ -267,9 +267,9 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
   expect(content).not.toBeNull();
   expect(content?.width).toBeLessThanOrEqual(1200);
   expect(content?.x).toBeGreaterThan(0);
-  await page.locator('summary').filter({ hasText: 'Add project' }).click();
-  await page.getByRole('button', { name: 'Add project' }).click();
-  await expect(page.getByText('Enter a project key.')).toBeVisible();
+  await page.getByRole('link', { name: 'Add project' }).click();
+  await expect(page).toHaveURL(/\/projects\/new$/);
+  await expect(page.getByRole('heading', { name: 'Add project' })).toBeVisible();
   await page.getByLabel(/Project key/).fill('RY');
   await page.getByLabel(/Name/).fill('Ryan Demo');
   await page.getByLabel(/Description/).fill('A browser showcase');

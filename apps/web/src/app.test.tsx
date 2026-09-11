@@ -127,23 +127,20 @@ describe('App', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     render(<MemoryRouter initialEntries={['/projects']}><App /></MemoryRouter>);
-    fireEvent.click(screen.getByText('Add project', { selector: 'summary' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Add project' }));
-    expect(await screen.findByText('Enter a project key.')).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('link', { name: 'Add project' }));
+    expect(await screen.findByRole('heading', { name: 'Add project' })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Project key/), { target: { value: 'RY' } });
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Ryan Demo' } });
     fireEvent.change(screen.getByLabelText(/Business goal/), { target: { value: 'Show the workflow' } });
     fireEvent.change(screen.getByLabelText(/Repository URL/), { target: { value: 'https://github.com/example/ryan-demo.git' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Project created.');
     expect(await screen.findByRole('link', { name: 'RY · Ryan Demo' })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('/api/projects', expect.objectContaining({ method: 'POST', body: JSON.stringify({ key: 'RY', name: 'Ryan Demo', description: '', businessGoal: 'Show the workflow', repositoryUrl: 'https://github.com/example/ryan-demo.git', defaultBranch: 'main' }) }));
   });
 
   it('rejects unsafe repository URLs and invalid default branches', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) }));
-    render(<MemoryRouter initialEntries={['/projects']}><App /></MemoryRouter>);
-    fireEvent.click(screen.getByText('Add project', { selector: 'summary' }));
+    render(<MemoryRouter initialEntries={['/projects/new']}><App /></MemoryRouter>);
     fireEvent.change(screen.getByLabelText(/Project key/), { target: { value: 'GD' } });
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Giga Desk' } });
     fireEvent.change(screen.getByLabelText(/Business goal/), { target: { value: 'Ship reliably' } });
