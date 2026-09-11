@@ -28,7 +28,12 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
   try {
     client = new Keycloak({ url, realm, clientId });
     console.log('Auth: Initializing with', { url, realm, clientId });
-    const authenticated = await client.init({ onLoad: 'check-sso', pkceMethod: 'S256', checkLoginIframe: true });
+    const authenticated = await client.init({
+      onLoad: 'check-sso',
+      pkceMethod: 'S256',
+      checkLoginIframe: true,
+      checkLoginIframeInterval: 300,
+    });
     console.log('Auth: Init completed, authenticated=', authenticated);
     return {
       configured: true,
@@ -41,7 +46,8 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
   } catch (error: unknown) {
     client = null;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Authentication initialization error:', errorMessage);
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('Authentication initialization error:', { message: errorMessage, stack: errorStack });
     return { configured: true, authenticated: false, username: null, error: 'Authentication is unavailable.', login: noAction, logout: noAction };
   }
 }
