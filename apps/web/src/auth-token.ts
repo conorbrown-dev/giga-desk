@@ -35,8 +35,10 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
       login: async () => { await client?.login(); },
       logout: async () => { await client?.logout({ redirectUri: window.location.origin }); },
     };
-  } catch {
+  } catch (error: unknown) {
     client = null;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Authentication initialization error:', errorMessage);
     return { configured: true, authenticated: false, username: null, error: 'Authentication is unavailable.', login: noAction, logout: noAction };
   }
 }
