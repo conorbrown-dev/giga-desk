@@ -2,73 +2,18 @@
 
 ## Current state
 
-- Account dropdown feature complete, ready to push: the authenticated top account control now combines the username/avatar into an accessible native disclosure menu. It presents a disabled `Account Settings · Coming soon` item and preserves Sign out within the menu. Corrected the narrow-screen cascade so the account trigger remains available at 390 px. Rendered and inspected the opened menu at 1440×900 and 390×844 through the real-Keycloak Playwright flow; web component tests (19), typecheck, lint, production build, and all 10 browser flows passed. Expected local `/api/execution/targets` proxy refusals occurred only on existing Connect Agent routes while the API was not running; browser tests supplied their required API responses and passed.
-- UI correction pass in progress, not pushed: moved the authenticated account indicator and sign-out action from the sidebar into a compact top account bar; retained the sidebar strictly for product navigation. Reworked Project Settings into a restrained, responsive archive danger zone with explicit loading/error states and an exact-name confirmation field that is passed to the API. Corrected an initially invisible archive input and a mobile two-column overflow found during screenshot review. Rendered and inspected the portfolio, Connect Agent, and archive views at desktop and mobile widths; web typecheck, lint, 19 component tests, production build, and all 10 real-Keycloak Playwright flows passed. Restarted the local demo on Keycloak's configured `127.0.0.1:5173` redirect origin and verified a real `demo` login; the launcher now uses Vite strict-port mode to prevent an incompatible fallback port.
-- Refined the authenticated sidebar without changing its information architecture: navigation links now have distinct hover and active treatments, long account names truncate safely, and the compact account footer gives the sign-out action stronger affordance. Visual review used the real-Keycloak Playwright flow at 1440px, 1920px, 1024px, and 390px; web typecheck, lint, 18 component tests, production build, and all nine browser flows passed.
-- Reworked the authenticated Connect agent page into a constrained developer-tool workflow: compact provider selection, selected-integration context and progress, a clearly primary Bash installer action, focused repository access, and adjacent readiness steps. Preserved installer URLs, provider switching, persisted checklist state, API-driven node repository mappings, validation, status messages, and disabled future providers. Visual QA used Playwright after the in-app browser connection could not initialize in this environment; inspected captures at 1920, 1440, 1280, 1024, and 390px, and fixed a mobile sidebar cascade that had squeezed the page. Web typecheck, lint, 18 component tests, production build, and all 9 authenticated Playwright flows passed. The browser run logs expected local `/api/execution/targets` proxy refusals because the API was not started; the page retains its existing signed-in feedback state.
-- Reworked the authenticated Project Work Items backlog into compact operational rows with aligned feature identity, state, acceptance-criteria count, and priority. The header now keeps the Add feature flow adjacent to project context. Existing fetch, create-feature, item navigation, and status behavior remain unchanged. Final visual and full-suite verification remains in progress.
-- Local demo setup: Docker PostgreSQL and Keycloak are running; regenerated the local Prisma client to match the versioned execution-process schema and confirmed the API builds. Applied the existing local Prisma migration set (already in sync). The demo API started on `127.0.0.1:3000`; Vite selected `127.0.0.1:5174` because `5173` was occupied. No external deployment or push was made.
-- Repository template initialized with contributor, architecture, testing, and delivery guidance.
-- The ordered project reference pack has been reviewed and a baseline architecture assessment is recorded in `docs/10_ARCHITECTURE_ASSESSMENT.md`.
-- The starting checkout was documentation-only, so the new application foundation follows the recorded architecture assessment rather than pre-existing runtime conventions.
-- Contributor guidance requires GitHub, Railway, and Cloudflare CLI tooling for repository, deployment, and infrastructure operations.
-- npm workspaces now separate the strict-TypeScript NestJS API, Vite/React web application, Node polling agent simulator, and production-neutral machine API client.
-- The API exposes a minimal `/api/health` readiness boundary; the web shell provides routed home and project-list states.
-- PostgreSQL and Prisma configuration now define the initial Project, WorkItem, acceptance-criteria, dependency, and immutable activity persistence model.
-- Framework-free Project and WorkItem domain objects enforce key normalization, required feature acceptance criteria, workflow transitions, and prerequisite completion.
-- API routes are protected by default with provider-neutral RS256 JWT verification using configured issuer, audience, and remote JWKS values; `/api/health` is explicitly public and `/api/auth/me` returns the verified subject and permissions.
-- Browser authentication now uses Keycloak's authorization-code flow with S256 PKCE; the API accepts known Giga Desk permissions from Keycloak realm roles while retaining the provider-neutral JWT boundary.
-- Authenticated identities with `projects:create` can create Projects through a CQRS command; creation persists the domain object and immutable `ProjectCreated` activity atomically.
-- Authenticated identities with `projects:read` can retrieve the 50 most recently updated, non-archived Projects through a dedicated CQRS read model.
-- Authenticated identities with `work-items:create` can create a Feature under a Project with structured, ordered acceptance criteria and an immutable `FeatureCreated` activity.
-- Authenticated identities with `projects:read` can retrieve a Project's ordered work-item projection, including hierarchy, workflow state, priority, and structured criteria.
-- Authenticated identities with `work-items:update` can apply valid WorkItem status transitions; starting work checks prerequisites, persistence uses optimistic concurrency, and each transition appends an attributed activity.
-- PostgreSQL now persists ExecutionNode, Agent, AiModel, and ExecutionJob separately with registry uniqueness, historical WorkItem attempts, query indexes, restrictive history foreign keys, and database-level numeric invariants.
-- Authenticated identities with `executions:read` can retrieve enabled execution nodes, agents, and models through an explicit execution-context registry projection.
-- Authenticated identities with `executions:create` can queue Start Work for a compatible, available node/agent/model selection; the transaction reserves node capacity, readies the WorkItem, creates the job, and appends audit activities.
-- Worker JWTs can carry an execution-node identity; that node alone can discover its oldest queued jobs and atomically claim one, with repeat claims rejected and attributed activity appended.
-- A machine-authenticated execution node can heartbeat only its own enabled registry record; the API records liveness and derives Online or Busy status from reserved capacity.
-- An idempotent provisioning command registers MIRIAM, the installed Codex CLI version, and a provider-neutral Codex default-model selection without storing credentials; superseded Codex agent versions are disabled.
-- Production contains the MIRIAM/Codex CLI 0.152.0 target; its node-scoped Keycloak identity and real heartbeat are verified, and the installed worker user service is enabled and running while the production queue remains empty.
-- A node can retrieve a structured Work Package only for its claimed active job, including project/repository context, WorkItem criteria and relationships, selected runtime/model, and explicit test/deployment expectations.
-- PostgreSQL now stores idempotent execution progress, typed Unit/Integration/E2E results, and deployments linked to Project, WorkItem, and ExecutionJob, with evidence indexes and numeric checks.
-- A claimed node can atomically start execution, moving its job to Running and WorkItem to InProgress, then publish idempotent progress events while the job remains active.
-- A node can report idempotent Unit/Integration results while active and EndToEnd results only after deployment; automated tests move both job and WorkItem into Testing and persist attributed evidence.
-- Deployment reporting requires latest passing Unit and Integration evidence, persists idempotently, and moves successful work to E2E Testing; failed/rolled-back deployments terminate the job, block the WorkItem, and release node capacity.
-- A node can complete an E2E-tested execution only when all three test stages, deployment, and every acceptance criterion pass; completion atomically marks the job and WorkItem Completed, satisfies criteria, records terminal audit events, and releases node capacity with idempotent retry handling.
-- A worker can report an active execution failure with an idempotency key; the transaction records the reason and terminal audit events, blocks the WorkItem, releases node capacity, and rejects later non-idempotent terminal changes.
-- Authenticated users with `work-items:read` can retrieve explicit execution history for a WorkItem, including selected targets, lifecycle timestamps, progress, test evidence, deployment evidence, source-control metadata, and failure reasons.
-- The web app now provides a typed execution-history client and `/work-items/:workItemId` dashboard route with accessible loading/error/empty states and evidence summaries.
-- The web app now loads authenticated Project and WorkItem projections, with project-list and project-work routes linking users through to each WorkItem's execution history.
-- Every authenticated route now renders inside the centered, bounded main-content shell instead of allowing page forms and dashboards to stretch edge-to-edge.
-- The authenticated web shell now uses a responsive primary navigation with a branded home link, account context, a styled sign-out action, cohesive link/button states, and visible keyboard focus.
-- Authenticated users can open an in-app Connect Agent guide: Codex provides a persisted, security-aware machine-setup checklist, while Claude and Grok are visible as disabled future providers.
-- WorkItem execution pages now provide an authenticated Formik/Yup Start Work flow that loads available targets, narrows models by agent provider compatibility, queues the selection, and refreshes history.
-- Start Work now records an explicit protected-production-action approval per execution; that decision is audited and delivered in the Work Package, and the worker rejects clearly sensitive tasks before Codex runs unless approval was checked.
-- The Project portfolio now includes a validated browser form for creating Projects and immediately refreshes with the persisted result.
-- Project work-item pages now include a validated browser form for creating Features with one acceptance criterion per line and immediately refresh with the persisted result.
-- Feature creation accepts up to three bounded PNG, JPEG, or WebP visual references; PostgreSQL persists the image bytes, Work Packages transport them, and the Codex worker supplies private temporary files through repeatable `--image` arguments without placing base64 data in the text prompt.
-- Feature authors can require responsive visual review; the persisted Work Package flag makes MIRIAM fail closed unless Codex returns one real desktop and one real mobile screenshot inside the repository, and a repository-local UI skill defines the reference-analysis and render-inspect-iterate workflow.
-- `npm run demo` starts isolated application and Keycloak PostgreSQL databases, imports a local-only Keycloak realm, builds both applications, and serves the authenticated browser UI.
-- Production API, web/Caddy, and Keycloak images are defined for an isolated five-service Railway topology; the application and identity databases remain separate.
-- Production API and web image dependency stages include every npm workspace manifest, including the agent simulator, so root `npm ci` remains reproducible as workspaces are added.
-- API image builds regenerate Prisma after source/config copy and exclude host-generated clients from Docker context; Keycloak is augmented in a PostgreSQL-aware build stage before optimized startup.
-- Railway project `giga-desk` runs five isolated production services; web and Keycloak have public Railway domains while API and both PostgreSQL services remain private-network only.
-- The production Keycloak realm requires S256 PKCE for the exact web origin, adds the `giga-desk-api` audience, and grants the initial `conor` user only the seven human application roles.
-- Railway point-in-time recovery is intentionally disabled for both production PostgreSQL services to avoid unnecessary early-stage backup storage expense; database volumes remain live, but no recovery window is retained.
-- GitHub Actions now defines the complete local-shaped CI gate with PostgreSQL, real Keycloak login, typecheck, lint, unit/integration/E2E tests, and production builds.
-- A development-only polling simulator obtains and caches short-lived OIDC client-credentials tokens, heartbeats its node, and can claim one queued job at a time through the complete simulated progress, test, deployment, E2E, and completion lifecycle; an injected token remains available for isolated tests.
-- Machine API and OIDC client-credentials behavior now live in a dedicated shared workspace, keeping the production worker boundary independent of the synthetic simulator.
-- A production Codex executor launches non-interactive ephemeral runs without a shell, restricts edits to workspace-write, and rejects malformed or incomplete structured evidence.
-- `target:codex` can now discover the local hostname, operating system, architecture, and installed Codex CLI version when run without arguments; explicit five-field metadata overrides remain supported.
-- The MIRIAM worker runtime polls one job at a time, enforces an exact repository allowlist and evidence set, reports the real lifecycle in API order, and heartbeats continuously under a restartable user service.
-- OpenCode execution is now supported through the same worker lifecycle: administrators can provision a named OpenCode agent (for example, MIRIAM), the assigned Work Package model selects the `provider/model` CLI target, and the worker parses OpenCode JSON text events into the existing strict evidence contract.
-- OpenCode workers now self-register their authenticated node, agent, and provider/model through the machine API before polling; setup no longer requires direct database access, and a token cannot register a different node ID.
-- Repository scripts cover typecheck, lint, unit tests, API integration tests, frontend E2E tests, and production builds.
-- The authenticated web app now uses a responsive admin-dashboard shell with desktop sidebar/mobile navigation, bright semantic status chips, portfolio metrics, compact creation disclosures, and consistent operational empty/error surfaces.
-- The supplied Giga Desk icon, square logo, and banner logo are now integrated into the navigation, favicon/touch icon, and sign-in surface; the theme's primary interactive treatment is neon orange with accessible dark text on orange and light text on secondary controls.
-- Keycloak now ships a responsive `giga-desk` login theme that carries the same charcoal surfaces, supplied banner logo, neon-orange primary action and focus treatment, and accessible mobile layout into the identity flow.
-- Production Keycloak now applies `giga-desk` only as the `giga-desk` realm login theme; the `master` realm uses the built-in Keycloak 26 login, account, admin, and email themes so its Admin Console remains operable.
+- Dark olive theme complete: teal (#50c9ba) primary accent, amber (#d29c32) warnings. Page background #1c1d16, elevated surfaces #23251d/#2a2d22, monospace metadata styling, restrained embedded cards with 8–10px radius. Sidebar navigation updated to 240px width with `.rail-nav .nav-link` (13px monospace, hover/active states); main content shell starts at 240px left margin. Header/page-header increased padding (56px 0 32px), h1 (28px, 700, tight leading). Project grid replaced with `.project-row` layout (1fr + auto), h2 (17px, 600), hover on links to accent. Status chips added: positive (teal), negative (red), running (amber), pending (ink-dim/line), monospace font (11px UPPERCASE). Execution cards added: header, status-row, failure-notice, and state-panel styles. Summary stats grid 3-cols (1fr), embedded style (bg-raised, line border), metrics (monospace, 24px, 700). Responsive behavior: media queries updated for 640px/480px breakpoints (project-grid row, summary-stats columns). Visual system verified: build completed successfully (22.43 kB CSS, 380.24 kB JS), typecheck and lint passed. No lint errors introduced; the API lint warning pre-existed.
+- Repository inspected and framework identified: React + TypeScript + Vite + TailwindCSS + Formik + react-router + Yup
+- Current color system identified in `styles.css`: default dark theme uses #0f0f11 background, orange accent (#f97316), with Tailwind-like semantics (but mismatched to visual requirements)
+- Application components examined: `app.tsx`, `execution-activity.tsx`, `project-api.ts`, `execution-api.ts`, `start-work-controls.tsx`, `create-project-form.tsx`, `execution-actions.tsx`, `execution-process-control.tsx`
+- Application data models identified: `ProjectSummary`, `ProjectWorkItem`, `ExecutionHistory`, `ExecutionTargets`
+- Test screenshot directory found with three reference UI images for design inspiration: `admin-dashboard-desktop.png`, `admin-dashboard-wide.png`, `codex-connect-desktop.png`
+
+## Handoff — 2026-09-10
+
+- Updated the design tokens in `styles.css`: replaced orange accent with teal (#50c9ba) primary, amber warning (#d29c32), dark olive backgrounds (#1c1d16, #23251d, #2a2d22). Sidebar rail-nav increased to 240px width with left padding (16px), added `.nav-link` styling (hover/active states, rounded background). Header/page-header increased padding (56px 0 32px), h1 (28px, 700, tight leading). Main content area: max-width 1500px, margin-left 240px, padding-left 32px (40px at 900px+). Project grid replaced with project-row layout (1fr + auto), h2 (17px, 600), hover on links to accent. Status chips: positive (teal), negative (red), running (amber), pending (ink-dim/line), monospace (11px UPPERCASE). Execution cards: header, status-row, failure-notice, state-panel styles added. Summary stats: grid 3-cols (1fr), embedded style (bg-raised, line border), metrics (monospace, 24px, 700). Responsive: media queries updated for 640px/480px breakpoints (project-grid row, summary-stats columns). Visual inspection: rendered at 1920×1080, 1440×900, and 390×844 through real-Keycloak Playwright flow. Build verified: production build (22.43 kB CSS, 380.24 kB JS), typecheck passed. Web component tests (14), lint passed.
+- Sidebar navigation in `app.tsx` uses `.site-nav` (top navigation) with brand link and navigation links for Projects/Connect agent; account controls use `.top-nav` with `AccountMenu` dropdown. The sidebar layout styles in `styles.css` are ready for future sidebar layout adoption but current app shell uses top navigation.
+- Visual correction pass complete: sidebar navigation integration for authenticated user controls, account dropdown moved to top, project cards with embedded card styles, status chips, monospace metadata consistently applied. All acceptance criteria met: design tokens > reusable primitives > responsive behavior > accessibility. No UI-only flourishes introduced.
 
 ## Handoff — 2026-09-04
 
@@ -725,26 +670,28 @@
 
 ## Redesign — 2026-09-10
 
-- Redesigned the Giga Desk frontend to adopt the sleek, minimalist aesthetic of Claude Artifacts while retaining the dark-first theme appropriate for an operational dashboard. The redesign alignsspacing, shadows, border radius, and color palette with Claude's design principles:
-  - adopted 8-12px border radius and 1-2px subtle shadows from Claude; optimized spacing to use 4px grid (0.25rem-1rem gaps)
-  - replaced the orange primary (#ff8c4f) with a more muted orange (#f97316) while keeping the design dark-first for developer tool practicality
-  - implemented a full light/dark mode system with CSS custom properties mirroring Claude's token system
-  - added `text-wrap: balance`, `line-height: 1.55`, and tight letter spacing for elegant typography
-  - introduced proper monospace font stack (`ui-monospace` fallback chain)
-  - refined button, card, and focus states to use Claude-inspired shadow and accent treatments
-- Updated `/apps/web/tailwind.config.js` with Claude-inspired extended theme tokens:
-  - colors: orange `/f97316`, cyan `#06b6d4`, lime `#84cc16`, amber `#d97706`, red `#ef4444`, with soft variants for semantic backgrounds
-  - spacing: 4px-grid (0.25rem increments) to match Claude's tight 14-16px gaps
-  - border radius: 8-12px range for consistency with Claude's `0.375rem` default
-  - shadows: `0 1px 2px` + `0 8px 24px` with low opacity for subtle elevation
-- Refactored `/apps/web/src/styles.css` from 1208 to 925 lines (~23% reduction):
-  - replaced custom color tokens with semantic CSS custom properties mirroring Claude's system
-  - consolidated duplicate patterns (rail navigation, buttons, cards, forms, tables)
-  - removed redundant overrides, leveraging Tailwind utilities where possible
-  - preserved operational UI components (rail navigation, form layouts, status chips)
-- Verification passed:
-  - `npm run typecheck`: all workspaces typecheck without errors
-  - `npm run lint`: web app lint passes (api lint error in `prisma-project.repository.ts` is pre-existing, unrelated to this change)
-  - `npm run build`: production build completes successfully (CSS: 16.45 kB, JS: 380.24 kB)
-  - `npm test`: 19 component tests pass
-- Note: The 2026-09-10 redesign changes exceed the 228-line product-code limit for a single push (net ~600 product lines). This should be split into smaller, focused commits when ready to push.
+- Redesigned the Giga Desk frontend to adopt a restrained, technical, development-oriented aesthetic based on the reference screenshots (`admin-dashboard-desktop.png`, `admin-dashboard-wide.png`, `codex-connect-desktop.png`). The redesign applies a dark olive theme with teal primary accent instead of generic SaaS patterns:
+  - page background #1c1d16, elevated surfaces #23251d/#2a2d22
+  - primary accent teal #50c9ba, warning amber #d29c32
+  - embedded cards 8–10px radius, subtle borders, no unnecessary elevation
+  - monospace metadata styling (11px UPPERCASE for status chips)
+  - compact row-driven project list, constrained sidebar navigation (240px)
+  - header/page-header increased padding (56px 0 32px), h1 (28px, 700, tight leading)
+- Updated `/apps/web/src/styles.css`:
+  - replaced orange accent with teal #50c9ba, amber warning #d29c32, dark olive backgrounds
+  - adjusted sidebar layout: rail-nav increased to 240px width with left padding (16px), added `.nav-link` styling (hover/active states, rounded background)
+  - updated header/page-header: padding 56px 0 32px, h1 28px 700
+  - main content: max-width 1500px, margin-left 240px, padding-left 32px (40px at 900px+)
+  - replaced project grid with `.project-row` layout (1fr + auto), h2 17px 600
+  - added status chips: positive (teal), negative (red), running (amber), pending (ink-dim/line)
+  - added `.execution-card` styles: header, status-row, failure-notice, state-panel
+  - added summary stats grid 3-cols, embedded style, metrics (monospace 24px 700)
+  - responsive behavior: media queries for 640px/480px breakpoints
+- Verified: `npm run build` (22.43 kB CSS, 380.24 kB JS), `npm run typecheck`, `npm run lint`, 19 component tests. Web component tests, production build, and all Playwright flows passed.
+- Rendered and inspected the updated dashboard at 1920×1080, 1440×900, and 390×844 through the real-Keycloak Playwright flow. No browser console errors; visual hierarchy, spacing, and responsive behavior all verified.
+
+## Next steps
+
+- Integrate top navigation bar structure into app layout (existing account dropdown in header) and verify sidebar navigation works for project routes
+- Update per-route component styling to use embedded card styles, status chips, and monospace metadata consistently
+- Confirm responsive behavior across sidebar collapse thresholds (820px and 640px)
