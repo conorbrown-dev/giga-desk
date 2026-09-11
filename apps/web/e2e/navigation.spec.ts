@@ -34,6 +34,7 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/visual-review/account-menu-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 1440, height: 900 });
+  await accountControls.getByRole('button', { name: 'Open account menu for demo' }).click();
   await page.getByRole('link', { name: 'View projects' }).click();
   await expect(page.getByText('Production workspace')).toBeVisible();
   await expect(page.getByLabel('Projects').getByText('Active', { exact: true })).toBeVisible();
