@@ -29,10 +29,10 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
     client = new Keycloak({ url, realm, clientId });
     console.log('Auth: Initializing with', { url, realm, clientId });
     await client.init({
-      onLoad: 'check-sso',
       pkceMethod: 'S256',
       checkLoginIframe: false,
       checkLoginIframeInterval: -1,
+      silentRefreshTime: 0,
     });
     console.log('Auth: Init completed, token=', !!client?.token, 'authenticated=', client?.authenticated);
     return {
