@@ -32,7 +32,6 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
       pkceMethod: 'S256',
       checkLoginIframe: false,
       checkLoginIframeInterval: -1,
-      silentRefreshTime: 0,
     });
     console.log('Auth: Init completed, token=', !!client?.token, 'authenticated=', client?.authenticated);
     return {
