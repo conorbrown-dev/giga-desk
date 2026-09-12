@@ -31,8 +31,8 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
     await client.init({
       onLoad: 'check-sso',
       pkceMethod: 'S256',
-      checkLoginIframe: true,
-      checkLoginIframeInterval: 300,
+      checkLoginIframe: false,
+      checkLoginIframeInterval: -1,
     });
     console.log('Auth: Init completed, token=', !!client?.token, 'authenticated=', client?.authenticated);
     return {
