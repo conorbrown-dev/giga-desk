@@ -26,17 +26,21 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
     return { configured: false, authenticated: false, username: null, error: null, login: noAction, logout: noAction };
   }
   try {
-    client = new Keycloak({ url, realm, clientId });
-    console.log('Auth: Creating client with', { url, realm, clientId });
-    const token = client.token;
-    console.log('Auth: Initial state - token exists:', !!token, 'authenticated:', client.authenticated);
+    const initializedClient = new Keycloak({ url, realm, clientId });
+    const authenticated = await initializedClient.init({
+      pkceMethod: 'S256',
+      checkLoginIframe: false,
+    });
+    client = initializedClient;
     return {
       configured: true,
-      authenticated: client.authenticated,
-      username: token && client.tokenParsed ? (client.tokenParsed['preferred_username'] as string) : null,
+      authenticated,
+      username: typeof initializedClient.tokenParsed?.['preferred_username'] === 'string'
+        ? initializedClient.tokenParsed['preferred_username']
+        : null,
       error: null,
-      login: async () => { await client?.login(); },
-      logout: async () => { await client?.logout({ redirectUri: window.location.origin }); },
+      login: async () => { await initializedClient.login(); },
+      logout: async () => { await initializedClient.logout({ redirectUri: window.location.origin }); },
     };
   } catch (error: unknown) {
     client = null;
