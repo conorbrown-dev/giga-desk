@@ -8,7 +8,7 @@ Giga Desk uses five isolated Railway services:
 4. `giga-desk-keycloak` from `Dockerfile.keycloak`, with its own public domain.
 5. `giga-desk-keycloak-postgres`, attached only to Keycloak.
 
-The web service proxies `/api/*` to `API_UPSTREAM` and `/auth/*` to `KEYCLOAK_UPSTREAM`, so browsers use one application origin for both API and OIDC token requests. Set `VITE_KEYCLOAK_URL` to `/auth`, `KEYCLOAK_UPSTREAM` to the public Keycloak origin, the realm to `giga-desk`, and the client to `giga-desk-web`. Set the API issuer to the public Keycloak realm URL, audience to `giga-desk-api`, and JWKS URL to Keycloak's private-network realm certificate endpoint.
+The web service proxies `/api/*` to `API_UPSTREAM` and `/auth/*` to `KEYCLOAK_UPSTREAM`, so browsers use one application origin for both API and OIDC token requests. It also forwards Keycloak's root-relative `/resources/*` assets and `/realms/*` login actions to the same upstream. Set `VITE_KEYCLOAK_URL` to `/auth`, `KEYCLOAK_UPSTREAM` to the public Keycloak origin, the realm to `giga-desk`, and the client to `giga-desk-web`. Set the API issuer to the public Keycloak realm URL, audience to `giga-desk-api`, and JWKS URL to Keycloak's private-network realm certificate endpoint.
 
 Keycloak must use PostgreSQL, HTTPS hostname metadata, forwarded proxy headers, and generated bootstrap-admin credentials. Create the production realm and public client only after both public domains exist so redirect URIs and web origins can be exact, then select `giga-desk` as the realm login theme. Do not import `keycloak/realm-local.json`: it deliberately contains local credentials and loopback origins.
 
