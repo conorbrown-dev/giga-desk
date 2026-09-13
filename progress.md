@@ -2,6 +2,7 @@
 
 ## Current state
 
+- Production Keycloak traffic is routed through the web service at `/auth/*`, with the prefix stripped before proxying to `KEYCLOAK_UPSTREAM`. Railway production uses `VITE_KEYCLOAK_URL=/auth`, keeping authorization-code and refresh-token exchanges same-origin and removing the browser's dependency on Keycloak CORS response headers. Verification is recorded in the 2026-09-13 change-log entry below.
 - Keycloak browser authentication initialization restored: the web client now awaits `Keycloak.init()` with S256 PKCE before exposing login/logout actions, preventing the production sign-in button from calling an undefined Keycloak adapter. Added focused unit coverage for initialization-before-login and authenticated username hydration. Production token-endpoint preflight currently permits both the custom GigaDesk origin and Railway web origin. Verification is recorded in the 2026-09-13 change-log entry below.
 - Web page/component extraction and project-creation route complete: `app.tsx` now contains only auth gates, the authenticated shell, and route composition. Extracted `ProjectListPage`, `ProjectWorkItemsPage`, `ExecutionDashboardPage`, and `ProjectSettingsPage` under `src/pages/`; moved shared account controls, authenticated-load behavior, and status-class selection into focused component/hook/UI modules. Project creation is now the responsive `/projects/new` page rather than a dashboard disclosure or modal; portfolio CTA and browser/component tests exercise the new route and return to the created project list. Verified 2026-09-10: web typecheck, lint, 19 component tests, production build, and 10 real-Keycloak Playwright flows passed. Rendered and inspected `project-repository-validation-desktop.png` and `project-repository-validation-mobile.png`; the latter validates the form's mobile single-column layout. The E2E run's unmocked agent-target proxy warnings remain non-fatal because its API was intentionally not started.
 - Follow-up dashboard layout correction complete: moved the Add Project disclosure from the header into a dedicated `PROJECT REGISTRY` command row, retaining it for empty portfolios; corrected System Health metric cards to use a flex column so labels and values share a consistent left baseline; and rebuilt `/agents/connect` into the same operational composition with provider-selection cards, selected-integration overview, installation command row, repository-mapping panel, and numbered readiness workflow. The Connect Agent page reflows to a two-column workspace on desktop and staged single-column workflow on mobile while preserving provider switching, installer downloads, mapping, and persisted checklist behavior. Rendered and inspected `admin-dashboard-desktop.png`, `codex-connect-desktop.png`, and `codex-connect-mobile.png`. Verification passed 2026-09-10: web typecheck, lint, 19 component tests, production build, and 10 real-Keycloak Playwright flows. The E2E run's unmocked agent-target proxy warnings remain non-fatal because the API was not started; all assertions passed.
@@ -205,6 +206,12 @@
 - Unlock the final Codex tutorial step only after that real Codex worker acceptance succeeds.
 
 ## Change log
+
+### Same-origin Keycloak proxy — 2026-09-13
+
+- Diagnosed the post-login failure from Railway HTTP logs: the browser's authorization-code token request reached Keycloak and returned HTTP 200, but the successful response omitted `Access-Control-Allow-Origin`; the browser therefore discarded the tokens.
+- Added a Caddy `/auth/*` reverse proxy that strips the prefix and forwards to the configured Keycloak origin. Production uses `/auth` as the frontend Keycloak URL, while local development can continue using its configured direct Keycloak URL.
+- Verification passed before deployment: web typecheck, lint, 21 unit/component tests, production build, and clean diff validation. The production `/auth` proxy and complete login flow still require post-deployment verification.
 
 ### Keycloak adapter initialization — 2026-09-13
 
