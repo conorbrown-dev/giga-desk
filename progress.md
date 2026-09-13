@@ -211,7 +211,7 @@
 
 - Diagnosed the post-login failure from Railway HTTP logs: the browser's authorization-code token request reached Keycloak and returned HTTP 200, but the successful response omitted `Access-Control-Allow-Origin`; the browser therefore discarded the tokens.
 - Added a Caddy `/auth/*` reverse proxy that strips the prefix and forwards to the configured Keycloak origin. Production uses `/auth` as the frontend Keycloak URL, while local development can continue using its configured direct Keycloak URL.
-- Verification passed before deployment: web typecheck, lint, 21 unit/component tests, production build, and clean diff validation. The production `/auth` proxy and complete login flow still require post-deployment verification.
+- Verification passed before deployment: web typecheck, lint, 21 unit/component tests, production build, and clean diff validation. The first production probe found Railway host-based routing sent proxied requests back to the web service because Caddy preserved the browser Host header; the proxy now explicitly supplies the Keycloak service host. Final production proxy and login-flow verification remain pending.
 
 ### Keycloak adapter initialization — 2026-09-13
 

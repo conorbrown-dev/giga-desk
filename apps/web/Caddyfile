@@ -8,7 +8,9 @@
   }
 
   handle_path /auth/* {
-    reverse_proxy {$KEYCLOAK_UPSTREAM}
+    reverse_proxy {$KEYCLOAK_UPSTREAM} {
+      header_up Host giga-desk-keycloak-production.up.railway.app
+    }
   }
 
   handle {
