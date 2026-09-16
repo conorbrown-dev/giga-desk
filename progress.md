@@ -3,7 +3,8 @@
 ## 2026-09-16 — Allow legacy project archive
 
 - Diagnosed the live archive 500 from Railway logs: PostgreSQL constraint `Project_default_branch_required_check` rejected legacy projects that lack repository configuration when their status was changed to `Archived`.
-- Added migration `20260916234500_allow_legacy_project_archive`, which retains repository URL/default-branch requirements for active projects while allowing incomplete legacy projects to be archived. API unit tests (48), API typecheck, API build, Prisma schema validation, and `git diff --check` passed. Production application remains authorized and pending.
+- Added migration `20260916234500_allow_legacy_project_archive`, which retains repository URL/default-branch requirements for active projects while allowing incomplete legacy projects to be archived. API unit tests (48), API typecheck, API build, Prisma schema validation, and `git diff --check` passed.
+- Released commit `d379c63` to Railway production. Applied and read back the migration through the production service (`12 migrations`, schema up to date); deployment `263df78c-3dc8-463e-9739-03d2353fa98a` is online and `GET /api/health` returned `{ "status": "ok" }`. The live authenticated archive action itself was not replayed to avoid archiving another project.
 
 ## 2026-09-16 — Project archive reliability and settings page
 
