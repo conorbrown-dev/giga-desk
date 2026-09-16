@@ -1,7 +1,0 @@
-{
-  "realm": "giga-desk",
-  "sslRequired": "none",
-  "tokenService": "https://giga-desk-keycloak-production.up.railway.app/realms/giga-desk/protocol/openid-connect",
-  "accountService": "https://giga-desk-keycloak-production.up.railway.app/realms/giga-desk/account",
-  "tokensNotBefore": 0
-}

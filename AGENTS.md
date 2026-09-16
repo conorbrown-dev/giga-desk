@@ -223,6 +223,42 @@ Maintain existing repository conventions for:
 
 Visual improvements must not degrade architecture or maintainability.
 
+## Debugging / Investigation Rules
+
+When diagnosing an issue:
+
+1. Do not repeatedly propose a hypothesis the user has already tested and falsified.
+2. Treat explicit user statements about completed tests as facts unless repository
+   evidence contradicts them.
+3. Before suggesting configuration changes, inspect the existing configuration.
+4. Prefer evidence gathering over speculation:
+   - inspect source
+   - inspect Dockerfile
+   - inspect Railway configuration available through CLI
+   - inspect build scripts
+   - inspect generated artifacts when applicable
+   - inspect network/runtime behavior
+5. After a hypothesis is falsified, explicitly remove it from consideration and
+   investigate a different failure mode.
+6. Do not recommend creating a local `.env` file to solve production Railway
+   configuration unless evidence shows the application actually requires one.
+7. Do not say "redeploy" if a deployment has already occurred after the relevant
+   variable/configuration change.
+8. For Vite environment-variable issues, determine whether the variable is required:
+   - during Vite compilation/build
+   - at server/container runtime
+   - or both
+   before suggesting a fix.
+9. Do not make configuration changes until the current configuration and build
+   pipeline have been inspected.
+10. When stuck after two failed hypotheses, stop changing things and produce an
+    evidence table:
+    - Known
+    - Tested
+    - Ruled out
+    - Unknown
+    - Next diagnostic
+
 ### Frontend Validation
 
 For any meaningful change to a rendered frontend surface, use the Build Web Apps `frontend-testing-debugging` workflow when available.

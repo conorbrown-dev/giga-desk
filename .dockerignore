@@ -1,9 +1,0 @@
-.git
-.env*
-node_modules
-**/dist
-**/node_modules
-apps/api/src/generated
-**/playwright-report
-**/test-results
-*.log
