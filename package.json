@@ -16,7 +16,6 @@
     "test:integration": "npm run test:integration -w @giga-desk/api && npm run test:integration -w @giga-desk/agent-client && npm run test:integration -w @giga-desk/codex-worker",
     "test:e2e": "npm run test:e2e -w @giga-desk/web",
     "verify:demo": "node scripts/verify-demo.mjs",
-    "demo": "docker compose up -d postgres keycloak-postgres keycloak && npm run build && node scripts/demo.mjs",
     "agent:simulate": "npm run start -w @giga-desk/agent-simulator"
   },
   "devDependencies": {

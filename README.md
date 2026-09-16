@@ -35,16 +35,6 @@ progress.md
 - Unit/component and E2E tests for every frontend product-code change.
 - Update `progress.md` for every change and reconcile it with the codebase before starting.
 
-## Local showcase
-
-With Docker running, launch the database, API, and web demo with:
-
-```bash
-npm run demo
-```
-
-Open `http://127.0.0.1:5173` and sign in with the local-only account `demo` / `giga-desk-demo`. The launcher starts an isolated Keycloak realm and database, so the browser uses authorization code flow with PKCE and the API verifies a real Keycloak access token. These development credentials must not be used in production.
-
 ## Polling agent simulator
 
 The development-only simulator consumes the machine API without importing API implementation code. Register an execution node, queue work for it, and provide a node-scoped OIDC client. Its access token must contain the `agent:jobs` realm role, the API audience, and an `execution_node_id` claim matching the registered node:

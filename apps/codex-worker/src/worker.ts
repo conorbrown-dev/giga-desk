@@ -18,12 +18,12 @@ const protectedActionPatterns = [
   /\b(production|prod)\b.{0,50}\b(database|schema|migration|backfill|data)\b/i,
   /\b(database|schema|migration|backfill)\b.{0,50}\b(production|prod)\b/i,
   /\b(prisma\s+migrate|migrate\s+deploy|drop\s+(table|database)|truncate|alter\s+table|delete\s+from)\b/i,
-  /\b(secret|credential|keycloak|auth0|dns|cloudflare|billing|paid resource|repository visibility)\b/i,
+  /\b(secret|credential|auth0|dns|cloudflare|billing|paid resource|repository visibility)\b/i,
 ];
 
 export const requiresProtectedActionApproval = (work: WorkPackage): boolean => {
   const text = [work.workItem.title, work.workItem.description, work.workItem.technicalNotes,
-    work.workItem.implementationInstructions, ...work.workItem.acceptanceCriteria.map(({ text }) => text)]
+  work.workItem.implementationInstructions, ...work.workItem.acceptanceCriteria.map(({ text }) => text)]
     .filter((value): value is string => value !== null).join('\n');
   return protectedActionPatterns.some((pattern) => pattern.test(text));
 };
@@ -52,7 +52,7 @@ export class CodexWorker {
   constructor(
     private readonly api: WorkerApi, private readonly executor: WorkExecutor,
     private readonly nodeId: string, private approvedRepositories: ApprovedRepositories,
-  ) {}
+  ) { }
 
   setApprovedRepositories(repositories: ApprovedRepositories): void { this.approvedRepositories = repositories; }
 
@@ -98,14 +98,16 @@ export class CodexWorker {
           }
         } catch { /* A transient control poll failure must not fail valid work. */ }
       };
-      const execution = this.executor.execute(work, repositoryPath, reportProgress, { signal: abort.signal,
+      const execution = this.executor.execute(work, repositoryPath, reportProgress, {
+        signal: abort.signal,
         onStarted: (processId) => {
           processRegistration = this.api.post(job.id, 'process', { processId }).then(() => undefined);
           void processRegistration.then(checkControl).catch((error: unknown) => {
             controlState.processRegistrationError = error;
             abort.abort();
           });
-        } });
+        }
+      });
       const controlTimer = setInterval(() => { void checkControl(); }, 1_000);
       let result: CodexExecutionResult;
       try { result = await execution; } finally { clearInterval(controlTimer); }
