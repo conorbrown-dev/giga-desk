@@ -1,31 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const keycloakClient = vi.hoisted(() => ({
-  init: vi.fn(),
-  login: vi.fn(),
+const auth0Client = vi.hoisted(() => ({
+  isAuthenticated: vi.fn(),
+  loginWithPopup: vi.fn(),
   logout: vi.fn(),
-  updateToken: vi.fn(),
-  authenticated: false,
-  token: undefined as string | undefined,
-  tokenParsed: undefined as Record<string, unknown> | undefined,
+  getTokenSilently: vi.fn(),
+  getUser: vi.fn(),
 }));
-const Keycloak = vi.hoisted(() => vi.fn(function KeycloakMock() { return keycloakClient; }));
+const auth0Create = vi.hoisted(() => vi.fn(() => Promise.resolve(auth0Client)));
 
-vi.mock('keycloak-js', () => ({ default: Keycloak }));
+vi.mock('@auth0/auth0-spa-js', () => ({ createAuth0Client: auth0Create }));
 
 import { initializeAuthentication } from './auth-token.js';
 
 describe('initializeAuthentication', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_KEYCLOAK_URL', 'https://keycloak.example.com');
-    vi.stubEnv('VITE_KEYCLOAK_REALM', 'giga-desk');
-    vi.stubEnv('VITE_KEYCLOAK_CLIENT_ID', 'giga-desk-web');
-    keycloakClient.init.mockResolvedValue(false);
-    keycloakClient.login.mockResolvedValue(undefined);
-    keycloakClient.logout.mockResolvedValue(undefined);
-    keycloakClient.authenticated = false;
-    keycloakClient.token = undefined;
-    keycloakClient.tokenParsed = undefined;
+    vi.stubEnv('VITE_AUTH0_DOMAIN', 'https://auth0.example.com');
+    vi.stubEnv('VITE_AUTH0_CLIENT_ID', 'giga-desk-web');
+    auth0Client.isAuthenticated.mockResolvedValue(false);
+    auth0Client.loginWithPopup.mockResolvedValue(undefined);
+    auth0Client.logout.mockResolvedValue(undefined);
+    auth0Client.getTokenSilently.mockResolvedValue('');
+    auth0Client.getUser.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -33,23 +29,19 @@ describe('initializeAuthentication', () => {
     vi.unstubAllEnvs();
   });
 
-  it('initializes the Keycloak adapter before exposing sign in', async () => {
+  it('initializes the Auth0 adapter before exposing sign in', async () => {
     const authentication = await initializeAuthentication();
 
-    expect(keycloakClient.init).toHaveBeenCalledWith({
-      pkceMethod: 'S256',
-      checkLoginIframe: false,
-    });
+    expect(auth0Create).toHaveBeenCalled();
 
     await authentication.login();
 
-    expect(keycloakClient.login).toHaveBeenCalledOnce();
+    expect(auth0Client.loginWithPopup).toHaveBeenCalledOnce();
   });
 
   it('returns the authenticated user parsed during initialization', async () => {
-    keycloakClient.init.mockResolvedValue(true);
-    keycloakClient.authenticated = true;
-    keycloakClient.tokenParsed = { preferred_username: 'conor' };
+    auth0Client.isAuthenticated.mockResolvedValue(true);
+    auth0Client.getUser.mockResolvedValue({ preferred_username: 'conor' });
 
     const authentication = await initializeAuthentication();
 

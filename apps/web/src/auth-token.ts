@@ -1,4 +1,4 @@
-import Keycloak from 'keycloak-js';
+import { createAuth0Client, Auth0Client } from '@auth0/auth0-spa-js';
 
 export interface AuthenticationState {
   configured: boolean;
@@ -9,7 +9,7 @@ export interface AuthenticationState {
   logout: () => Promise<void>;
 }
 
-let client: Keycloak | null = null;
+let client: Auth0Client | null = null;
 
 const setting = (name: string): string => {
   const value: unknown = (import.meta.env as Record<string, unknown>)[name];
@@ -18,29 +18,26 @@ const setting = (name: string): string => {
 const noAction = async (): Promise<void> => {};
 
 export async function initializeAuthentication(): Promise<AuthenticationState> {
-  const url = setting('VITE_KEYCLOAK_URL');
-  const realm = setting('VITE_KEYCLOAK_REALM');
-  const clientId = setting('VITE_KEYCLOAK_CLIENT_ID');
-  if (!url || !realm || !clientId) {
-    console.warn('Authentication not configured (missing:', { url: !!url, realm: !!realm, clientId: !!clientId });
+  const domain = setting('VITE_AUTH0_DOMAIN');
+  const clientId = setting('VITE_AUTH0_CLIENT_ID');
+  if (!domain || !clientId) {
+    console.warn('Authentication not configured (missing:', { domain: !!domain, clientId: !!clientId });
     return { configured: false, authenticated: false, username: null, error: null, login: noAction, logout: noAction };
   }
   try {
-    const initializedClient = new Keycloak({ url, realm, clientId });
-    const authenticated = await initializedClient.init({
-      pkceMethod: 'S256',
-      checkLoginIframe: false,
+    client = await createAuth0Client({
+      domain,
+      clientId,
     });
-    client = initializedClient;
+    const authenticated = await client.isAuthenticated();
+    const user = await client.getUser();
     return {
       configured: true,
       authenticated,
-      username: typeof initializedClient.tokenParsed?.['preferred_username'] === 'string'
-        ? initializedClient.tokenParsed['preferred_username']
-        : null,
+      username: user?.preferred_username ?? null,
       error: null,
-      login: async () => { await initializedClient.login(); },
-      logout: async () => { await initializedClient.logout({ redirectUri: window.location.origin }); },
+      login: async () => { if (client) await client.loginWithPopup(); },
+      logout: async () => { if (client) await client.logout({ logoutParams: { returnTo: window.location.origin } }); },
     };
   } catch (error: unknown) {
     client = null;
@@ -53,7 +50,10 @@ export async function initializeAuthentication(): Promise<AuthenticationState> {
 
 export async function getAuthToken(): Promise<string> {
   if (import.meta.env.MODE === 'test') return localStorage.getItem('giga-desk-token') ?? '';
-  if (!client?.authenticated) return '';
-  await client.updateToken(30);
-  return client.token ?? '';
+  if (!client) return '';
+  try {
+    return await client.getTokenSilently() ?? '';
+  } catch {
+    return '';
+  }
 }

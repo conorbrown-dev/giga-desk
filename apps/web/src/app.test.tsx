@@ -6,7 +6,7 @@ import type { AuthenticationState } from './auth-token.js';
 
 describe('App', () => {
   afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); });
-  it('offers Keycloak sign in before protected routes render', () => {
+  it('offers Auth0 sign in before protected routes render', () => {
     const login = vi.fn().mockResolvedValue(undefined);
     const authentication: AuthenticationState = { configured: true, authenticated: false, username: null, error: null, login, logout: vi.fn() };
     render(<MemoryRouter><App authentication={authentication} /></MemoryRouter>);

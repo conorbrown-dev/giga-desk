@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "formik": "^2.4.9",
-    "keycloak-js": "^26.2.4",
+    "@auth0/auth0-react": "^2.2.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.3",

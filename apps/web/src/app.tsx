@@ -27,7 +27,7 @@ function AuthenticatedShell({ authentication }: { authentication: Authentication
 
 export function App({ authentication = testAuthentication }: { authentication?: AuthenticationState }) {
   if (authentication.error) return <main className="auth-page"><h1>Giga Desk</h1><p role="alert">{authentication.error}</p></main>;
-  if (!authentication.configured) return <main className="auth-page"><h1>Giga Desk</h1><p role="alert">Keycloak is not configured.</p></main>;
+  if (!authentication.configured) return <main className="auth-page"><h1>Giga Desk</h1><p role="alert">Auth0 is not configured.</p></main>;
   if (!authentication.authenticated) return <main className="auth-page"><div className="auth-card"><img className="auth-banner" src="/images/giga-desk-banner-logo.png" alt="Giga Desk" /><p className="eyebrow">Praxis Project Orchestrator</p><h1>Turn plans into shipped work.</h1><p>One command center for projects, agents, and delivery evidence.</p><button className="button" type="button" onClick={() => { void authentication.login(); }}>Sign in</button></div></main>;
   return <AuthenticatedShell authentication={authentication} />;
 }

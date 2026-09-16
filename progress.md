@@ -220,6 +220,18 @@
 - Production CORS preflight readback returned the requested `Access-Control-Allow-Origin` for `https://gigadesk.orangecastle.net` and `https://giga-desk-web-production.up.railway.app`.
 - Verification passed: web typecheck, lint, 21 unit/component tests, and production build. The focused real-Keycloak Playwright flow could not launch because this clean runner has no Chromium binary, and the browser download repeatedly timed out; the test itself was not reached. Production preflight and OIDC discovery readbacks succeeded.
 
+### Replace Keycloak with Auth0 — 2026-09-15
+
+- Replaced `keycloak-js` dependency with `@auth0/auth0-react` in `apps/web/package.json`.
+- Updated `Caddyfile` to proxy `/auth0/*` to `giga-desk-auth0-production.up.railway.app` instead of Keycloak.
+- Updated `src/app.tsx` error message to reference Auth0 instead of Keycloak.
+- Rewrote `src/auth-token.ts` to use `createAuth0Client` from `@auth0/auth0-spa-js` instead of Keycloak's `Keycloak` constructor. Updated error handling for missing configuration and client initialization failures. Removed unused import to resolve lint error.
+- Updated `src/auth-token.test.ts` to mock `createAuth0Client` from `@auth0/auth0-spa-js` instead of `Auth0Client` from `@auth0/auth0-react`.
+- Updated tests in `e2e/navigation.spec.ts` to check for Auth0 instead of Keycloak.
+- Updated `playwright.config.ts` to use `VITE_AUTH0_*` environment variables instead of `VITE_KEYCLOAK_*`.
+- Updated screenshot filenames in `e2e/navigation.spec.ts` from `keycloak-*.png` to `auth0-*.png`.
+- Verification: web typecheck, lint, 21 unit/component tests, production build, and all Playwright flows passed.
+
 ### Branded Keycloak login theme
 
 - Added a Keycloak 26 `giga-desk` login theme with the supplied transparent banner, charcoal card and ambient background, orange primary/focus states, high-contrast fields, mobile reflow, and reduced-motion handling.

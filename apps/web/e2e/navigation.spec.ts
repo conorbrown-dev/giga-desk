@@ -50,7 +50,7 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   await expect(page.getByText('No execution attempts yet.')).toBeVisible();
 });
 
-test('requires Keycloak authentication for project access', async ({ page }) => {
+test('requires Auth0 authentication for project access', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/projects');
   await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
@@ -85,7 +85,7 @@ test('archives a project only after its exact name is confirmed', async ({ page 
   await expect(page).toHaveURL(/\/projects$/);
 });
 
-test('uses the responsive Giga Desk theme for Keycloak sign in', async ({ page }) => {
+test('uses the responsive Giga Desk theme for Auth0 sign in', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/projects');
   await page.getByRole('button', { name: 'Sign in' }).click();
@@ -93,9 +93,9 @@ test('uses the responsive Giga Desk theme for Keycloak sign in', async ({ page }
   await expect(page).toHaveTitle('Sign in to Giga Desk');
   await expect(page.locator('link[href*="/login/giga-desk/css/login.css"]')).toBeAttached();
   await expect(page.getByRole('heading', { name: 'Sign in to your account' })).toBeVisible();
-  await page.screenshot({ path: 'test-results/visual-review/keycloak-login-desktop.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/visual-review/auth0-login-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: 'test-results/visual-review/keycloak-login-mobile.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/visual-review/auth0-login-mobile.png', fullPage: true });
 });
 
 test('walks through Codex agent setup in the authenticated app', async ({ page }) => {

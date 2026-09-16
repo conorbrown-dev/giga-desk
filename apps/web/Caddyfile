@@ -7,21 +7,9 @@
     reverse_proxy {$API_UPSTREAM}
   }
 
-  handle_path /auth/* {
-    reverse_proxy {$KEYCLOAK_UPSTREAM} {
-      header_up Host giga-desk-keycloak-production.up.railway.app
-    }
-  }
-
-  handle /resources/* {
-    reverse_proxy {$KEYCLOAK_UPSTREAM} {
-      header_up Host giga-desk-keycloak-production.up.railway.app
-    }
-  }
-
-  handle /realms/* {
-    reverse_proxy {$KEYCLOAK_UPSTREAM} {
-      header_up Host giga-desk-keycloak-production.up.railway.app
+  handle /auth/* {
+    reverse_proxy {$AUTH0_UPSTREAM} {
+      header_up Host giga-desk-auth0-production.up.railway.app
     }
   }
 
