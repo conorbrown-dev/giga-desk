@@ -1,0 +1,11 @@
+[build]
+builder = "RAILPACK"
+buildCommand = "npm run build"
+
+[deploy]
+startCommand = "node /app/apps/api/dist/main.js"
+healthCheckPath = "/api/health"
+port = 3000
+
+[env]
+PORT = "3000"
