@@ -1,0 +1,67 @@
+* {
+  baseref: node:22-alpine
+}
+
+* npm {
+  install: {}
+  build: "npm run build"
+}
+
+* copy {
+  from: "."
+  to: "/app"
+  include: [
+    "package.json",
+    "package-lock.json",
+    "apps/**/package.json",
+    "apps/api/prisma.config.ts",
+    "apps/api/prisma",
+    "apps/web/dist",
+    "dist",
+  ]
+}
+
+* npm {
+  install: { production: true }
+}
+
+* copy {
+  from: "/app/apps/api/dist"
+  to: "/app"
+}
+
+* copy {
+  from: "/app/apps/api/prisma"
+  to: "/app/apps/api/prisma"
+}
+
+* copy {
+  from: "/app/apps/web/dist"
+  to: "/app/apps/web/dist"
+}
+
+* copy {
+  from: "/app/apps/api/package.json"
+  to: "/app/apps/api/package.json"
+}
+
+* copy {
+  from: "/app/apps/api/node_modules"
+  to: "/app/apps/api/node_modules"
+}
+
+* copy {
+  from: "/app/node_modules"
+  to: "/app/node_modules"
+}
+
+* npm {
+  install: { cwd: "/app/apps/api" }
+}
+
+* run {
+  command: "npm run prisma:generate"
+  cwd: "/app/apps/api"
+}
+
+run: "node /app/apps/api/dist/main.js"
