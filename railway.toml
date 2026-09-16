@@ -1,5 +1,5 @@
 [build]
-builder = "npm"
+builder = "RAILPACK"
 buildCommand = "npm run build"
 
 [deploy]
