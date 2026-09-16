@@ -1,9 +1,8 @@
 [build]
-builder = "npm"
-buildCommand = "npm run build"
+builder = "RAILPACK"
 
 [deploy]
-startCommand = "node dist/main.js"
+# startCommand is defined in railpack.toml
 healthCheckPath = "/api/health"
 port = 3000
 
