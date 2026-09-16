@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-09-16 — Neutral control-center shell alignment
+
+- Replaced the olive-tinted shell colors with a neutral near-black canvas, graphite raised surfaces, and neutral borders inspired by Railway and Expo’s dark product surfaces. Kept teal as a semantic accent rather than a background color.
+- Corrected the desktop sidebar’s inherited `space-between` layout so navigation groups begin at the top and flow directly downward. Centered the top-bar account control by removing a stale layout offset and making its control occupy the header height.
+- Passed web unit tests (22), web typecheck, web lint, production build, and the targeted Playwright archive flow. Inspected the real local shell at 1440px and 390px plus refreshed archive desktop/mobile screenshots. A prior full navigation-suite attempt remains blocked by two pre-existing Auth0 test-fixture mismatches (expected `demo`/a populated bearer token, current test mode provides `test-user`/an empty token); the initial targeted command also omitted npm's argument separator and did not load Playwright's base URL. Neither failure is caused by the shell styles.
+
 ## 2026-09-16 — Allow legacy project archive
 
 - Diagnosed the live archive 500 from Railway logs: PostgreSQL constraint `Project_default_branch_required_check` rejected legacy projects that lack repository configuration when their status was changed to `Archived`.
