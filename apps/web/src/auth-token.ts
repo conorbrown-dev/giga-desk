@@ -15,7 +15,7 @@ const setting = (name: string): string => {
   const value: unknown = (import.meta.env as Record<string, unknown>)[name];
   return typeof value === 'string' ? value.trim() : '';
 };
-const noAction = async (): Promise<void> => {};
+const noAction = async (): Promise<void> => { };
 
 export async function initializeAuthentication(): Promise<AuthenticationState> {
   const domain = setting('VITE_AUTH0_DOMAIN');
@@ -57,3 +57,4 @@ export async function getAuthToken(): Promise<string> {
     return '';
   }
 }
+
