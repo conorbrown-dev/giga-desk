@@ -1,51 +1,32 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { auth0AuthorizationParameters, auth0Settings, getAuthToken, setAccessTokenGetter } from './auth-token.js';
 
-const auth0Client = vi.hoisted(() => ({
-  isAuthenticated: vi.fn(),
-  loginWithPopup: vi.fn(),
-  logout: vi.fn(),
-  getTokenSilently: vi.fn(),
-  getUser: vi.fn(),
-}));
-const auth0Create = vi.hoisted(() => vi.fn(() => Promise.resolve(auth0Client)));
-
-vi.mock('@auth0/auth0-spa-js', () => ({ createAuth0Client: auth0Create }));
-
-import { initializeAuthentication } from './auth-token.js';
-
-describe('initializeAuthentication', () => {
+describe('Auth0 settings', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_AUTH0_DOMAIN', 'https://auth0.example.com');
     vi.stubEnv('VITE_AUTH0_CLIENT_ID', 'giga-desk-web');
-    auth0Client.isAuthenticated.mockResolvedValue(false);
-    auth0Client.loginWithPopup.mockResolvedValue(undefined);
-    auth0Client.logout.mockResolvedValue(undefined);
-    auth0Client.getTokenSilently.mockResolvedValue('');
-    auth0Client.getUser.mockResolvedValue(null);
+    vi.stubEnv('VITE_AUTH0_AUDIENCE', 'https://api.example.com');
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
     vi.unstubAllEnvs();
   });
 
-  it('initializes the Auth0 adapter before exposing sign in', async () => {
-    const authentication = await initializeAuthentication();
-
-    expect(auth0Create).toHaveBeenCalled();
-
-    await authentication.login();
-
-    expect(auth0Client.loginWithPopup).toHaveBeenCalledOnce();
+  it('requires and normalizes the Auth0 SPA settings', () => {
+    const settings = auth0Settings();
+    expect(settings).toEqual({ domain: 'auth0.example.com', clientId: 'giga-desk-web', audience: 'https://api.example.com' });
+    if (!settings) throw new Error('Expected Auth0 settings');
+    expect(auth0AuthorizationParameters(settings, 'https://giga.example.com')).toEqual({
+      audience: 'https://api.example.com', redirect_uri: 'https://giga.example.com',
+    });
+    vi.stubEnv('VITE_AUTH0_AUDIENCE', '');
+    expect(auth0Settings()).toBeNull();
   });
 
-  it('returns the authenticated user parsed during initialization', async () => {
-    auth0Client.isAuthenticated.mockResolvedValue(true);
-    auth0Client.getUser.mockResolvedValue({ preferred_username: 'conor' });
-
-    const authentication = await initializeAuthentication();
-
-    expect(authentication.authenticated).toBe(true);
-    expect(authentication.username).toBe('conor');
+  it('uses the Auth0 provider access token outside React components', async () => {
+    const reset = setAccessTokenGetter(() => Promise.resolve('auth0-access-token'));
+    await expect(getAuthToken()).resolves.toBe('auth0-access-token');
+    reset();
+    await expect(getAuthToken()).resolves.toBe('');
   });
 });
