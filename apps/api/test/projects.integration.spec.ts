@@ -62,6 +62,15 @@ describe('projects API', () => {
     });
     expect(stored.activities).toHaveLength(1);
     expect(stored.activities[0]?.actorId).toBe('user-123');
+    await request(server).post(`/api/projects/${stored.id}/archive`)
+      .set('Authorization', 'Bearer valid-token').send({ projectName: 'wrong name' }).expect(400, {
+        message: 'Enter the active project name exactly to archive it.', error: 'Bad Request', statusCode: 400,
+      });
+    await request(server).post(`/api/projects/${stored.id}/archive`)
+      .set('Authorization', 'Bearer valid-token').send({ projectName: projectInput.name }).expect(201);
+    await expect(database.project.findUniqueOrThrow({ where: { id: stored.id } })).resolves.toMatchObject({ archived: true, status: 'Archived' });
+    await expect(database.activity.findFirstOrThrow({ where: { projectId: stored.id, eventType: 'ProjectArchived' } }))
+      .resolves.toMatchObject({ actorId: 'user-123', metadata: { name: projectInput.name } });
     await request(server).get('/api/projects').expect(401);
     const listResponse = await request(server).get('/api/projects')
       .set('Authorization', 'Bearer read-only-token').expect(200);

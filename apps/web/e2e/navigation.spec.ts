@@ -65,16 +65,16 @@ test('archives a project only after its exact name is confirmed', async ({ page 
     await route.fulfill({ status: 201, json: {} });
   });
   await signIn(page, `/projects/${projectId}/settings`);
-  const confirmation = page.getByLabel(/Type Giga Desk to confirm archive/);
-  await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeDisabled();
+  const confirmation = page.getByLabel(/Confirmation name/);
+  await expect(page.getByRole('button', { name: 'Archive project' })).toBeDisabled();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({ path: 'test-results/visual-review/project-archive-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/visual-review/project-archive-mobile.png', fullPage: true });
   await confirmation.fill('Giga desk');
-  await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Archive project' })).toBeDisabled();
   await confirmation.fill('Giga Desk');
-  await page.getByRole('button', { name: 'Confirm archive' }).click();
+  await page.getByRole('button', { name: 'Archive project' }).click();
   await expect(page).toHaveURL(/\/projects$/);
 });
 

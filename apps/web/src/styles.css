@@ -865,7 +865,13 @@ footer a {
 .button-danger {
   background: var(--red);
   border: 1px solid var(--red);
+  border-radius: 6px;
   color: var(--bg-raised);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 13px;
 }
 
 .button-danger:hover {
@@ -874,9 +880,11 @@ footer a {
 }
 
 .button-danger:disabled {
-  opacity: 0.5;
+  background: #6b3a36;
+  border-color: #8f504a;
+  color: #d7bbb6;
   cursor: not-allowed;
-  transform: none;
+  opacity: 1;
 }
 
 .form-grid {
@@ -1409,44 +1417,40 @@ button.provider-card { cursor: pointer; font: inherit; }
   margin-bottom: 16px;
 }
 
-.danger-panel {
-  background: var(--red-soft);
-  border: 1px solid var(--red);
-  border-radius: 12px;
-  padding: 24px 26px;
-  margin-top: 24px;
-}
-
-.danger-panel h2 {
-  font-size: 17px;
-  font-weight: 600;
-  margin: 0 0 8px;
-  color: var(--red);
-}
-
-.danger-panel p {
-  color: var(--ink-dim);
-  font-size: 14px;
-  margin: 0 0 20px;
-}
+.project-settings-header { border-bottom: 0; }
+.settings-context { color: var(--ink-dim); font: 10px/1.4 ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
+.settings-section { border-top: 1px solid var(--line); padding: 28px 0 0; }
+.archive-panel { background: var(--bg-raised); border: 1px solid rgba(180, 190, 160, .15); border-left: 3px solid var(--red); border-radius: 8px; padding: 20px; }
+.archive-copy { align-items: flex-start; display: flex; gap: 13px; max-width: 68ch; }
+.archive-marker { align-items: center; background: var(--red-soft); border: 1px solid rgba(239, 68, 68, .55); border-radius: 3px; color: var(--red); display: inline-flex; flex: 0 0 auto; font: 700 14px/1 ui-monospace, monospace; height: 24px; justify-content: center; margin-top: 1px; width: 24px; }
+.archive-copy h3 { color: var(--ink); font-size: 14px; margin: 0 0 4px; }
+.archive-copy p { color: var(--ink-dim); font-size: 13px; margin: 0; }
 
 .archive-form {
+  border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   gap: 16px;
+  margin-top: 20px;
+  max-width: 480px;
+  padding-top: 20px;
 }
 
-.archive-form label {
+.archive-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.archive-form label span {
+.archive-field label {
   font-family: ui-monospace, monospace;
-  font-size: 12.5px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
   color: var(--ink-dim);
 }
+
+.archive-form .archive-instruction { color: var(--ink-dim); font-size: 12px; letter-spacing: 0; text-transform: none; }
 
 .archive-form label strong {
   color: var(--ink);
@@ -1461,7 +1465,7 @@ button.provider-card { cursor: pointer; font: inherit; }
 .archive-form input {
   background: var(--bg-elevated);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   padding: 10px 12px;
   color: var(--ink);
   font-family: ui-monospace, monospace;
@@ -1480,6 +1484,16 @@ button.provider-card { cursor: pointer; font: inherit; }
 
 .archive-form p[role="alert"] {
   margin: 0;
+}
+
+.archive-form small { color: var(--ink-dim); font-size: 11px; }
+.archive-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; }
+.archive-actions [role="alert"] { flex-basis: 100%; }
+
+@media (max-width: 560px) {
+  .settings-context { display: none; }
+  .archive-panel { padding: 16px; }
+  .archive-form, .archive-form button { width: 100%; }
 }
 
 .site-header {

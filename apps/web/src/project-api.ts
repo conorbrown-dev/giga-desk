@@ -61,5 +61,10 @@ export async function createFeature(projectId: string, input: CreateFeatureInput
 export async function archiveProject(projectId: string, projectName: string): Promise<void> {
   const token = await getAuthToken();
   const response = await fetch(`/api/projects/${projectId}/archive`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ projectName }) });
-  if (!response.ok) throw new Error('Unable to archive this project. Check the confirmation name and try again.');
+  if (!response.ok) throw new Error(
+    response.status === 401 || response.status === 403 ? 'You do not have permission to archive projects.'
+      : response.status === 400 ? 'Enter the active project name exactly to archive it.'
+        : response.status === 404 ? 'This project is no longer available.'
+          : 'Unable to archive this project. Try again shortly.',
+  );
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../shared/infrastructure/prisma.service.js';
 import { ProjectKeyConflictError, ProjectRepository } from '../application/project-repository.js';
+import { ProjectArchiveConfirmationError } from '../application/project-archive.error.js';
 import type { Project } from '../domain/project.js';
 
 @Injectable()
@@ -32,6 +33,9 @@ export class PrismaProjectRepository extends ProjectRepository {
     const result = await this.database.project.updateMany({ where: { id: projectId, archived: false, name: projectName }, data: {
       archived: true, status: 'Archived',
     } });
-    if (result.count !== 1) throw new Error('Project was not found or the confirmation name does not match.');
+    if (result.count !== 1) throw new ProjectArchiveConfirmationError();
+    await this.database.activity.create({ data: {
+      projectId, actorId, eventType: 'ProjectArchived', metadata: { name: projectName },
+    } });
   }
 }

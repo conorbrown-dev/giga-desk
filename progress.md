@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-09-16 — Project archive reliability and settings page
+
+- Archive confirmation failures now return a deliberate HTTP 400 response instead of an unhandled server error, and the web client distinguishes confirmation, permission, unavailable-project, and transient failures rather than labeling every failure as a name mismatch.
+- Archived projects record a `ProjectArchived` activity attributed to the requesting identity. Added focused handler coverage and extended the project API integration scenario for rejected and successful archive requests.
+- Rebuilt the project settings route as a responsive control-center lifecycle section, with an explicit confirmation field, case-sensitivity help, and a restrained danger treatment aligned with the active workspace UI.
+- Passed web unit tests (22), API unit tests (48), both web/API typechecks, web lint, and both production builds. Ran the mocked Playwright archive route and inspected its desktop and mobile screenshots. The full API integration suite remains blocked in the sandbox because it cannot bind loopback HTTP or connect to PostgreSQL at `127.0.0.1:5442`; its archive case is present but not executed against a database here.
+
 ## 2026-09-16 — Auth0-only browser authentication
 
 - Replaced the one-time popup authentication snapshot with the Auth0 React provider and redirect flow. API calls now request Auth0 access tokens for the configured Giga Desk API audience.

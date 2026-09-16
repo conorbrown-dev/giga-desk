@@ -56,13 +56,26 @@ describe('App', () => {
       status: 'Active', priority: 'High', updatedAt: '2026-09-01T00:00:00.000Z',
     }]) }));
     render(<MemoryRouter initialEntries={['/projects/project-1/settings']}><App /></MemoryRouter>);
-    const confirmation = await screen.findByLabelText(/Type Giga Desk to confirm archive/);
-    const archive = screen.getByRole('button', { name: 'Confirm archive' });
+    const confirmation = await screen.findByLabelText(/Confirmation name/);
+    const archive = screen.getByRole('button', { name: 'Archive project' });
     expect(archive).toBeDisabled();
     fireEvent.change(confirmation, { target: { value: 'Giga desk' } });
     expect(archive).toBeDisabled();
     fireEvent.change(confirmation, { target: { value: 'Giga Desk' } });
     expect(archive).toBeEnabled();
+  });
+
+  it('explains when the signed-in user cannot archive a project', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([{
+        id: 'project-1', key: 'GD', name: 'Giga Desk', businessGoal: 'Ship work reliably',
+        status: 'Active', priority: 'High', updatedAt: '2026-09-01T00:00:00.000Z',
+      }]) })
+      .mockResolvedValueOnce({ ok: false, status: 403 }));
+    render(<MemoryRouter initialEntries={['/projects/project-1/settings']}><App /></MemoryRouter>);
+    fireEvent.change(await screen.findByLabelText(/Confirmation name/), { target: { value: 'Giga Desk' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Archive project' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('You do not have permission to archive projects.');
   });
 
   it('guides Codex setup and remembers completed steps', () => {

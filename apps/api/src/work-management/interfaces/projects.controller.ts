@@ -1,4 +1,4 @@
-import { Body, ConflictException, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Post, Req } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Post, Req } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authentication.guard.js';
 import { RequirePermissions } from '../../auth/interfaces/permissions.decorator.js';
@@ -9,6 +9,7 @@ import { ListProjectsQuery, type ProjectListItem } from '../application/list-pro
 import { ListProjectWorkItemsQuery, type ProjectWorkItemView } from '../application/list-project-work-items.query.js';
 import { ProjectKeyConflictError } from '../application/project-repository.js';
 import { ProjectNotFoundError } from '../application/project-not-found.error.js';
+import { ProjectArchiveConfirmationError } from '../application/project-archive.error.js';
 import { CreateFeatureDto } from './create-feature.dto.js';
 import { CreateProjectDto } from './create-project.dto.js';
 
@@ -60,7 +61,12 @@ export class ProjectsController {
   @RequirePermissions('projects:create')
   async archive(@Param('projectId', ParseUUIDPipe) projectId: string, @Body('projectName') projectName: string, @Req() request: AuthenticatedRequest): Promise<void> {
     if (!request.user) throw new Error('Authenticated principal was not attached');
-    await this.commands.execute(new ArchiveProjectCommand(projectId, projectName, request.user.subject));
+    try {
+      await this.commands.execute(new ArchiveProjectCommand(projectId, projectName, request.user.subject));
+    } catch (error) {
+      if (error instanceof ProjectArchiveConfirmationError) throw new BadRequestException(error.message);
+      throw error;
+    }
   }
 
   @Post()
