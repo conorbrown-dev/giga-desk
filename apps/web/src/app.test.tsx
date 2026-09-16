@@ -65,6 +65,21 @@ describe('App', () => {
     expect(archive).toBeEnabled();
   });
 
+  it('returns to the portfolio after archiving without reloading the document', async () => {
+    const activeProject = {
+      id: 'project-1', key: 'GD', name: 'Giga Desk', businessGoal: 'Ship work reliably',
+      status: 'Active', priority: 'High', updatedAt: '2026-09-01T00:00:00.000Z',
+    };
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([activeProject]) })
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) }));
+    render(<MemoryRouter initialEntries={['/projects/project-1/settings']}><App /></MemoryRouter>);
+    fireEvent.change(await screen.findByLabelText(/Confirmation name/), { target: { value: 'Giga Desk' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Archive project' }));
+    expect(await screen.findByRole('heading', { name: 'Project Portfolio' })).toBeInTheDocument();
+  });
+
   it('explains when the signed-in user cannot archive a project', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([{

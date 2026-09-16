@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-09-16 — Persist browser authentication across reloads
+
+- Diagnosed the logout after project archival and browser refresh: archive success used a document-level navigation, while the Auth0 provider's default in-memory cache did not survive a new document load.
+- Configured the Auth0 React provider to persist its browser cache in local storage and changed the successful archive return to React Router navigation, preserving the active session without a full-page reload.
+- Added provider-configuration and client-navigation coverage. Passed web unit tests (24), web typecheck, web lint, and the production web build. A live Auth0 refresh/archival check remains pending deployment.
+
 ## 2026-09-16 — Neutral control-center shell alignment
 
 - Replaced the olive-tinted shell colors with a neutral near-black canvas, graphite raised surfaces, and neutral borders inspired by Railway and Expo’s dark product surfaces. Kept teal as a semantic accent rather than a background color.
