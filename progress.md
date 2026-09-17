@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-09-17 — Shadcn project portfolio migration
+
+- Migrated `/projects` command action, load/error/empty states, summary metrics, and project rows to the installed shadcn Button, Alert, Skeleton, Card, and Badge primitives. Retained the neutral control-center tokens and the dashboard's existing operational metadata hierarchy.
+- Passed web typecheck, web tests (5 files / 24 tests), web lint, production build, and `git diff --check`. The production bundle retains its existing >500 kB chunk-size warning. Authenticated browser visual review remains blocked locally by missing Auth0 configuration, as recorded in the preceding backlog migration.
+
 ## 2026-09-17 — Shadcn project backlog migration
 
 - Added the official shadcn Base/Nova primitives needed by the project-backlog flow: Card, Badge, Alert, Skeleton, Input, Textarea, Checkbox, Label, Separator, Field, and Collapsible. Corrected the generated Field component's unnecessary optional-chain lint violation without changing its behavior.
