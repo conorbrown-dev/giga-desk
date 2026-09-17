@@ -1,10 +1,11 @@
 import { ErrorMessage, Field as FormikField, Form, Formik } from 'formik';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import * as Yup from 'yup';
 import { Alert, AlertDescription } from './components/ui/alert.js';
 import { Button } from './components/ui/button.js';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card.js';
 import { Checkbox } from './components/ui/checkbox.js';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './components/ui/collapsible.js';
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from './components/ui/field.js';
 import { Input } from './components/ui/input.js';
 import { Textarea } from './components/ui/textarea.js';
@@ -38,9 +39,10 @@ const schema = Yup.object({
 
 export function CreateFeatureForm({ projectId, onCreated }: { projectId: string; onCreated: () => void }) {
   const fileInput = useRef<HTMLInputElement>(null);
-  return <details className="action-panel"><summary>Add feature</summary><Card><CardHeader><CardTitle id="create-feature-heading">Feature details</CardTitle></CardHeader><CardContent><Formik<FeatureFormValues> initialValues={initialValues} validationSchema={schema} onSubmit={async (values, { resetForm, setStatus }) => {
+  const [open, setOpen] = useState(false);
+  return <Collapsible className="action-panel" open={open} onOpenChange={setOpen}><CollapsibleTrigger render={<Button variant="outline" />}>Add feature</CollapsibleTrigger><CollapsibleContent><Card><CardHeader><CardTitle id="create-feature-heading">Feature details</CardTitle></CardHeader><CardContent><Formik<FeatureFormValues> initialValues={initialValues} validationSchema={schema} onSubmit={async (values, { resetForm, setStatus }) => {
     setStatus(undefined);
-    try { const visualReferences = await Promise.all(values.visualReferences.map(encodeImage)); await createFeature(projectId, { title: values.title, description: values.description, acceptanceCriteria: criteria(values.acceptanceCriteria), visualReviewRequired: values.visualReviewRequired || visualReferences.length > 0, ...(visualReferences.length > 0 ? { visualReferences } : {}) }); resetForm(); if (fileInput.current) fileInput.current.value = ''; onCreated(); }
+    try { const visualReferences = await Promise.all(values.visualReferences.map(encodeImage)); await createFeature(projectId, { title: values.title, description: values.description, acceptanceCriteria: criteria(values.acceptanceCriteria), visualReviewRequired: values.visualReviewRequired || visualReferences.length > 0, ...(visualReferences.length > 0 ? { visualReferences } : {}) }); resetForm(); if (fileInput.current) fileInput.current.value = ''; setOpen(false); onCreated(); }
     catch (reason: unknown) { setStatus({ error: reason instanceof Error ? reason.message : 'Unable to create the feature.' }); }
   }}>{(form) => {
     const status: unknown = form.status;
@@ -54,5 +56,5 @@ export function CreateFeatureForm({ projectId, onCreated }: { projectId: string;
       <Button type="submit" disabled={form.isSubmitting}>{form.isSubmitting ? 'Adding…' : 'Create feature'}</Button>
       {feedback?.error && <Alert variant="destructive"><AlertDescription>{feedback.error}</AlertDescription></Alert>}
     </FieldGroup></Form>;
-  }}</Formik></CardContent></Card></details>;
+  }}</Formik></CardContent></Card></CollapsibleContent></Collapsible>;
 }

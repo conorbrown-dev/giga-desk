@@ -22,8 +22,8 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   await expect(navigation.locator('img')).toHaveAttribute('src', '/images/giga-desk-icon.png');
   const accountControls = page.getByRole('navigation', { name: 'Account controls' });
   await accountControls.getByRole('button', { name: 'Open account menu for demo' }).click();
-  await expect(accountControls.getByRole('button', { name: /Account Settings/ })).toBeDisabled();
-  await expect(accountControls.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /Account Settings/ })).toHaveAttribute('data-disabled');
+  await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
   await page.screenshot({ path: 'test-results/visual-review/account-menu-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/visual-review/account-menu-mobile.png', fullPage: true });
@@ -91,19 +91,19 @@ test('does not require a legacy identity-provider page for browser tests', async
 test('walks through Codex agent setup in the authenticated app', async ({ page }) => {
   await signIn(page, '/agents/connect');
   await expect(page.getByRole('heading', { name: 'Connect an agent' })).toBeVisible();
-  await expect(page.getByText('Claude').locator('..')).toHaveAttribute('aria-disabled', 'true');
+  await expect(page.locator('[data-slot="card"]', { hasText: 'Claude' })).toHaveAttribute('aria-disabled', 'true');
   await expect(page.getByText(/installs a verified, versioned Giga Desk bundle/i)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.sh');
   await expect(page.getByRole('link', { name: 'PowerShell installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.ps1');
   await expect(page.getByText(/registers only its node-scoped target through the API/)).toBeVisible();
   await expect(page.getByText(/The worker can come Online before project checkouts exist/)).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Configure an approved checkout' })).toBeVisible();
-  await expect(page.getByLabel('Step completed').nth(3)).toBeEnabled();
-  await expect(page.getByLabel('Step completed').last()).toBeEnabled();
-  await page.getByLabel('Step completed').first().check();
+  await expect(page.getByRole('checkbox', { name: 'Step completed' }).nth(3)).toBeEnabled();
+  await expect(page.getByRole('checkbox', { name: 'Step completed' }).last()).toBeEnabled();
+  await page.getByRole('checkbox', { name: 'Step completed' }).first().click();
   await expect(page.getByLabel('1 of 5 setup steps complete')).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel('Step completed').first()).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Step completed' }).first()).toBeChecked();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({ path: 'test-results/visual-review/codex-connect-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -161,7 +161,7 @@ test('validates selections and handles Start Work success and conflict', async (
   await expect(page.getByRole('option', { name: /OpenCode/ })).not.toBeAttached();
   await page.getByLabel(/Agent/).selectOption('agent-1');
   await page.getByLabel(/Model/).selectOption('model-1');
-  await page.getByLabel('Approve protected production actions').check();
+  await page.getByRole('checkbox', { name: 'Approve protected production actions' }).click();
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({ path: 'test-results/visual-review/start-work-selection-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -277,14 +277,14 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
   await page.getByLabel(/Default branch/).fill('main');
   await page.getByRole('button', { name: 'Add project' }).click();
   await page.getByRole('link', { name: 'RY · Ryan Demo' }).click();
-  await page.locator('summary').filter({ hasText: 'Add feature' }).click();
   await page.getByRole('button', { name: 'Add feature' }).click();
+  await page.getByRole('button', { name: 'Create feature' }).click();
   await expect(page.getByText('Enter a feature title.')).toBeVisible();
   await page.getByLabel(/Title/).fill('Coworker showcase');
   await page.getByLabel(/Description/).fill('Demonstrate feature planning');
   await page.getByLabel(/Acceptance criteria/).fill('Project can be opened\nFeature appears immediately');
   await page.getByLabel(/Visual references/).setInputFiles({ name: 'expo.png', mimeType: 'image/png',
     buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) });
-  await page.getByRole('button', { name: 'Add feature' }).click();
+  await page.getByRole('button', { name: 'Create feature' }).click();
   await expect(page.getByRole('link', { name: 'Coworker showcase' })).toBeVisible();
 });

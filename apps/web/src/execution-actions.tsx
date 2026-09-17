@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Alert, AlertDescription } from './components/ui/alert.js';
+import { Button } from './components/ui/button.js';
 import { clearExecution, retryExecution } from './execution-api.js';
 
 interface ExecutionActionsProps {
@@ -29,5 +31,5 @@ export function ExecutionActions({ executionId, status, workItemId, onChanged }:
     }
   };
 
-  return <div className="execution-action-area">{error && <p className="execution-action-error" role="alert">{error}</p>}<div className="execution-actions" role="group" aria-label="Execution actions">{canClear && <button type="button" className="execution-action execution-action-clear" disabled={pendingAction !== null} onClick={() => { void run('clear'); }}>{pendingAction === 'clear' ? 'Clearing…' : 'Clear execution'}</button>}{canRetry && <button type="button" className="execution-action execution-action-retry" disabled={pendingAction !== null} onClick={() => { void run('retry'); }}>{pendingAction === 'retry' ? 'Retrying…' : 'Retry execution'}</button>}</div></div>;
+  return <div className="execution-action-area">{error && <Alert variant="destructive" className="execution-action-error"><AlertDescription>{error}</AlertDescription></Alert>}<div className="execution-actions" role="group" aria-label="Execution actions">{canClear && <Button type="button" variant="destructive" disabled={pendingAction !== null} onClick={() => { void run('clear'); }}>{pendingAction === 'clear' ? 'Clearing…' : 'Clear execution'}</Button>}{canRetry && <Button type="button" variant="outline" disabled={pendingAction !== null} onClick={() => { void run('retry'); }}>{pendingAction === 'retry' ? 'Retrying…' : 'Retry execution'}</Button>}</div></div>;
 }

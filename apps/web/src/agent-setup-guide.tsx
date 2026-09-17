@@ -1,4 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Alert, AlertDescription, AlertTitle } from './components/ui/alert.js';
+import { Badge } from './components/ui/badge.js';
+import { Button, buttonVariants } from './components/ui/button.js';
+import { Card, CardContent } from './components/ui/card.js';
+import { Checkbox } from './components/ui/checkbox.js';
+import { Field, FieldGroup, FieldLabel } from './components/ui/field.js';
+import { Input } from './components/ui/input.js';
+import { NativeSelect, NativeSelectOption } from './components/ui/native-select.js';
 import { fetchExecutionTargets, updateRepositoryMappings, type ExecutionTargets } from './execution-api.js';
 
 type Provider = 'codex' | 'opencode';
@@ -76,21 +84,21 @@ function RepositoryMappingHelper() {
   const [path, setPath] = useState('');
   const [targets, setTargets] = useState<ExecutionTargets['nodes']>([]);
   const [nodeId, setNodeId] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
-  useEffect(() => { const controller = new AbortController(); void fetchExecutionTargets(controller.signal).then((value) => { setTargets(value.nodes); setNodeId(value.nodes[0]?.id ?? ''); }).catch(() => { setMessage('Sign in to configure an execution node.'); }); return () => { controller.abort(); }; }, []);
+  useEffect(() => { const controller = new AbortController(); void fetchExecutionTargets(controller.signal).then((value) => { setTargets(value.nodes); setNodeId(value.nodes[0]?.id ?? ''); setMessage(null); }).catch(() => { if (!controller.signal.aborted) setMessage({ kind: 'error', text: 'Sign in to configure an execution node.' }); }); return () => { controller.abort(); }; }, []);
   const save = async (): Promise<void> => {
-    if (!nodeId || !url.trim() || !path.trim()) { setMessage('Choose a node and enter both the repository URL and local checkout path.'); return; }
-    setSaving(true); setMessage('');
-    try { await updateRepositoryMappings(nodeId, [{ url: url.trim(), path: path.trim() }]); setMessage('Repository mapping saved. The worker will pick it up automatically; no restart is required.'); }
-    catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to save repository mapping.'); }
+    if (!nodeId || !url.trim() || !path.trim()) { setMessage({ kind: 'error', text: 'Choose a node and enter both the repository URL and local checkout path.' }); return; }
+    setSaving(true); setMessage(null);
+    try { await updateRepositoryMappings(nodeId, [{ url: url.trim(), path: path.trim() }]); setMessage({ kind: 'success', text: 'Repository mapping saved. The worker will pick it up automatically; no restart is required.' }); }
+    catch (error) { setMessage({ kind: 'error', text: error instanceof Error ? error.message : 'Unable to save repository mapping.' }); }
     finally { setSaving(false); }
   };
-  return <section className="repository-mapping" aria-labelledby="repository-mapping-heading"><div className="workflow-section-heading"><div><p className="section-kicker">Repository access</p><h3 id="repository-mapping-heading">Configure an approved checkout</h3></div></div>
+  return <Card className="repository-mapping" aria-labelledby="repository-mapping-heading"><CardContent className="contents"><div className="workflow-section-heading"><div><p className="section-kicker">Repository access</p><h3 id="repository-mapping-heading">Configure an approved checkout</h3></div></div>
     <p>Tell Giga Desk where this machine may work. The worker retrieves the mapping automatically—no worker.env edits or restart required.</p>
-    <div className="form-grid"><label>Execution node<select value={nodeId} onChange={(event) => { setNodeId(event.target.value); }}><option value="">Select a node</option>{targets.map((target) => <option key={target.id} value={target.id}>{target.name} ({target.status})</option>)}</select></label><label>Repository URL<input value={url} onChange={(event) => { setUrl(event.target.value); }} placeholder="https://github.com/example/project.git" /></label><label>Local checkout path<input value={path} onChange={(event) => { setPath(event.target.value); }} placeholder="/home/user/repos/project" /></label></div>
-    <button className="button-link" type="button" onClick={() => { void save(); }} disabled={saving || !nodeId}>{saving ? 'Saving…' : 'Save repository mapping'}</button>{message && <p className="form-help" role="status">{message}</p>}
-  </section>;
+    <FieldGroup className="form-grid"><Field><FieldLabel htmlFor="mapping-node">Execution node</FieldLabel><NativeSelect className="w-full" id="mapping-node" value={nodeId} onChange={(event) => { setNodeId(event.target.value); }}><NativeSelectOption value="">Select a node</NativeSelectOption>{targets.map((target) => <NativeSelectOption key={target.id} value={target.id}>{target.name} ({target.status})</NativeSelectOption>)}</NativeSelect></Field><Field><FieldLabel htmlFor="mapping-url">Repository URL</FieldLabel><Input id="mapping-url" value={url} onChange={(event) => { setUrl(event.target.value); }} placeholder="https://github.com/example/project.git" /></Field><Field><FieldLabel htmlFor="mapping-path">Local checkout path</FieldLabel><Input id="mapping-path" value={path} onChange={(event) => { setPath(event.target.value); }} placeholder="/home/user/repos/project" /></Field></FieldGroup>
+    <Button type="button" onClick={() => { void save(); }} disabled={saving || !nodeId}>{saving ? 'Saving…' : 'Save repository mapping'}</Button>{message && <Alert variant={message.kind === 'error' ? 'destructive' : 'default'} role={message.kind === 'error' ? 'alert' : 'status'}><AlertDescription>{message.text}</AlertDescription></Alert>}
+  </CardContent></Card>;
 }
 
 export function AgentSetupGuide() {
@@ -115,22 +123,22 @@ export function AgentSetupGuide() {
   return <section className="agent-connect">
     <header className="page-header agent-connect-header"><div><p className="eyebrow">Agent integrations</p><h1>Connect an agent</h1><p>Prepare a machine to accept Giga Desk work and use only approved repository checkouts.</p></div></header>
     <section className="agent-provider-grid" aria-label="Agent providers">
-      <button className={`provider-card ${provider === 'codex' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'codex'} onClick={() => { setProvider('codex'); }}><h2>Codex CLI</h2><p>OpenAI work agent</p><span className="provider-state">Available</span></button>
-      <button className={`provider-card ${provider === 'opencode' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'opencode'} onClick={() => { setProvider('opencode'); }}><h2>OpenCode</h2><p>Custom worker runtime</p><span className="provider-state">Available</span></button>
-      <article className="provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Claude</h2><p>Provider adapter planned</p></article>
-      <article className="provider-card provider-disabled" aria-disabled="true"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></article>
+      <Button variant="outline" className={`provider-card ${provider === 'codex' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'codex'} onClick={() => { setProvider('codex'); }}><h2>Codex CLI</h2><p>OpenAI work agent</p><span className="provider-state">Available</span></Button>
+      <Button variant="outline" className={`provider-card ${provider === 'opencode' ? 'provider-selected' : ''}`} type="button" aria-pressed={provider === 'opencode'} onClick={() => { setProvider('opencode'); }}><h2>OpenCode</h2><p>Custom worker runtime</p><span className="provider-state">Available</span></Button>
+      <Card className="provider-card provider-disabled" aria-disabled="true"><CardContent className="contents"><span>Coming later</span><h2>Claude</h2><p>Provider adapter planned</p></CardContent></Card>
+      <Card className="provider-card provider-disabled" aria-disabled="true"><CardContent className="contents"><span>Coming later</span><h2>Grok</h2><p>Provider adapter planned</p></CardContent></Card>
     </section>
     <section className="agent-setup-workflow" aria-labelledby="agent-setup-heading">
-      <div className="agent-setup-overview"><div><p className="section-kicker">Selected integration</p><h2 id="agent-setup-heading">{activeProvider.heading}</h2><p>{activeProvider.description}</p></div><span className="setup-progress" aria-label={`${String(completed.length)} of ${String(activeProvider.steps.length)} setup steps complete`}>{completed.length} / {activeProvider.steps.length} complete</span></div>
-      <section className="agent-install" aria-labelledby="install-worker-heading"><div><p className="section-kicker">Install worker</p><h3 id="install-worker-heading">Download the worker for this machine</h3><p>It installs a verified, versioned Giga Desk bundle and reuses protected machine configuration automatically.</p></div><div className="agent-downloads"><a className="button-link" href={activeProvider.bashInstaller} download>Download Bash installer</a><a className="button-link button-secondary" href={activeProvider.powerShellInstaller} download>PowerShell installer</a></div></section>
+      <div className="agent-setup-overview"><div><p className="section-kicker">Selected integration</p><h2 id="agent-setup-heading">{activeProvider.heading}</h2><p>{activeProvider.description}</p></div><Badge variant="outline" className="setup-progress" aria-label={`${String(completed.length)} of ${String(activeProvider.steps.length)} setup steps complete`}>{completed.length} / {activeProvider.steps.length} complete</Badge></div>
+      <Card className="agent-install" aria-labelledby="install-worker-heading"><CardContent className="contents"><div><p className="section-kicker">Install worker</p><h3 id="install-worker-heading">Download the worker for this machine</h3><p>It installs a verified, versioned Giga Desk bundle and reuses protected machine configuration automatically.</p></div><div className="agent-downloads"><a className={buttonVariants()} href={activeProvider.bashInstaller} download>Download Bash installer</a><a className={buttonVariants({ variant: 'outline' })} href={activeProvider.powerShellInstaller} download>PowerShell installer</a></div></CardContent></Card>
       <div className="agent-workspace-body"><RepositoryMappingHelper />
-      <section className="agent-readiness" aria-labelledby="agent-readiness-heading"><div className="workflow-section-heading"><div><p className="section-kicker">Readiness</p><h3 id="agent-readiness-heading">Finish the setup</h3></div><span className="setup-progress">{completed.length} of {activeProvider.steps.length}</span></div>
+      <section className="agent-readiness" aria-labelledby="agent-readiness-heading"><div className="workflow-section-heading"><div><p className="section-kicker">Readiness</p><h3 id="agent-readiness-heading">Finish the setup</h3></div><Badge variant="outline" className="setup-progress">{completed.length} of {activeProvider.steps.length}</Badge></div>
       <ol className="setup-steps agent-steps">{activeProvider.steps.map((step, index) => <li key={step.title}>
-        <div className="row"><h3>{step.title}</h3>{step.pending && <span className="pending-badge">Requires worker support</span>}</div>
+        <div className="row"><h3>{step.title}</h3>{step.pending && <Badge variant="outline" className="pending-badge">Requires worker support</Badge>}</div>
         <p>{step.detail}</p>{step.command && <pre><code>{step.command}</code></pre>}
-        <label className="step-check"><input type="checkbox" checked={completed.includes(index)} disabled={step.pending} onChange={(event) => { setStep(index, event.target.checked); }} /> Step completed</label>
+        <Field orientation="horizontal" className="step-check"><Checkbox id={`setup-step-${String(index)}`} checked={completed.includes(index)} disabled={step.pending} onCheckedChange={(checked) => { setStep(index, checked); }} /><FieldLabel htmlFor={`setup-step-${String(index)}`}>Step completed</FieldLabel></Field>
       </li>)}</ol></section></div>
-      {provider === 'codex' && <aside className="security-note"><strong>Keep credentials private.</strong> Never paste a Codex token or Giga Desk machine secret into a Project, Work Item, command output, or source-controlled file. Authentication details follow the <a href="https://learn.chatgpt.com/docs/enterprise/service-accounts" target="_blank" rel="noreferrer">official OpenAI service-account guidance</a>.</aside>}
+      {provider === 'codex' && <Alert className="security-note"><AlertTitle>Keep credentials private.</AlertTitle><AlertDescription>Never paste a Codex token or Giga Desk machine secret into a Project, Work Item, command output, or source-controlled file. Authentication details follow the <a href="https://learn.chatgpt.com/docs/enterprise/service-accounts" target="_blank" rel="noreferrer">official OpenAI service-account guidance</a>.</AlertDescription></Alert>}
     </section>
   </section>;
 }

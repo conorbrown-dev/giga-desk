@@ -45,8 +45,8 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Connect agent' })).toHaveAttribute('href', '/agents/connect');
     expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute('aria-current', 'page');
     fireEvent.click(screen.getByRole('button', { name: 'Open account menu for conor' }));
-    expect(screen.getByRole('button', { name: /Account Settings/ })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(screen.getByRole('menuitem', { name: /Account Settings/ })).toHaveAttribute('data-disabled');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Sign out' }));
     expect(logout).toHaveBeenCalledOnce();
   });
 
@@ -93,10 +93,14 @@ describe('App', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('You do not have permission to archive projects.');
   });
 
-  it('guides Codex setup and remembers completed steps', () => {
+  it('guides Codex setup and remembers completed steps', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({
+      nodes: [{ id: 'node-1', name: 'Miriam', status: 'Online', maximumConcurrentJobs: 1, currentJobCount: 0, capabilities: {} }],
+      agents: [], models: [],
+    }) }));
     const view = render(<MemoryRouter initialEntries={['/agents/connect']}><App /></MemoryRouter>);
     expect(screen.getByRole('heading', { name: 'Connect an agent' })).toBeInTheDocument();
-    expect(screen.getByText('Claude').closest('article')).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText('Claude').closest('[data-slot="card"]')).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByRole('button', { name: /OpenCode/ })).not.toHaveAttribute('aria-disabled', 'true');
     expect(screen.queryByText('Requires worker support')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Download Bash installer' })).toHaveAttribute('href', '/scripts/install-codex-worker.sh');
@@ -106,6 +110,8 @@ describe('App', () => {
     expect(screen.getByText(/The worker can come Online before project checkouts exist/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Configure an approved checkout' })).toBeInTheDocument();
     expect(screen.getByText(/worker retrieves the mapping automatically/)).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Miriam (Online)' })).toBeInTheDocument();
+    expect(screen.queryByText('Sign in to configure an execution node.')).not.toBeInTheDocument();
     expect(screen.getAllByRole('checkbox')[3]).toBeEnabled();
     expect(screen.getAllByRole('checkbox')[4]).toBeEnabled();
     const firstStep = screen.getAllByRole('checkbox')[0];
@@ -192,7 +198,7 @@ describe('App', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     render(<MemoryRouter initialEntries={['/projects/project-2']}><App /></MemoryRouter>);
-    fireEvent.click(screen.getByText('Add feature', { selector: 'summary' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add feature' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Create feature' }));
     expect(await screen.findByText('Enter a feature title.')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Title/), { target: { value: 'Show Ryan the demo' } });
@@ -264,7 +270,7 @@ describe('App', () => {
     fireEvent.change(screen.getByLabelText(/Agent/), { target: { value: 'agent-1' } });
     expect(screen.queryByRole('option', { name: /Claude/ })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Model/), { target: { value: 'model-1' } });
-    fireEvent.click(screen.getByLabelText('Approve protected production actions'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Approve protected production actions' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
     await screen.findByText('No execution attempts yet.');
     expect(fetchMock).toHaveBeenCalledWith('/api/work-items/work-1/executions', expect.objectContaining({
