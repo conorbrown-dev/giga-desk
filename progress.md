@@ -1,5 +1,10 @@
 # Progress
 
+## 2026-09-17 — Shared dashboard spacing and link regression guards
+
+- Removed global/footer link underlines, added an explicit grid gap between work-item cards, and defined desktop/mobile work-item row alignment so identity, status, criteria, and priority retain a predictable reading order.
+- Added `styles.test.ts`, which reads the authoritative stylesheet source and guards the no-underline and work-item list/grid contracts. Passed web typecheck, web tests (6 files / 26 tests), web lint, production build, and `git diff --check`. The existing production bundle chunk-size warning remains; no browser route was inspected because the local app still stops at missing Auth0 configuration.
+
 ## 2026-09-17 — Shadcn project portfolio migration
 
 - Migrated `/projects` command action, load/error/empty states, summary metrics, and project rows to the installed shadcn Button, Alert, Skeleton, Card, and Badge primitives. Retained the neutral control-center tokens and the dashboard's existing operational metadata hierarchy.
