@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-09-17 — Project backlog spacing parity
+
+- Brought `/projects/:projectId` into parity with the portfolio route by adding the same numbered section hierarchy and deliberate section padding around backlog health and the delivery queue. Replaced the work-item row's `display: contents` layout with explicit shadcn `CardHeader`, `CardAction`, `CardTitle`, and `CardFooter` composition so status and metadata remain aligned at desktop and mobile widths.
+- Extended component/style regression coverage for the card slots and flex composition, and added desktop/mobile backlog screenshots plus an overflow assertion to the navigation E2E flow. Browser inspection at 1440x900 and 390x844 confirmed clean spacing, readable card reflow, no horizontal overflow or console warnings, and a correctly expanding Add Feature form.
+- Passed repository typecheck, all unit suites (web: 7 files / 33 tests), web lint, the full production build, the full Playwright suite (10 tests), and `git diff --check`. The existing >500 kB web bundle warning remains; repository-wide lint retains the previously recorded unrelated API-test parameter errors.
+
 ## 2026-09-17 — Project card composition and responsive verification
 
 - Rebuilt each `/projects` entry with explicit shadcn `CardHeader`, `CardContent`, and `CardFooter` regions so identity/status, business goal, and priority/update metadata retain distinct alignment and spacing. Removed the legacy display-contents composition and overrode the stale grid alignment while preserving the neutral dashboard palette.

@@ -150,7 +150,13 @@ describe('App', () => {
       criteria: [{ id: 'criterion-1', text: 'Projects link to work', satisfied: false, sortOrder: 0 }],
     }]) }));
     render(<MemoryRouter initialEntries={['/projects/project-1']}><App /></MemoryRouter>);
-    expect(await screen.findByRole('link', { name: 'Navigate projects' })).toHaveAttribute('href', '/work-items/work-1');
+    const workItemLink = await screen.findByRole('link', { name: 'Navigate projects' });
+    expect(workItemLink).toHaveAttribute('href', '/work-items/work-1');
+    const workItemCard = workItemLink.closest<HTMLElement>('[data-slot="card"]');
+    expect(workItemCard?.querySelector('[data-slot="card-header"]')).toHaveTextContent('FeatureNavigate projectsReady');
+    expect(workItemCard?.querySelector('[data-slot="card-footer"]')).toHaveTextContent('Acceptance criteria0/1PriorityMedium');
+    expect(screen.getByRole('region', { name: 'Work at a glance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Work items' })).toContainElement(workItemCard);
     expect(screen.getByLabelText('Work item summary')).toHaveTextContent('Criteria complete0/1');
   });
 

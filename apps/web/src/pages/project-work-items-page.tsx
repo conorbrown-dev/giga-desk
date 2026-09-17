@@ -4,7 +4,7 @@ import { CreateFeatureForm } from '../create-feature-form.js';
 import { Alert, AlertDescription } from '../components/ui/alert.js';
 import { Badge } from '../components/ui/badge.js';
 import { buttonVariants } from '../components/ui/button.js';
-import { Card, CardContent } from '../components/ui/card.js';
+import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/card.js';
 import { Skeleton } from '../components/ui/skeleton.js';
 import { useAuthenticatedLoad } from '../hooks/use-authenticated-load.js';
 import { fetchProjectWorkItems, type ProjectWorkItem } from '../project-api.js';
@@ -26,7 +26,7 @@ export function ProjectWorkItemsPage() {
     <header className="page-header work-items-header">
       <div>
         <Link to="/projects" className="back-link">← Projects</Link>
-        <p className="eyebrow">Project backlog</p>
+        <p className="eyebrow">01 — Project backlog</p>
         <h1>Project Work Items</h1>
         <p>Prioritize features, verify their criteria, and open execution history.</p>
       </div>
@@ -43,21 +43,22 @@ export function ProjectWorkItemsPage() {
       : workItems === null ? <Card className="state-panel" aria-busy="true"><CardContent className="flex flex-col items-center gap-3"><Skeleton className="h-4 w-48" /><Skeleton className="h-4 w-32" /></CardContent></Card>
         : workItems.length === 0 ? <Card className="state-panel"><CardContent>No work items yet. Add the first feature above.</CardContent></Card>
           : <>
-            <div className="summary-stats work-item-summary" aria-label="Work item summary">
-              <Card className="summary-stat"><CardContent className="contents"><span className="summary-stat-label">Work items</span><span className="summary-stat-value">{workItems.length}</span></CardContent></Card>
-              <Card className="summary-stat"><CardContent className="contents"><span className="summary-stat-label">Criteria complete</span><span className="summary-stat-value accent-cyan">{completedCriteria}/{totalCriteria}</span></CardContent></Card>
-              <Card className="summary-stat"><CardContent className="contents"><span className="summary-stat-label">Completion</span><span className="summary-stat-value accent-green">{totalCriteria > 0 ? Math.round((completedCriteria / totalCriteria) * 100) : 0}%</span></CardContent></Card>
-            </div>
-            <section aria-label="Work items" className="work-item-list">
-              {workItems.map((item) => {
-                const criteriaComplete = item.criteria.filter((criterion) => criterion.satisfied).length;
-                return <Card className="card work-item-row" key={item.id}><CardContent className="contents">
-                  <div className="work-item-identity"><Badge variant="outline" className="project-key">{item.type}</Badge><h2><Link to={`/work-items/${item.id}`}>{item.title}</Link></h2></div>
-                  <Badge className={statusClassName(item.status)}>{item.status}</Badge>
-                  <div className="work-item-progress"><span className="status-label">Acceptance criteria</span><strong>{criteriaComplete}/{item.criteria.length}</strong></div>
-                  <div className="work-item-priority"><span className="status-label">Priority</span><span className="status-value">{item.priority}</span></div>
-                </CardContent></Card>;
-              })}
+            <section className="dashboard-section" aria-labelledby="backlog-health">
+              <div className="section-heading"><p className="section-kicker">02 — Backlog health</p><h2 id="backlog-health">Work at a glance</h2></div>
+              <div className="summary-stats work-item-summary" aria-label="Work item summary">
+                <Card className="summary-stat"><CardContent className="contents"><span className="summary-stat-label">Work items</span><span className="summary-stat-value">{workItems.length}</span></CardContent></Card>
+                <Card className="summary-stat"><CardContent className="contents"><span className="summary-stat-label">Criteria complete</span><span className="summary-stat-value accent-cyan">{completedCriteria}/{totalCriteria}</span></CardContent></Card>
+                <Card className="summary-stat"><CardContent className="contents"><span className="summary-stat-label">Completion</span><span className="summary-stat-value accent-green">{totalCriteria > 0 ? Math.round((completedCriteria / totalCriteria) * 100) : 0}%</span></CardContent></Card>
+              </div>
+            </section>
+            <section aria-labelledby="work-items-heading" className="dashboard-section work-items-section">
+              <div className="section-heading"><p className="section-kicker">03 — Delivery queue</p><h2 id="work-items-heading">Work items</h2></div>
+              <div className="work-item-list">
+                {workItems.map((item) => {
+                  const criteriaComplete = item.criteria.filter((criterion) => criterion.satisfied).length;
+                  return <Card className="work-item-row" key={item.id}><CardHeader><div className="work-item-identity"><Badge variant="outline" className="project-key">{item.type}</Badge><CardTitle><h3><Link to={`/work-items/${item.id}`}>{item.title}</Link></h3></CardTitle></div><CardAction><Badge className={statusClassName(item.status)}>{item.status}</Badge></CardAction></CardHeader><CardFooter><div className="status-row"><div className="work-item-progress"><span className="status-label">Acceptance criteria</span><strong>{criteriaComplete}/{item.criteria.length}</strong></div><div className="work-item-priority"><span className="status-label">Priority</span><span className="status-value">{item.priority}</span></div></div></CardFooter></Card>;
+                })}
+              </div>
             </section>
           </>}
   </>;

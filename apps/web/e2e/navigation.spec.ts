@@ -40,6 +40,12 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'test-results/visual-review/admin-dashboard-mobile.png', fullPage: true });
   await page.getByRole('link', { name: 'GD · Giga Desk' }).click();
+  await expect(page.getByRole('region', { name: 'Work at a glance' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Work items' })).toBeVisible();
+  expect(await page.locator('body').evaluate((body) => body.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/visual-review/project-backlog-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: 'test-results/visual-review/project-backlog-desktop.png', fullPage: true });
   await page.getByRole('link', { name: 'Project navigation' }).click();
   await expect(page.getByText('No execution attempts yet.')).toBeVisible();
 });
