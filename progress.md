@@ -4,6 +4,7 @@
 
 - Initialized shadcn/ui's Base/Nova setup for the Vite application, including its component registry, path aliases, utility helper, and Tailwind v4 integration.
 - Mapped shadcn's semantic variables to a Railway/Expo-inspired neutral near-black palette: `#0d0d0f` canvas, `#171719` cards, `#202024` elevated surfaces, neutral borders, and teal/amber/pink only as semantic accents. Removed the legacy olive and light-mode branches while preserving the shell layout.
+- Added the shared shadcn Button primitive and adopted it for sign-in, the fallback route, and the primary project action.
 - Passed web unit tests (24), typecheck, lint, production build, and diff validation. Browser test-mode inspection confirmed the authenticated shell, neutral token values, and no console warnings; a broad component-by-component migration remains intentionally staged so each product-code change can stay within the repository's 228-line release limit.
 
 ## 2026-09-16 — Persist browser authentication across reloads
