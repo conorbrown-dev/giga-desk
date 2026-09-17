@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-09-17 — Shadcn project backlog migration
+
+- Added the official shadcn Base/Nova primitives needed by the project-backlog flow: Card, Badge, Alert, Skeleton, Input, Textarea, Checkbox, Label, Separator, Field, and Collapsible. Corrected the generated Field component's unnecessary optional-chain lint violation without changing its behavior.
+- Migrated `/projects/:projectId` status feedback, loading state, work-item rows, and the feature-creation form to shadcn composition while retaining the neutral control-center palette, existing dashboard density, and all API/form behavior. Work-item status now uses `Badge`; feedback uses `Alert`; loading uses `Skeleton`; fields use accessible `Field`/`Input`/`Textarea`/`Checkbox` composition. The native disclosure remains temporarily because the shadcn Collapsible integration lost the post-create feedback state during the live list refresh.
+- Passed web typecheck, web tests (5 files / 24 tests), web lint, production build, and `git diff --check`. Browser inspection reached the intended local `/projects/project-2` URL, but the app stops at `Auth0 is not configured`, so an authenticated desktop/mobile screenshot inspection remains pending a configured local test mode or Auth0 session. Continue the remaining routes as separate shadcn migration slices to respect the 228-line product-code release limit.
+
 ## 2026-09-16 — shadcn UI foundation
 
 - Initialized shadcn/ui's Base/Nova setup for the Vite application, including its component registry, path aliases, utility helper, and Tailwind v4 integration.
