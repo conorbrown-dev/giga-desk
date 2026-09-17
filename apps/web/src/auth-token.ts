@@ -36,6 +36,7 @@ export const setAccessTokenGetter = (getter: AccessTokenGetter): (() => void) =>
 };
 
 export async function getAuthToken(): Promise<string> {
+  if (isAuth0TestMode()) return 'test-token';
   if (import.meta.env.MODE === 'test') {
     const testToken = localStorage.getItem('giga-desk-token');
     if (testToken) return testToken;

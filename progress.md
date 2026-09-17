@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-09-17 — Project card composition and responsive verification
+
+- Rebuilt each `/projects` entry with explicit shadcn `CardHeader`, `CardContent`, and `CardFooter` regions so identity/status, business goal, and priority/update metadata retain distinct alignment and spacing. Removed the legacy display-contents composition and overrode the stale grid alignment while preserving the neutral dashboard palette.
+- Added a component regression assertion for the three card regions and repaired Auth0 browser-test mode to provide its expected non-empty token and current `test-user` account label. Browser inspection passed at 1440x900 and 390x844 with no horizontal overflow; the full Playwright suite passed (10 tests).
+- Passed repository typecheck, all unit suites (web: 7 files / 33 tests), web lint, the full production build, and `git diff --check`. Repository-wide lint remains blocked only by the pre-existing unused `_project` and `_actorId` parameters in `apps/api/src/work-management/application/archive-project.handler.spec.ts`; the existing >500 kB web bundle warning also remains.
+
 ## 2026-09-17 — Shared dashboard spacing and link regression guards
 
 - Removed global/footer link underlines, added an explicit grid gap between work-item cards, and defined desktop/mobile work-item row alignment so identity, status, criteria, and priority retain a predictable reading order.

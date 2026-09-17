@@ -23,7 +23,12 @@ describe('App', () => {
       status: 'Active', priority: 'High', updatedAt: '2026-09-01T00:00:00.000Z',
     }]) }));
     render(<MemoryRouter initialEntries={['/projects']}><App /></MemoryRouter>);
-    expect(await screen.findByRole('link', { name: 'GD · Giga Desk' })).toHaveAttribute('href', '/projects/project-1');
+    const projectLink = await screen.findByRole('link', { name: 'GD · Giga Desk' });
+    expect(projectLink).toHaveAttribute('href', '/projects/project-1');
+    const projectCard = projectLink.closest('[data-slot="card"]');
+    expect(projectCard?.querySelector('[data-slot="card-header"]')).toHaveTextContent('GDGD · Giga DeskActive');
+    expect(projectCard?.querySelector('[data-slot="card-content"]')).toHaveTextContent('Ship work reliably');
+    expect(projectCard?.querySelector('[data-slot="card-footer"]')).toHaveTextContent('PriorityHighUpdated');
     expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { name: 'Project Portfolio' }));
     expect(screen.getByText('Production workspace')).toBeInTheDocument();
     expect(screen.getByText('Active', { selector: '.status-chip' })).toHaveClass('status-positive');
