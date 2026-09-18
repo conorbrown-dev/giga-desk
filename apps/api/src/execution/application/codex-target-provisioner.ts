@@ -5,6 +5,9 @@ export interface CodexTargetInput {
   operatingSystem: string;
   architecture: string;
   agentVersion: string;
+  agentType?: 'CodexAppServer' | 'CodexSdk' | 'ClaudeAgentSdk';
+  agentName?: string;
+  modelIdentifier?: string;
 }
 
 export interface ProvisionedCodexTarget {
@@ -24,4 +27,5 @@ export const validateCodexTargetInput = (input: CodexTargetInput): void => {
   ] as const;
   for (const [name, value] of required) if (!value.trim()) throw new Error(`${name} is required`);
   if (input.executionNodeId !== undefined && !input.executionNodeId.trim()) throw new Error('executionNodeId is required');
+  if (input.agentType !== undefined && !['CodexAppServer', 'CodexSdk', 'ClaudeAgentSdk'].includes(input.agentType)) throw new Error('agentType is invalid');
 };

@@ -9,6 +9,8 @@ export interface OpenCodeRegistration {
 
 export interface CodexRegistration {
   hostname: string; operatingSystem: string; architecture: string; agentVersion: string;
+  agentType?: 'CodexAppServer' | 'CodexSdk' | 'ClaudeAgentSdk';
+  agentName?: string; modelIdentifier?: string;
 }
 export interface RepositoryMapping { url: string; path: string }
 
@@ -59,8 +61,8 @@ export class AgentApi {
     return response.json() as Promise<T>;
   }
 
-  discover(nodeId: string): Promise<readonly DiscoverableJob[]> {
-    return this.send(`/api/agent/nodes/${nodeId}/jobs`, 'GET');
+  discover(nodeId: string, agentType?: string): Promise<readonly DiscoverableJob[]> {
+    return this.send(`/api/agent/nodes/${nodeId}/jobs${agentType ? `?agentType=${encodeURIComponent(agentType)}` : ''}`, 'GET');
   }
 
   repositories(nodeId: string): Promise<{ mappings: readonly RepositoryMapping[] }> {

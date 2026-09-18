@@ -1,4 +1,4 @@
-import { Body, ConflictException, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Post, Req } from '@nestjs/common';
+import { Body, ConflictException, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Post, Query, Req } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { AuthenticatedRequest } from '../../auth/interfaces/authentication.guard.js';
 import { RequirePermissions } from '../../auth/interfaces/permissions.decorator.js';
@@ -104,10 +104,10 @@ export class AgentJobsController {
 
   @Get('nodes/:nodeId/jobs')
   @RequirePermissions('agent:jobs')
-  discover(@Param('nodeId', ParseUUIDPipe) nodeId: string, @Req() request: AuthenticatedRequest): Promise<readonly DiscoverableJob[]> {
+  discover(@Param('nodeId', ParseUUIDPipe) nodeId: string, @Query('agentType') agentType: string | undefined, @Req() request: AuthenticatedRequest): Promise<readonly DiscoverableJob[]> {
     try {
       assertWorkerNode(nodeId, request.user?.executionNodeId ?? null);
-      return this.queries.execute(new DiscoverNodeJobsQuery(nodeId));
+      return this.queries.execute(new DiscoverNodeJobsQuery(nodeId, agentType));
     } catch (error) {
       if (error instanceof WorkerNodeMismatchError) throw new ForbiddenException(error.message);
       throw error;

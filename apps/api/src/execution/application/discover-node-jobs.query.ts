@@ -6,5 +6,5 @@ export interface DiscoverableJob {
 }
 
 export class DiscoverNodeJobsQuery extends Query<readonly DiscoverableJob[]> {
-  constructor(readonly nodeId: string) { super(); }
+  constructor(readonly nodeId: string, readonly agentType?: string) { super(); }
 }

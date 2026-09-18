@@ -6,6 +6,6 @@ import { DiscoverNodeJobsQuery, type DiscoverableJob } from './discover-node-job
 export class DiscoverNodeJobsHandler implements IQueryHandler<DiscoverNodeJobsQuery> {
   constructor(private readonly jobs: AgentJobRepository) {}
   execute(query: DiscoverNodeJobsQuery): Promise<readonly DiscoverableJob[]> {
-    return this.jobs.discover(query.nodeId);
+    return this.jobs.discover(query.nodeId, query.agentType);
   }
 }

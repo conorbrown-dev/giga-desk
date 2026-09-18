@@ -1,4 +1,4 @@
-import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class RegisterCodexTargetDto {
   @IsString() @MinLength(1) @MaxLength(255)
@@ -12,4 +12,13 @@ export class RegisterCodexTargetDto {
 
   @IsString() @Matches(/^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/)
   agentVersion!: string;
+
+  @IsOptional() @IsIn(['CodexAppServer', 'CodexSdk', 'ClaudeAgentSdk'])
+  agentType?: 'CodexAppServer' | 'CodexSdk' | 'ClaudeAgentSdk';
+
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(120)
+  agentName?: string;
+
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(255)
+  modelIdentifier?: string;
 }

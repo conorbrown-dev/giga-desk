@@ -1,5 +1,12 @@
 # Progress
 
+## 2026-09-18 — Selectable Codex and Claude SDK worker runtimes
+
+- Added selectable `CodexAppServer`, `CodexSdk`, and `ClaudeAgentSdk` execution targets. A worker now registers its precise runtime/model, and node job discovery is filtered by the selected agent type so independently installed runtimes on one approved host cannot claim one another's work items. The existing Start Work agent selector therefore exposes the installed runtime choice on demand.
+- Added real TypeScript executors for the Codex SDK, Codex App Server JSON-RPC protocol, and Claude Agent SDK. Claude requires `ANTHROPIC_API_KEY` only in the local protected worker configuration; it is not sent to Giga Desk. The worker-release manifest now declares the SDK dependencies for installer-time, platform-specific installation.
+- Replaced both Codex worker installers with staged transactional installers. They snapshot the existing Giga Desk config/release/service or scheduled task, verify the downloaded release checksum, install SDK dependencies in a staging directory, start the new runtime, and restore the snapshot on failure. Set `GIGA_DESK_WORKER_AGENT_TYPE` to `CodexAppServer` (default), `CodexSdk`, or `ClaudeAgentSdk`; Claude additionally requires `ANTHROPIC_API_KEY`.
+- Passed worker/API/agent-client typechecks; worker tests (16) and worker lint; API unit tests (51); Bash installer syntax validation; and the full production build (after an escalated rerun because sandboxed `tar` returned EPERM). API lint remains blocked only by the pre-existing unused `_project` and `_actorId` parameters in `archive-project.handler.spec.ts`. Live App Server, Claude API-key, Windows PowerShell, installer rollback, and database-backed integration proof remain unexecuted because they require a configured worker identity, credentials, a Windows host, and PostgreSQL.
+
 ## 2026-09-17 — Project → Feature → Work Item hierarchy
 
 - Made the delivery hierarchy explicit across the domain, API, and project backlog: Features are outcome containers, while child UserStory work items are the assignable execution units. Added authenticated child creation at `POST /api/projects/:projectId/features/:featureId/work-items`, persisted the parent relationship and audit activity, and rejected Feature containers from the execution queue even for direct API requests.

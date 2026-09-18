@@ -14,9 +14,11 @@ try {
   cpSync('apps/codex-worker/dist', join(stagingDirectory, 'apps/codex-worker/dist'), { recursive: true });
   cpSync('apps/agent-client/dist', join(stagingDirectory, 'node_modules/@giga-desk/agent-client/dist'), { recursive: true });
   cpSync('apps/agent-client/package.json', join(stagingDirectory, 'node_modules/@giga-desk/agent-client/package.json'));
+  const workerPackage = JSON.parse(readFileSync('apps/codex-worker/package.json', 'utf8'));
   writeFileSync(join(stagingDirectory, 'package.json'), JSON.stringify({
     name: '@giga-desk/worker-release', private: true, version: '1.0.0',
     engines: { node: '>=22' }, scripts: { start: 'node apps/codex-worker/dist/main.js' },
+    dependencies: Object.fromEntries(Object.entries(workerPackage.dependencies).filter(([name]) => name !== '@giga-desk/agent-client')),
   }, null, 2));
   mkdirSync(releaseDirectory, { recursive: true });
   execFileSync('tar', ['-czf', archivePath, '-C', stagingDirectory, '.']);

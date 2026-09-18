@@ -3,7 +3,7 @@ import type { CodexExecutionResult, CodexProgressUpdate, ExecutionProcessControl
 
 export interface WorkerApi {
   heartbeat(nodeId: string): Promise<unknown>;
-  discover(nodeId: string): Promise<readonly DiscoverableJob[]>;
+  discover(nodeId: string, agentType?: string): Promise<readonly DiscoverableJob[]>;
   workPackage(jobId: string): Promise<WorkPackage>;
   control(jobId: string): Promise<{ terminationRequested: boolean }>;
   post(jobId: string, action: string, body?: object): Promise<unknown>;
@@ -51,14 +51,14 @@ const failureReason = (error: unknown): string => {
 export class CodexWorker {
   constructor(
     private readonly api: WorkerApi, private readonly executor: WorkExecutor,
-    private readonly nodeId: string, private approvedRepositories: ApprovedRepositories,
+    private readonly nodeId: string, private approvedRepositories: ApprovedRepositories, private readonly agentType?: string,
   ) { }
 
   setApprovedRepositories(repositories: ApprovedRepositories): void { this.approvedRepositories = repositories; }
 
   async runNext(): Promise<string | null> {
     await this.api.heartbeat(this.nodeId);
-    const [job] = await this.api.discover(this.nodeId);
+    const [job] = await this.api.discover(this.nodeId, this.agentType);
     if (!job) return null;
     await this.api.post(job.id, 'claim');
     let progressWrites = Promise.resolve();

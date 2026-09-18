@@ -9,9 +9,9 @@ import { JobClaimConflictError } from '../domain/job-claim.js';
 export class PrismaAgentJobRepository extends AgentJobRepository {
   constructor(private readonly database: PrismaService) { super(); }
 
-  async discover(nodeId: string): Promise<readonly DiscoverableJob[]> {
+  async discover(nodeId: string, agentType?: string): Promise<readonly DiscoverableJob[]> {
     const jobs = await this.database.executionJob.findMany({
-      where: { executionNodeId: nodeId, status: 'Queued', executionNode: { enabled: true } },
+      where: { executionNodeId: nodeId, status: 'Queued', executionNode: { enabled: true }, ...(agentType ? { agent: { agentType } } : {}) },
       orderBy: { requestedAt: 'asc' }, take: 20,
       select: { id: true, workItemId: true, requestedAt: true, workItem: {
         select: { title: true, projectId: true, project: { select: { key: true } } },

@@ -40,7 +40,7 @@ const runCommand: CommandRunner = (file, args, options) => new Promise((resolve,
   });
 });
 
-const resultSchema = {
+export const resultSchema = {
   type: 'object', additionalProperties: false,
   required: ['summary', 'tests', 'visualEvidence', 'deployment', 'satisfiedAcceptanceCriterionIds', 'branchName', 'commitHash', 'pullRequestUrl'],
   properties: {

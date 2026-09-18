@@ -3,6 +3,7 @@ import { CodexTargetProvisioner, type ProvisionedCodexTarget } from './codex-tar
 
 export interface CodexRegistration {
   hostname: string; operatingSystem: string; architecture: string; agentVersion: string;
+  agentType?: 'CodexAppServer' | 'CodexSdk' | 'ClaudeAgentSdk'; agentName?: string; modelIdentifier?: string;
 }
 
 export class RegisterCodexTargetCommand extends Command<ProvisionedCodexTarget> {
