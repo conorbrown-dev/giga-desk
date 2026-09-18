@@ -3,7 +3,7 @@ import { AuthTokenVerifier, type AuthenticatedPrincipal } from '../application/a
 
 const appPermissions = new Set([
   'projects:read', 'projects:create', 'work-items:create', 'work-items:update',
-  'work-items:read', 'executions:read', 'executions:create', 'agent:jobs',
+  'work-items:read', 'executions:read', 'executions:create', 'agent:jobs', 'organizations:manage',
 ]);
 
 const stringArray = (value: unknown): readonly string[] =>

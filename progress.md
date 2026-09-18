@@ -1,5 +1,15 @@
 # Progress
 
+## 2026-09-18 — Ideas API and invite-link slice
+
+- Added authenticated organization creation gated by `organizations:manage`, owner/coworker membership enforcement, Idea create/read/update/archive endpoints, coworker comment creation, owner-only seven-day opaque invite-link creation, and one-time authenticated invite acceptance. Projects remain outside this authorization boundary.
+- Regenerated the Prisma client and passed API typecheck. Focused controller/unit coverage, database integration, and the rendered Ideas UI are next; no migration has been applied to a database.
+
+## 2026-09-18 — Organization-scoped Ideas groundwork
+
+- Added the organization persistence model required for owner-managed Idea collaboration: Organization, owner/coworker membership, open/archived Ideas, comments, and opaque hashed invite-link records. Existing Projects remain intentionally unscoped, per the requested out-of-scope boundary.
+- Added the reviewed migration `20260918120000_organization_ideas` and recognized Auth0 `organizations:manage` as the bootstrap permission for organization creation. Passed Prisma schema validation and API typecheck. CRUD/controllers, invite acceptance, and the rendered Ideas UI remain to be implemented in the next focused slice.
+
 ## 2026-09-18 — Selectable Codex and Claude SDK worker runtimes
 
 - Added selectable `CodexAppServer`, `CodexSdk`, and `ClaudeAgentSdk` execution targets. A worker now registers its precise runtime/model, and node job discovery is filtered by the selected agent type so independently installed runtimes on one approved host cannot claim one another's work items. The existing Start Work agent selector therefore exposes the installed runtime choice on demand.

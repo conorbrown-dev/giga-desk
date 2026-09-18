@@ -19,10 +19,11 @@ import { PrismaWorkItemTransitionRepository } from './infrastructure/prisma-work
 import { PrismaProjectQueries } from './infrastructure/prisma-project.queries.js';
 import { ProjectsController } from './interfaces/projects.controller.js';
 import { WorkItemsController } from './interfaces/work-items.controller.js';
+import { IdeasController } from '../ideas/ideas.controller.js';
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [ProjectsController, WorkItemsController],
+  controllers: [ProjectsController, WorkItemsController, IdeasController],
   providers: [
     CreateProjectHandler,
     ArchiveProjectHandler,
