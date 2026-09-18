@@ -10,10 +10,13 @@ Create a **Single Page Application** named `Giga Desk Web` and an **API** for Gi
 - `work-items:read`, `work-items:create`, `work-items:update`
 - `executions:read`, `executions:create`
 - `agent:jobs`
+- `organizations:manage` (organization owners/administrators only)
 
-Assign the appropriate permissions through Auth0 roles. Configure MFA in Auth0 for this application’s users.
+Assign the ordinary application permissions through a member role. Assign `organizations:manage` through a separate owner role so coworkers cannot create organizations. Configure MFA in Auth0 for this application’s users.
 
 For the SPA, add the production origin to **Allowed Callback URLs**, **Allowed Logout URLs**, and **Allowed Web Origins**. Add each local development origin used by the Vite app separately. Do not use wildcard origins.
+
+For the standard local ports, allow `http://127.0.0.1:3000` and `http://localhost:3000` for the API-hosted build, plus `http://127.0.0.1:5173` and `http://localhost:5173` for Vite development.
 
 ## Railway variables
 
@@ -30,3 +33,19 @@ Set these API variables to the same Auth0 tenant and API:
 - `AUTH_AUDIENCE`: the same API identifier as `VITE_AUTH0_AUDIENCE`
 
 Vite embeds `VITE_*` values at build time, so redeploy after changing them. The API must reject tokens whose issuer, audience, signature, or permissions do not match these settings.
+
+## Local integrated application
+
+Keep the six Auth0 variables above and a local `DATABASE_URL` in the ignored root `.env`. Load it before Prisma or workspace commands:
+
+```bash
+set -a
+source .env
+set +a
+npm exec -w @giga-desk/api -- prisma migrate deploy
+npm run build -w @giga-desk/web
+npm run build -w @giga-desk/api
+node apps/api/dist/main.js
+```
+
+The API then serves both the backend and built SPA at `http://127.0.0.1:3000`. Rebuild the web workspace after changing any `VITE_*` value.

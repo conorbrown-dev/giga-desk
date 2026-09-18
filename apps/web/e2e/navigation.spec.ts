@@ -62,6 +62,53 @@ test('renders an Auth0-configured protected project route', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Projects' })).not.toBeVisible();
 });
 
+test('switches between organization idea workspaces', async ({ page }) => {
+  const consoleErrors: string[] = [];
+  const coworkerIdeas = [
+    { id: 'idea-3', organizationId: 'org-2', title: 'Shared discovery calls', description: 'Invite customers into structured discovery sessions.', status: 'Open', createdBy: 'user-2', createdAt: '2026-09-18T12:00:00.000Z', updatedAt: '2026-09-18T12:00:00.000Z', comments: [] },
+  ];
+  page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+  await page.route('**/api/organizations', async (route) => route.fulfill({ json: [
+    { id: 'org-1', name: 'Praxis Labs', members: [{ role: 'Owner' }] },
+    { id: 'org-2', name: 'Customer Council', members: [{ role: 'Coworker' }] },
+  ] }));
+  await page.route('**/api/organizations/org-1/ideas', async (route) => route.fulfill({ json: [
+    { id: 'idea-1', organizationId: 'org-1', title: 'Customer research board', description: 'Bring stakeholder evidence together before project approval.', status: 'Open', createdBy: 'user-1', createdAt: '2026-09-17T12:00:00.000Z', updatedAt: '2026-09-18T12:00:00.000Z', comments: [{ id: 'comment-1', body: 'Worth exploring', authorId: 'user-2', createdAt: '2026-09-18T12:00:00.000Z' }] },
+    { id: 'idea-2', organizationId: 'org-1', title: 'Retired proposal', description: 'An archived idea remains available for context.', status: 'Archived', createdBy: 'user-1', createdAt: '2026-09-16T12:00:00.000Z', updatedAt: '2026-09-17T12:00:00.000Z', comments: [] },
+  ] }));
+  await page.route('**/api/organizations/org-2/ideas', async (route) => {
+    if (route.request().method() === 'POST') {
+      expect(route.request().postDataJSON()).toEqual({ title: 'Customer advisory group', description: 'Validate demand before delivery begins.' });
+      coworkerIdeas.unshift({ ...coworkerIdeas[0], id: 'idea-4', title: 'Customer advisory group', description: 'Validate demand before delivery begins.' });
+      await route.fulfill({ status: 201, json: coworkerIdeas[0] });
+    } else await route.fulfill({ json: coworkerIdeas });
+  });
+
+  await signIn(page, '/ideas');
+  await expect(page.getByRole('heading', { name: 'Customer research board' })).toBeVisible();
+  await expect(page.getByLabel('Idea summary')).toContainText('Discussion posts1');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: 'test-results/visual-review/ideas-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 390);
+  await page.screenshot({ path: 'test-results/visual-review/ideas-mobile.png', fullPage: true });
+  await page.getByLabel('Organization').selectOption('org-2');
+  await expect(page.getByRole('heading', { name: 'Shared discovery calls' })).toBeVisible();
+  await expect(page.getByText('Coworker')).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole('button', { name: 'Add idea' }).click();
+  await page.getByLabel('Title').fill('Customer advisory group');
+  await page.getByLabel('Description').fill('Validate demand before delivery begins.');
+  await page.screenshot({ path: 'test-results/visual-review/create-idea-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 390);
+  await page.screenshot({ path: 'test-results/visual-review/create-idea-mobile.png', fullPage: true });
+  await page.getByRole('button', { name: 'Create idea' }).click();
+  await expect(page.getByRole('status')).toContainText('Idea “Customer advisory group” created.');
+  await expect(page.getByRole('heading', { name: 'Customer advisory group' })).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+});
+
 test('archives a project only after its exact name is confirmed', async ({ page }) => {
   const projectId = '00000000-0000-4000-8000-000000000003';
   await page.route('**/api/projects', async (route) => route.fulfill({ json: [{

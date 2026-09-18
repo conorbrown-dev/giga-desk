@@ -1,5 +1,17 @@
 # Progress
 
+## 2026-09-18 — Local PostgreSQL, backend, and Auth0 runtime
+
+- Reused the existing `giga-desk-postgres-1` PostgreSQL 17 container on `127.0.0.1:5442`, secured the ignored root `.env` to mode 600, added the local `DATABASE_URL`, and corrected its stale double-slash Auth0 JWKS URL. Applied all 13 committed migrations; the local schema is current through organization Ideas.
+- Verified Railway project/service selection and matched the local public SPA/API metadata to production without copying the production database URL. Reauthorized the Auth0 CLI, added localhost callback/logout/web origins for ports 3000 and 5173, added the `organizations:manage` API permission, created a separate `giga-desk-owner` role, and assigned both owner and standard-user roles to the verified local owner account. Auth0 Management API readback confirms the effective owner permission alongside the existing project/work-item/execution permissions.
+- Rebuilt the web bundle with real Auth0 variables, built and started the API at `http://127.0.0.1:3000`, and verified health 200, SPA 200, unauthenticated organizations 401, a real Auth0 redirect/MFA return, authenticated local identity, and an authenticated Ideas read from PostgreSQL with clean browser logs. The API integration boundary executes locally (9 files / 11 tests), but 3 assertions are currently stale: two expect legacy `CodexCli` registration instead of `CodexAppServer`, and the project test expects an archived project in the active-project list. Six integration files and eight tests pass. The local database and API remain running for continued work.
+
+## 2026-09-18 — Read-only Ideas workspace
+
+- Added the authenticated `/ideas` workspace and primary navigation entry. Members can switch between their organizations, see whether they are an owner or coworker, review open and archived Ideas, and see proposal/discussion/update summaries. Loading, no-organization, no-ideas, authorization, and API-unavailable states are explicit; mutation controls remain intentionally outside this slice.
+- Added a typed Ideas API client that maps the membership-scoped organization response without exposing backend implementation types, plus focused component coverage for populated, switched-organization, and no-organization behavior. Added an E2E route covering the organization switch, desktop/mobile screenshots, horizontal-overflow protection, and console-error checking.
+- Passed web typecheck, lint, all 35 web unit/component tests, the production web build, all 11 Playwright E2E tests, and `git diff --check`. Browser inspection covered the real API-unavailable state plus the mocked populated state at 1440x900 and 390x844; the mobile document width matched its 390px viewport and browser logs were clean. The product-code change is 84 added-plus-deleted lines, within the 228-line limit. A live database-backed Ideas read remains unverified because no local API/PostgreSQL service is running; the next focused UI slice is authenticated Idea creation.
+
 ## 2026-09-18 — Ideas API and invite-link slice
 
 - Added authenticated organization creation gated by `organizations:manage`, owner/coworker membership enforcement, Idea create/read/update/archive endpoints, coworker comment creation, owner-only seven-day opaque invite-link creation, and one-time authenticated invite acceptance. Projects remain outside this authorization boundary.
