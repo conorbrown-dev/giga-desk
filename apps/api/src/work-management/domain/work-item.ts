@@ -43,7 +43,9 @@ export class WorkItem {
 
   static create(props: WorkItemProps): WorkItem {
     if (!props.title.trim()) throw new Error('Work item title is required');
-    if (props.type === 'Feature' && props.acceptanceCriteria.length === 0) throw new Error('Features require acceptance criteria');
+    if (['Feature', 'UserStory'].includes(props.type) && props.acceptanceCriteria.length === 0) {
+      throw new Error(`${props.type === 'Feature' ? 'Features' : 'Work items'} require acceptance criteria`);
+    }
     if (props.acceptanceCriteria.some((criterion) => !criterion.trim())) throw new Error('Acceptance criteria cannot be blank');
     if ((props.visualReferences?.length ?? 0) > 3) throw new Error('Work items support at most three visual references');
     if (props.visualReferences?.some((reference) => !reference.name.trim() || reference.name.length > 200

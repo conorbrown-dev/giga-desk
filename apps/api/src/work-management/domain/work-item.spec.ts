@@ -20,6 +20,11 @@ describe('WorkItem', () => {
     expect(() => { feature().transitionTo('Completed'); }).toThrow('Cannot transition');
   });
 
+  it('requires acceptance criteria for assignable UserStory work items', () => {
+    expect(() => feature({ type: 'UserStory', parentId: 'feature-1', acceptanceCriteria: [] }))
+      .toThrow('Work items require acceptance criteria');
+  });
+
   it('accepts bounded image references and rejects invalid image content', () => {
     const reference = { name: 'railway.png', mediaType: 'image/png' as const,
       content: Uint8Array.from([0x89, 0x50, 0x4e, 0x47]) };

@@ -58,6 +58,14 @@ export async function createFeature(projectId: string, input: CreateFeatureInput
   if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'Sign in to create features.' : response.status === 404 ? 'This project no longer exists.' : 'Unable to create the feature.');
 }
 
+export async function createWorkItem(projectId: string, featureId: string, input: CreateFeatureInput): Promise<void> {
+  const token = await getAuthToken();
+  const response = await fetch(`/api/projects/${projectId}/features/${featureId}/work-items`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(input),
+  });
+  if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'Sign in to create work items.' : response.status === 404 ? 'This feature no longer exists.' : 'Unable to create the work item.');
+}
+
 export async function archiveProject(projectId: string, projectName: string): Promise<void> {
   const token = await getAuthToken();
   const response = await fetch(`/api/projects/${projectId}/archive`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ projectName }) });

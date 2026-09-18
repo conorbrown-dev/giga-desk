@@ -4,7 +4,7 @@ import { AgentWorkPackageQueries, WorkPackageNotFoundError } from '../applicatio
 import type { WorkPackage } from '../application/get-work-package.query.js';
 
 const expectationsFor = (type: string, visualReviewRequired: boolean): WorkPackage['expectations'] => {
-  if (['Feature', 'UserStory', 'Bug'].includes(type)) {
+  if (['UserStory', 'Bug'].includes(type)) {
     return { tests: ['Unit', 'Integration', 'EndToEnd'], deploymentRequired: true, visualReviewRequired };
   }
   if (type === 'Research') return { tests: [], deploymentRequired: false, visualReviewRequired };

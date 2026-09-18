@@ -104,12 +104,20 @@ describe('projects API', () => {
     expect(feature.visualReferences[0]).toMatchObject({ name: 'railway.png', mediaType: 'image/png', sortOrder: 0 });
     expect(Buffer.from(feature.visualReferences[0]?.content ?? [])).toEqual(visualReferenceContent);
     expect(feature.activities[0]?.actorId).toBe('user-123');
+    const workItemInput = { ...featureInput, title: 'Configure the ORM', visualReferences: [] };
+    await request(server).post(`/api/projects/${stored.id}/features/${feature.id}/work-items`)
+      .set('Authorization', 'Bearer read-only-token').send(workItemInput).expect(403);
+    const workItemResponse = await request(server).post(`/api/projects/${stored.id}/features/${feature.id}/work-items`)
+      .set('Authorization', 'Bearer valid-token').send(workItemInput).expect(201);
+    expect(workItemResponse.body).toMatchObject({
+      projectId: stored.id, parentId: feature.id, type: 'UserStory', title: workItemInput.title, status: 'Backlog',
+    });
     const workItemsResponse = await request(server).get(`/api/projects/${stored.id}/work-items`)
       .set('Authorization', 'Bearer read-only-token').expect(200);
-    expect(workItemsResponse.body).toEqual([expect.objectContaining({
+    expect(workItemsResponse.body).toEqual(expect.arrayContaining([expect.objectContaining({
       id: feature.id, type: 'Feature', status: 'Backlog',
       criteria: [expect.objectContaining({ text: featureInput.acceptanceCriteria[0], satisfied: false })],
-    })]);
+    }), expect.objectContaining({ parentId: feature.id, type: 'UserStory', title: workItemInput.title })]));
     await request(server).get('/api/projects/00000000-0000-4000-8000-000000000001/work-items')
       .set('Authorization', 'Bearer read-only-token').expect(404);
     await request(server).patch(`/api/work-items/${feature.id}/status`)

@@ -1,4 +1,4 @@
-import type { WorkItemStatus } from '../../work-management/domain/work-item.js';
+import type { WorkItemStatus, WorkItemType } from '../../work-management/domain/work-item.js';
 import { isValidProjectDefaultBranch, isValidProjectRepositoryUrl } from '../../work-management/domain/project.js';
 
 export class InvalidExecutionSelectionError extends Error {}
@@ -10,6 +10,7 @@ export const isProjectRepositoryExecutable = (
 
 export interface ExecutionSelection {
   projectId: string;
+  workItemType: WorkItemType;
   workItemStatus: WorkItemStatus;
   repositoryUrl: string | null;
   defaultBranch: string | null;
@@ -26,6 +27,9 @@ export interface ExecutionSelection {
 }
 
 export const assertExecutionCanBeQueued = (selection: ExecutionSelection): void => {
+  if (selection.workItemType === 'Feature') {
+    throw new InvalidExecutionSelectionError('Features are containers; choose a child work item to start');
+  }
   if (!isProjectRepositoryExecutable(
     selection.repositoryUrl, selection.defaultBranch, selection.node.approvedRepositoryUrls,
   )) {

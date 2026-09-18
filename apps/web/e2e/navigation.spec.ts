@@ -10,10 +10,10 @@ test('navigates from projects to a work item execution dashboard', async ({ page
     id: '00000000-0000-4000-8000-000000000001', key: 'GD', name: 'Giga Desk', businessGoal: 'Ship work reliably',
     status: 'Active', priority: 'High', updatedAt: '2026-09-01T00:00:00.000Z',
   }] }));
-  await page.route('**/api/projects/*/work-items', async (route) => route.fulfill({ json: [{
-    id: '00000000-0000-4000-8000-000000000002', parentId: null, type: 'Feature', title: 'Project navigation',
-    status: 'Ready', priority: 'Medium', criteria: [],
-  }] }));
+  await page.route('**/api/projects/*/work-items', async (route) => route.fulfill({ json: [
+    { id: '00000000-0000-4000-8000-000000000002', parentId: null, type: 'Feature', title: 'Project navigation', status: 'Ready', priority: 'Medium', criteria: [] },
+    { id: '00000000-0000-4000-8000-000000000004', parentId: '00000000-0000-4000-8000-000000000002', type: 'UserStory', title: 'Open a project backlog', status: 'Backlog', priority: 'High', criteria: [] },
+  ] }));
   await page.route('**/api/work-items/*/executions', async (route) => route.fulfill({ json: [] }));
   await page.route('**/api/execution/targets', async (route) => route.fulfill({ json: { nodes: [], agents: [], models: [] } }));
   await signIn(page);
@@ -41,12 +41,14 @@ test('navigates from projects to a work item execution dashboard', async ({ page
   await page.screenshot({ path: 'test-results/visual-review/admin-dashboard-mobile.png', fullPage: true });
   await page.getByRole('link', { name: 'GD · Giga Desk' }).click();
   await expect(page.getByRole('region', { name: 'Work at a glance' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Work items' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Features and work items' })).toBeVisible();
+  await expect(page.getByText('Project navigation')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Project navigation' })).not.toBeVisible();
   expect(await page.locator('body').evaluate((body) => body.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/visual-review/project-backlog-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({ path: 'test-results/visual-review/project-backlog-desktop.png', fullPage: true });
-  await page.getByRole('link', { name: 'Project navigation' }).click();
+  await page.getByRole('link', { name: 'Open a project backlog' }).click();
   await expect(page.getByText('No execution attempts yet.')).toBeVisible();
 });
 
@@ -240,7 +242,7 @@ test('streams activity and controls the registered worker process', async ({ pag
   expect(consoleErrors).toEqual([]);
 });
 
-test('creates a project and adds a feature in the browser', async ({ page }) => {
+test('creates a project, feature, and assignable work item in the browser', async ({ page }) => {
   const projectId = '00000000-0000-4000-8000-000000000010';
   let projects: readonly object[] = [];
   let workItems: readonly object[] = [];
@@ -255,6 +257,11 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
   await page.route('**/api/projects/*/features', async (route) => {
     expect(route.request().postDataJSON()).toEqual({ title: 'Coworker showcase', description: 'Demonstrate feature planning', acceptanceCriteria: ['Project can be opened', 'Feature appears immediately'], visualReviewRequired: true, visualReferences: [{ name: 'expo.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=' }] });
     workItems = [{ id: 'work-10', parentId: null, type: 'Feature', title: 'Coworker showcase', status: 'Backlog', priority: 'Medium', criteria: [{ id: 'criterion-10', text: 'Project can be opened', satisfied: false, sortOrder: 0 }] }];
+    await route.fulfill({ status: 201, json: {} });
+  });
+  await page.route('**/api/projects/*/features/*/work-items', async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ title: 'Configure the ORM', description: 'Connect application persistence', acceptanceCriteria: ['Database client connects'], visualReviewRequired: false });
+    workItems = [...workItems, { id: 'story-10', parentId: 'work-10', type: 'UserStory', title: 'Configure the ORM', status: 'Backlog', priority: 'Medium', criteria: [{ id: 'criterion-11', text: 'Database client connects', satisfied: false, sortOrder: 0 }] }];
     await route.fulfill({ status: 201, json: {} });
   });
   await page.route('**/api/projects/*/work-items', async (route) => route.fulfill({ json: workItems }));
@@ -292,5 +299,16 @@ test('creates a project and adds a feature in the browser', async ({ page }) => 
   await page.getByLabel(/Visual references/).setInputFiles({ name: 'expo.png', mimeType: 'image/png',
     buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) });
   await page.getByRole('button', { name: 'Create feature' }).click();
-  await expect(page.getByRole('link', { name: 'Coworker showcase' })).toBeVisible();
+  await expect(page.getByText('Coworker showcase')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Coworker showcase' })).not.toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole('button', { name: 'Add work item' }).click();
+  await page.screenshot({ path: 'test-results/visual-review/create-work-item-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'test-results/visual-review/create-work-item-mobile.png', fullPage: true });
+  await page.getByLabel(/Title/).fill('Configure the ORM');
+  await page.getByLabel(/Description/).fill('Connect application persistence');
+  await page.getByLabel(/Acceptance criteria/).fill('Database client connects');
+  await page.getByRole('button', { name: 'Create work item' }).click();
+  await expect(page.getByRole('link', { name: 'Configure the ORM' })).toBeVisible();
 });

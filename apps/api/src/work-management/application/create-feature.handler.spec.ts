@@ -11,6 +11,7 @@ class RecordingWorkItemRepository extends WorkItemRepository {
     this.saved = { feature, actorId };
     return Promise.resolve();
   }
+  createWorkItem(): Promise<void> { return Promise.resolve(); }
 }
 
 describe('CreateFeatureHandler', () => {

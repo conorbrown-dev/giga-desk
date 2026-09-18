@@ -5,12 +5,14 @@ import { RequirePermissions } from '../../auth/interfaces/permissions.decorator.
 import { ArchiveProjectCommand } from '../application/archive-project.command.js';
 import { CreateProjectCommand, type CreatedProject } from '../application/create-project.command.js';
 import { CreateFeatureCommand, type CreatedFeature, type CreateFeatureInput } from '../application/create-feature.command.js';
+import { CreateWorkItemCommand, type CreatedWorkItem } from '../application/create-work-item.command.js';
 import { ListProjectsQuery, type ProjectListItem } from '../application/list-projects.query.js';
 import { ListProjectWorkItemsQuery, type ProjectWorkItemView } from '../application/list-project-work-items.query.js';
 import { ProjectKeyConflictError } from '../application/project-repository.js';
 import { ProjectNotFoundError } from '../application/project-not-found.error.js';
 import { ProjectArchiveConfirmationError } from '../application/project-archive.error.js';
-import { CreateFeatureDto } from './create-feature.dto.js';
+import { FeatureNotFoundError } from '../application/work-item-repository.js';
+import { CreateFeatureDto, CreateWorkItemDto } from './create-feature.dto.js';
 import { CreateProjectDto } from './create-project.dto.js';
 
 const toFeatureInput = ({ visualReferences = [], ...input }: CreateFeatureDto): CreateFeatureInput => ({
@@ -53,6 +55,23 @@ export class ProjectsController {
       return await this.commands.execute(new CreateFeatureCommand(projectId, toFeatureInput(input), request.user.subject));
     } catch (error) {
       if (error instanceof ProjectNotFoundError) throw new NotFoundException(error.message);
+      throw error;
+    }
+  }
+
+  @Post(':projectId/features/:featureId/work-items')
+  @RequirePermissions('work-items:create')
+  async createWorkItem(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('featureId', ParseUUIDPipe) featureId: string,
+    @Body() input: CreateWorkItemDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<CreatedWorkItem> {
+    if (!request.user) throw new Error('Authenticated principal was not attached');
+    try {
+      return await this.commands.execute(new CreateWorkItemCommand(projectId, featureId, toFeatureInput(input), request.user.subject));
+    } catch (error) {
+      if (error instanceof FeatureNotFoundError) throw new NotFoundException(error.message);
       throw error;
     }
   }

@@ -5,7 +5,7 @@ import { CreateExecutionJobHandler } from './create-execution-job.handler.js';
 import { ExecutionJobRepository } from './execution-job-repository.js';
 
 const selection: ExecutionSelection = {
-  projectId: 'project-1', workItemStatus: 'Backlog', prerequisiteStatuses: [], hasActiveJob: false,
+  projectId: 'project-1', workItemType: 'UserStory', workItemStatus: 'Backlog', prerequisiteStatuses: [], hasActiveJob: false,
   repositoryUrl: 'https://github.com/example/project.git', defaultBranch: 'main',
   node: { enabled: true, status: 'Online', currentJobCount: 0, maximumConcurrentJobs: 1,
     supportedAgentTypes: ['Simulator'], supportedModelProviders: ['Local'],
@@ -47,5 +47,14 @@ describe('CreateExecutionJobHandler', () => {
       'work-item-1', 'node-1', 'agent-1', 'model-1', false, 'user-123',
     ))).rejects.toThrow('repository is not configured');
     selection.defaultBranch = 'main';
+  });
+
+  it('rejects Feature containers before persistence', async () => {
+    const repository = new RecordingExecutionJobRepository();
+    selection.workItemType = 'Feature';
+    await expect(new CreateExecutionJobHandler(repository).execute(new CreateExecutionJobCommand(
+      'feature-1', 'node-1', 'agent-1', 'model-1', false, 'user-123',
+    ))).rejects.toThrow('Features are containers');
+    selection.workItemType = 'UserStory';
   });
 });

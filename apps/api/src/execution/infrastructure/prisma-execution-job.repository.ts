@@ -29,7 +29,7 @@ export class PrismaExecutionJobRepository extends ExecutionJobRepository {
   async loadSelection(workItemId: string, nodeId: string, agentId: string, modelId: string): Promise<ExecutionSelection | null> {
     const [workItem, node, agent, model, activeJob] = await Promise.all([
       this.database.workItem.findUnique({ where: { id: workItemId }, select: {
-        projectId: true, status: true, project: { select: { repositoryUrl: true, defaultBranch: true } },
+        projectId: true, type: true, status: true, project: { select: { repositoryUrl: true, defaultBranch: true } },
         dependencies: { select: { prerequisite: { select: { status: true } } } },
       } }),
       this.database.executionNode.findUnique({ where: { id: nodeId } }),
@@ -42,6 +42,7 @@ export class PrismaExecutionJobRepository extends ExecutionJobRepository {
     if (!workItem || !node || !agent || !model) return null;
     return {
       projectId: workItem.projectId,
+      workItemType: workItem.type,
       workItemStatus: workItem.status,
       repositoryUrl: workItem.project.repositoryUrl,
       defaultBranch: workItem.project.defaultBranch,
@@ -77,7 +78,7 @@ export class PrismaExecutionJobRepository extends ExecutionJobRepository {
           id: job.modelId, enabled: true, provider: selection.model.provider,
         } });
         const workItem = await transaction.workItem.updateMany({
-          where: { id: job.workItemId, status: selection.workItemStatus }, data: { status: 'Ready' },
+          where: { id: job.workItemId, type: { not: 'Feature' }, status: selection.workItemStatus }, data: { status: 'Ready' },
         });
         if (node.count !== 1 || agent !== 1 || model !== 1 || workItem.count !== 1) {
           throw new ConcurrentExecutionRequestError('Execution selection changed concurrently');

@@ -1,5 +1,11 @@
 # Progress
 
+## 2026-09-17 — Project → Feature → Work Item hierarchy
+
+- Made the delivery hierarchy explicit across the domain, API, and project backlog: Features are outcome containers, while child UserStory work items are the assignable execution units. Added authenticated child creation at `POST /api/projects/:projectId/features/:featureId/work-items`, persisted the parent relationship and audit activity, and rejected Feature containers from the execution queue even for direct API requests.
+- Rebuilt `/projects/:projectId` as grouped shadcn Feature cards with nested, linked Work Item rows, per-Feature work-item creation, hierarchy-aware counts, a safe unassigned-items section, and inline desktop/mobile form expansion. Feature titles no longer link to execution history; only work items do. Rendered inspection at 1440x900 and 390x844 covered populated, empty-feature, and open-create-form states and corrected a desktop form-clipping issue found during review.
+- Added domain/handler/execution/component/E2E coverage and extended the projects API integration scenario. Repository typecheck, all unit suites (104 tests), the full Playwright suite (10 tests), a post-fix focused Playwright rerun, the production build, targeted lint, and `git diff --check` passed. The current product-code diff is 225 added-plus-deleted lines, within the 228-line push limit. Repository-wide lint remains blocked only by the pre-existing unused `_project` and `_actorId` parameters in `archive-project.handler.spec.ts`; database-backed integration remains unexecuted because PostgreSQL is unavailable at `127.0.0.1:5442` (the sandbox-only loopback failure was separately ruled out with an escalated rerun).
+
 ## 2026-09-17 — Project backlog spacing parity
 
 - Brought `/projects/:projectId` into parity with the portfolio route by adding the same numbered section hierarchy and deliberate section padding around backlog health and the delivery queue. Replaced the work-item row's `display: contents` layout with explicit shadcn `CardHeader`, `CardAction`, `CardTitle`, and `CardFooter` composition so status and metadata remain aligned at desktop and mobile widths.

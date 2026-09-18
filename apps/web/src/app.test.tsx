@@ -145,19 +145,21 @@ describe('App', () => {
   });
 
   it('links project work items to execution history', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([{
-      id: 'work-1', parentId: null, type: 'Feature', title: 'Navigate projects', status: 'Ready', priority: 'Medium',
-      criteria: [{ id: 'criterion-1', text: 'Projects link to work', satisfied: false, sortOrder: 0 }],
-    }]) }));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([
+      { id: 'feature-1', parentId: null, type: 'Feature', title: 'Project navigation', status: 'Ready', priority: 'Medium', criteria: [] },
+      { id: 'work-1', parentId: 'feature-1', type: 'UserStory', title: 'Navigate projects', status: 'Backlog', priority: 'High',
+        criteria: [{ id: 'criterion-1', text: 'Projects link to work', satisfied: false, sortOrder: 0 }] },
+    ]) }));
     render(<MemoryRouter initialEntries={['/projects/project-1']}><App /></MemoryRouter>);
     const workItemLink = await screen.findByRole('link', { name: 'Navigate projects' });
     expect(workItemLink).toHaveAttribute('href', '/work-items/work-1');
-    const workItemCard = workItemLink.closest<HTMLElement>('[data-slot="card"]');
-    expect(workItemCard?.querySelector('[data-slot="card-header"]')).toHaveTextContent('FeatureNavigate projectsReady');
-    expect(workItemCard?.querySelector('[data-slot="card-footer"]')).toHaveTextContent('Acceptance criteria0/1PriorityMedium');
+    const featureCard = screen.getByText('Project navigation').closest<HTMLElement>('[data-slot="card"]');
+    expect(screen.queryByRole('link', { name: 'Project navigation' })).not.toBeInTheDocument();
+    expect(featureCard).toContainElement(workItemLink);
+    expect(workItemLink.closest('article')).toHaveTextContent('Work item · User storyNavigate projectsBacklogCriteria0/1PriorityHigh');
     expect(screen.getByRole('region', { name: 'Work at a glance' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Work items' })).toContainElement(workItemCard);
-    expect(screen.getByLabelText('Work item summary')).toHaveTextContent('Criteria complete0/1');
+    expect(screen.getByRole('region', { name: 'Features and work items' })).toContainElement(featureCard);
+    expect(screen.getByLabelText('Work item summary')).toHaveTextContent('Features1Work items1Criteria complete0/1');
   });
 
   it('creates a project and refreshes the portfolio', async () => {
@@ -205,6 +207,10 @@ describe('App', () => {
         workItems = [{ id: 'work-2', parentId: null, type: 'Feature', title: 'Show Ryan the demo', status: 'Backlog', priority: 'Medium', criteria: [{ id: 'criterion-1', text: 'Project is visible', satisfied: false, sortOrder: 0 }] }];
         return Promise.resolve({ ok: true, status: 201, json: () => Promise.resolve({}) });
       }
+      if (input === '/api/projects/project-2/features/work-2/work-items' && init?.method === 'POST') {
+        workItems = [...workItems, { id: 'story-1', parentId: 'work-2', type: 'UserStory', title: 'Configure the ORM', status: 'Backlog', priority: 'Medium', criteria: [{ id: 'criterion-2', text: 'Database connects', satisfied: false, sortOrder: 0 }] }];
+        return Promise.resolve({ ok: true, status: 201, json: () => Promise.resolve({}) });
+      }
       return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(workItems) });
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -219,8 +225,16 @@ describe('App', () => {
     ], 'railway.png', { type: 'image/png' })] } });
     fireEvent.click(screen.getByRole('button', { name: 'Create feature' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Feature created.');
-    expect(await screen.findByRole('link', { name: 'Show Ryan the demo' })).toBeInTheDocument();
+    expect(await screen.findByText('Show Ryan the demo')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Show Ryan the demo' })).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-2/features', expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'Show Ryan the demo', description: '', acceptanceCriteria: ['Project is visible', 'Feature is visible'], visualReviewRequired: true, visualReferences: [{ name: 'railway.png', mediaType: 'image/png', dataBase64: 'iVBORw0KGgo=' }] }) }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add work item' }));
+    fireEvent.change(screen.getByLabelText(/Title/), { target: { value: 'Configure the ORM' } });
+    fireEvent.change(screen.getByLabelText(/Acceptance criteria/), { target: { value: 'Database connects' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create work item' }));
+    expect(await screen.findByRole('link', { name: 'Configure the ORM' })).toHaveAttribute('href', '/work-items/story-1');
+    expect(screen.getByRole('status')).toHaveTextContent('Work item created.');
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/project-2/features/work-2/work-items', expect.objectContaining({ method: 'POST' }));
   });
 
   it('shows an empty execution dashboard state', async () => {

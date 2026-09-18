@@ -36,3 +36,5 @@ export class CreateFeatureDto {
   @IsOptional() @IsBoolean()
   declare visualReviewRequired?: boolean;
 }
+
+export class CreateWorkItemDto extends CreateFeatureDto {}
